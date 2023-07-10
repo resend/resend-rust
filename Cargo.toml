@@ -1,0 +1,15 @@
+[package]
+name = "resend-rs"
+version = "0.1.0"
+edition = "2021"
+repository = "https://github.com/AntoniosBarotsis/resend-rs"
+license = "GPL-3.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+async = []
+
+[dependencies]
+reqwest = { version = "0.11.18", features = ["blocking"] }
+thiserror = "1.0.43"
