@@ -6,8 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- ## [Unreleased] -->
 
+## [0.2.0] - 2023-07-10
+
+Disabled `reqwest`'s default features and enabled `rustls-tls`.
+
 ## [0.1.0] - 2023-07-10
 
-Initial release
+Initial release.
 
+[0.2.0]: https://crates.io/crates/resend-rs/0.2.0
 [0.1.0]: https://crates.io/crates/resend-rs/0.1.0
