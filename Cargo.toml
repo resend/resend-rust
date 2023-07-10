@@ -1,5 +1,6 @@
 [package]
 name = "resend-rs"
+description = "A very minimal Resend client for sending emails."
 version = "0.1.0"
 edition = "2021"
 repository = "https://github.com/AntoniosBarotsis/resend-rs"
