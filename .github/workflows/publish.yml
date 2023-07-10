@@ -14,10 +14,10 @@ jobs:
       - name: Use cached dependencies
         uses: Swatinem/rust-cache@v2
 
-      # - name: Check semver
-      #   run: |
-      #     cargo install cargo-semver-checks --locked
-      #     cargo semver-checks check-release
+      - name: Check semver
+        run: |
+          cargo install cargo-semver-checks --locked
+          cargo semver-checks check-release
 
       - name: Install cargo-release
         run: cargo install cargo-release
