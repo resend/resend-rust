@@ -15,7 +15,6 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Check semver
-        working-directory: lib
         run: |
           cargo install cargo-semver-checks --locked
           cargo semver-checks check-release
