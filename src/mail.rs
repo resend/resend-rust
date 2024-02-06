@@ -27,7 +27,7 @@ impl fmt::Display for Mail<'_> {
       .map(|el| format!("\"{el}\""))
       .collect::<Vec<_>>()
       .join(", ");
-    
+
     write!(
       f,
       "{{\"from\": \"{}\", \"to\": [{}], \"subject\": \"{}\", \"html\": \"{}\"}}",
