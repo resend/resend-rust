@@ -15,7 +15,7 @@ const URL: &str = "https://api.resend.com/emails";
 ///
 /// let mail = Mail::new(
 ///   "<SENDER EMAIL>",
-///   "<RECEIVER EMAIL>",
+///   &["<RECEIVER EMAIL>"],
 ///   "subject",
 ///   "html",
 /// );
