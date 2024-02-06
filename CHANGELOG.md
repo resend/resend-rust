@@ -6,6 +6,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- ## [Unreleased] -->
 
+## [0.3.0] - 2024-02-06
+
+### Changed
+
+- `Mail::new` now accepts a list of `to` addresses and thus supports sending an email to multiple
+  recipients.
+
+  ```rs
+  // Before:
+  let mail = Mail::new("from1", "to1", "subject1", "html1");
+
+  // Now
+  let mail = Mail::new("from1", &["to1"], "subject1", "html1");
+  ```
+
 ## [0.2.0] - 2023-07-10
 
 Disabled `reqwest`'s default features and enabled `rustls-tls`.
