@@ -9,7 +9,6 @@ use reqwest::Client;
 use crate::api_keys::ApiKeys;
 use crate::services::Emails;
 
-// TODO: api_keys
 // TODO: audiences
 // TODO: contacts
 // TODO: domains
@@ -17,13 +16,13 @@ use crate::services::Emails;
 /// A minimal [Resend](https://resend.com) client.
 #[derive(Clone)]
 pub struct Resend {
-    inner: ResendInner,
+    inner: Config,
     pub emails: Emails,
     pub api_keys: ApiKeys,
 }
 
 #[derive(Clone)]
-pub(crate) struct ResendInner {
+pub(crate) struct Config {
     pub(crate) api_key: Arc<String>,
     #[cfg(feature = "blocking")]
     pub(crate) client: Client,
@@ -31,7 +30,7 @@ pub(crate) struct ResendInner {
     pub(crate) client: Client,
 }
 
-impl fmt::Debug for ResendInner {
+impl fmt::Debug for Config {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // Don't output API key.
         fmt::Debug::fmt(&self.client, f)
@@ -52,7 +51,7 @@ impl Resend {
     /// [`Resend`]: https://resend.com
     pub fn with_client(api_key: &str, client: Client) -> Self {
         let api_key = Arc::new(api_key.to_string());
-        let inner = ResendInner { api_key, client };
+        let inner = Config { api_key, client };
 
         Self {
             emails: Emails(inner.clone()),

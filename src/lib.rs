@@ -2,8 +2,8 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc = include_str!("../README.md")]
 
+pub(crate) use client::Config;
 pub use client::Resend;
-pub(crate) use client::ResendInner;
 
 mod api_keys;
 mod client;
@@ -19,6 +19,7 @@ pub mod services {
 pub mod types {
     //! TODO.
 
+    pub use super::api_keys::types::*;
     pub use super::emails::types::*;
 }
 
