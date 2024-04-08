@@ -1,5 +1,6 @@
 use std::fmt;
 
+use crate::types::{CreateApiKeyRequest, CreateApiKeyResponse, ListApiKeysResponse};
 use crate::{Config, Result};
 
 /// TODO.
@@ -12,16 +13,13 @@ impl ApiKeys {
     /// <https://resend.com/docs/api-reference/api-keys/create-api-key>
     #[cfg(not(feature = "blocking"))]
     #[cfg_attr(docsrs, doc(cfg(not(feature = "blocking"))))]
-    pub async fn create(
-        &self,
-        api_key: types::CreateApiKeyRequest,
-    ) -> Result<types::CreateApiKeyResponse> {
+    pub async fn create(&self, api_key: CreateApiKeyRequest) -> Result<CreateApiKeyResponse> {
         let uri = self.0.base_url.join("/api-keys")?;
         let key = self.0.api_key.as_str();
 
         let request = self.0.client.post(uri).bearer_auth(key).json(&api_key);
         let response = request.send().await?;
-        let content = response.json::<types::CreateApiKeyResponse>().await?;
+        let content = response.json::<CreateApiKeyResponse>().await?;
 
         Ok(content)
     }
@@ -31,13 +29,13 @@ impl ApiKeys {
     /// <https://resend.com/docs/api-reference/api-keys/list-api-keys>
     #[cfg(not(feature = "blocking"))]
     #[cfg_attr(docsrs, doc(cfg(not(feature = "blocking"))))]
-    pub async fn list(&self) -> Result<types::ListApiKeysResponse> {
+    pub async fn list(&self) -> Result<ListApiKeysResponse> {
         let uri = self.0.base_url.join("/api-keys")?;
         let key = self.0.api_key.as_str();
 
         let request = self.0.client.get(uri).bearer_auth(key);
         let response = request.send().await?;
-        let content = response.json::<types::ListApiKeysResponse>().await?;
+        let content = response.json::<ListApiKeysResponse>().await?;
 
         Ok(content)
     }
@@ -63,16 +61,13 @@ impl ApiKeys {
     /// <https://resend.com/docs/api-reference/api-keys/create-api-key>
     #[cfg(feature = "blocking")]
     #[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
-    pub fn create(
-        &self,
-        api_key: types::CreateApiKeyRequest,
-    ) -> Result<types::CreateApiKeyResponse> {
+    pub fn create(&self, api_key: CreateApiKeyRequest) -> Result<CreateApiKeyResponse> {
         let uri = self.0.base_url.join("/api-keys")?;
         let key = self.0.api_key.as_str();
 
         let request = self.0.client.post(uri).bearer_auth(key).json(&api_key);
         let response = request.send()?;
-        let content = response.json::<types::CreateApiKeyResponse>()?;
+        let content = response.json::<CreateApiKeyResponse>()?;
 
         Ok(content)
     }
@@ -82,13 +77,13 @@ impl ApiKeys {
     /// <https://resend.com/docs/api-reference/api-keys/list-api-keys>
     #[cfg(feature = "blocking")]
     #[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
-    pub fn list(&self) -> Result<types::ListApiKeysResponse> {
+    pub fn list(&self) -> Result<ListApiKeysResponse> {
         let uri = self.0.base_url.join("/api-keys")?;
         let key = self.0.api_key.as_str();
 
         let request = self.0.client.get(uri).bearer_auth(key);
         let response = request.send()?;
-        let content = response.json::<types::ListApiKeysResponse>()?;
+        let content = response.json::<ListApiKeysResponse>()?;
 
         Ok(content)
     }
@@ -119,13 +114,16 @@ impl fmt::Debug for ApiKeys {
 pub mod types {
     use serde::{Deserialize, Serialize};
 
+    /// TODO.
+    #[must_use]
     #[derive(Debug, Clone, Serialize)]
     pub struct CreateApiKeyRequest {
         /// The API key name.
         pub name: String,
+
         /// The API key can have full access to Resend’s API or be only restricted to send emails.
-        /// * full_access - Can create, delete, get, and update any resource.
-        /// * sending_access - Can only send emails.
+        /// * `full_access` - Can create, delete, get, and update any resource.
+        /// * `sending_access` - Can only send emails.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub permission: Option<Permission>,
         /// Restrict an API key to send emails only from a specific domain.
@@ -134,9 +132,44 @@ pub mod types {
         pub domain_id: Option<String>,
     }
 
+    impl CreateApiKeyRequest {
+        /// Creates a new [`CreateApiKeyRequest`].
+        #[inline]
+        pub fn new(name: &str) -> Self {
+            Self {
+                name: name.to_owned(),
+                permission: None,
+                domain_id: None,
+            }
+        }
+
+        /// Allows an API key to create, delete, get, and update any resource.
+        #[inline]
+        pub fn with_full_access(mut self) -> Self {
+            self.permission = Some(Permission::FullAccess);
+            self
+        }
+
+        /// Restricts an API key to only sending emails
+        #[inline]
+        pub fn with_sending_access(mut self) -> Self {
+            self.permission = Some(Permission::SendingAccess);
+            self
+        }
+
+        /// Restricts an API key to send emails only from a specific domain.
+        #[inline]
+        pub fn with_domain_access(mut self, domain_id: &str) -> Self {
+            self.permission = Some(Permission::SendingAccess);
+            self.domain_id = Some(domain_id.to_owned());
+            self
+        }
+    }
+
     /// The API key can have full access to Resend’s API or be only restricted to send emails.
-    /// * full_access - Can create, delete, get, and update any resource.
-    /// * sending_access - Can only send emails.
+    /// * `full_access` - Can create, delete, get, and update any resource.
+    /// * `sending_access` - Can only send emails.
+    #[must_use]
     #[derive(Debug, Copy, Clone, Serialize)]
     pub enum Permission {
         #[serde(rename = "full_access")]
@@ -145,28 +178,29 @@ pub mod types {
         SendingAccess,
     }
 
+    /// TODO.
     #[derive(Debug, Clone, Deserialize)]
     pub struct CreateApiKeyResponse {
         /// The ID of the API key.
-        #[serde(rename = "id", skip_serializing_if = "Option::is_none")]
-        pub id: Option<String>,
+        pub id: String,
         /// The token of the API key.
-        #[serde(rename = "token", skip_serializing_if = "Option::is_none")]
-        pub token: Option<String>,
+        pub token: String,
     }
 
+    /// TODO.
     #[derive(Debug, Clone, Deserialize)]
     pub struct ApiKey {
         /// The ID of the API key.
-        pub id: Option<String>,
+        pub id: String,
         /// The name of the API key.
-        pub name: Option<String>,
+        pub name: String,
         /// The date and time the API key was created.
-        pub created_at: Option<String>,
+        pub created_at: String,
     }
 
+    /// TODO.
     #[derive(Debug, Clone, Deserialize)]
     pub struct ListApiKeysResponse {
-        pub data: Option<Vec<ApiKey>>,
+        pub data: Vec<ApiKey>,
     }
 }

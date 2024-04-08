@@ -1,16 +1,9 @@
 #![forbid(unsafe_code)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc = include_str!("../README.md")]
-#![warn(
-    clippy::all,
-    clippy::restriction,
-    clippy::pedantic,
-    clippy::nursery,
-    clippy::cargo
-)]
 
+pub use client::Client;
 pub(crate) use client::Config;
-pub use client::Resend;
 
 mod api_keys;
 mod client;
@@ -30,12 +23,15 @@ pub mod types {
     pub use super::emails::types::*;
 }
 
-/// Error type for operations of a [`Resend`] client.
+/// Error type for operations of a [`Client`] client.
+///
+/// <https://resend.com/docs/api-reference/errors>
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("reqwest error: {0}")]
+    #[error("http client error: {0}")]
     Reqwest(#[from] reqwest::Error),
+    // TODO: Remove Error::ParseUrl.
     #[error("url parsing error: {0}")]
     ParseUrl(#[from] url::ParseError),
 }

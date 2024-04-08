@@ -1,10 +1,10 @@
-use std::sync::Arc;
 use std::{env, fmt};
+use std::sync::Arc;
 
 #[cfg(feature = "blocking")]
-use reqwest::blocking::Client;
+use reqwest::blocking::Client as ReqwestClient;
 #[cfg(not(feature = "blocking"))]
-use reqwest::Client;
+use reqwest::Client as ReqwestClient;
 use reqwest::Url;
 
 use crate::services::{ApiKeys, Emails};
@@ -14,54 +14,54 @@ use crate::services::{ApiKeys, Emails};
 // TODO: domains
 
 /// A minimal [Resend](https://resend.com) client.
+#[must_use]
 #[derive(Clone)]
-pub struct Resend {
+pub struct Client {
+    /// TODO.
     pub emails: Emails,
+    /// TODO.
     pub api_keys: ApiKeys,
 }
 
 #[derive(Clone)]
-pub(crate) struct Config {
+pub struct Config {
     pub(crate) api_key: Arc<String>,
     pub(crate) base_url: Arc<Url>,
-
-    #[cfg(feature = "blocking")]
-    pub(crate) client: Client,
-    #[cfg(not(feature = "blocking"))]
-    pub(crate) client: Client,
+    pub(crate) client: ReqwestClient,
 }
 
 impl fmt::Debug for Config {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // Don't output API key.
-        f.debug_struct("Resend")
-            .field("base_url", &self.base_url)
-            .field("client", &self.client)
+        f.debug_struct("Client")
+            .field("api_key", &"re_*********")
+            .field("base_url", &self.base_url.as_str())
+            // .field("client", &self.client)
             .finish()
     }
 }
 
-impl Resend {
+impl Client {
     /// Creates a new [`Resend`] client.
     ///
     /// ### Panics
     ///
-    /// Panics if the environment variable `RESEND_BASE_URL` is not a valid URL.
+    /// Panics if the environment variable `RESEND_BASE_URL` is present but is not a valid URL.
     ///
     /// [`Resend`]: https://resend.com
     pub fn new(api_key: &str) -> Self {
-        let client = Client::default();
-        Self::with_client(api_key, client)
+        Self::with_client(api_key, ReqwestClient::default())
     }
 
-    /// Creates a new [`Resend`] client with a provided [`Client`].
+    /// Creates a new [`Resend`] client with a provided [`reqwest::Client`].
     ///
     /// ### Panics
     ///
-    /// Panics if the environment variable `RESEND_BASE_URL` is not a valid URL.
+    /// Panics if the environment variable `RESEND_BASE_URL` is present but is not a valid URL.
     ///
     /// [`Resend`]: https://resend.com
-    pub fn with_client(api_key: &str, client: Client) -> Self {
+    /// [`reqwest::Client`]: ReqwestClient
+    pub fn with_client(api_key: &str, client: ReqwestClient) -> Self {
         let base_url = env::var("RESEND_BASE_URL")
             .map_or_else(
                 |_| Url::parse("https://api.resend.com"),
@@ -81,30 +81,51 @@ impl Resend {
         }
     }
 
-    /// Returns the provided `Resend` API key.
+    /// Returns the provided API key.
+    #[must_use]
     pub fn api_key(&self) -> String {
         self.emails.0.api_key.to_string()
     }
 
-    /// Returns the underlying [`Client`].
-    pub fn client(&self) -> Client {
+    /// Returns the underlying [`reqwest::Client`].
+    ///
+    /// [`reqwest::Client`]: ReqwestClient
+    #[must_use]
+    pub fn client(&self) -> ReqwestClient {
         self.emails.0.client.clone()
     }
 }
 
-impl fmt::Debug for Resend {
+impl Default for Client {
+    /// Creates a new [`Client`] client from the `RESEND_API_KEY` environment variable .
+    ///
+    /// ### Panics
+    ///
+    /// Panics if the environment variable `RESEND_API_KEY` is not a valid API key.
+    fn default() -> Self {
+        let api_key = env::var("RESEND_API_KEY")
+            .expect("env variable `RESEND_API_KEY` should be a valid API key");
+
+        Self::new(api_key.as_str())
+    }
+}
+
+impl fmt::Debug for Client {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Debug::fmt(&self.emails.0, f)
+        fmt::Debug::fmt(&self.emails, f)
     }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::Resend;
+    use std::env;
+
+    use crate::Client;
 
     #[test]
     fn new() {
-        let api_key = std::env::var("RESEND_API_KEY").unwrap();
-        let _ = Resend::new(api_key.as_str());
+        let api_key = env::var("RESEND_API_KEY").unwrap_or_default();
+        let resend = Client::new(api_key.as_str());
+        let _ = dbg!(resend);
     }
 }

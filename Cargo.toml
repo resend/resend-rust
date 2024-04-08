@@ -35,4 +35,4 @@ thiserror = { version = "1.0.58", features = [] }
 url = { version = "2.5.0", features = [] }
 
 [dev-dependencies]
-tokio = { version = "1.37.0", features = ["macros", "test-util"] }
+tokio = { version = "1.37.0", features = ["macros", "test-util", "rt-multi-thread"] }
