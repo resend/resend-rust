@@ -1,7 +1,9 @@
+use std::fmt;
+
 use crate::{Config, Result};
 
 /// TODO.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct ApiKeys(pub(crate) Config);
 
 impl ApiKeys {
@@ -14,10 +16,10 @@ impl ApiKeys {
         &self,
         api_key: types::CreateApiKeyRequest,
     ) -> Result<types::CreateApiKeyResponse> {
-        let uri = "https://api.resend.com/api-keys";
+        let uri = self.0.base_url.join("/api-keys")?;
         let key = self.0.api_key.as_str();
 
-        let request = self.0.client.get(uri).bearer_auth(key).json(&api_key);
+        let request = self.0.client.post(uri).bearer_auth(key).json(&api_key);
         let response = request.send().await?;
         let content = response.json::<types::CreateApiKeyResponse>().await?;
 
@@ -30,7 +32,7 @@ impl ApiKeys {
     #[cfg(not(feature = "blocking"))]
     #[cfg_attr(docsrs, doc(cfg(not(feature = "blocking"))))]
     pub async fn list(&self) -> Result<types::ListApiKeysResponse> {
-        let uri = "https://api.resend.com/api-keys";
+        let uri = self.0.base_url.join("/api-keys")?;
         let key = self.0.api_key.as_str();
 
         let request = self.0.client.get(uri).bearer_auth(key);
@@ -46,7 +48,8 @@ impl ApiKeys {
     #[cfg(not(feature = "blocking"))]
     #[cfg_attr(docsrs, doc(cfg(not(feature = "blocking"))))]
     pub async fn delete(&self, api_key_id: &str) -> Result<()> {
-        let uri = format!("https://api.resend.com/api-keys/{api_key_id}");
+        let path = format!("/api-keys/{api_key_id}");
+        let uri = self.0.base_url.join(path.as_str())?;
         let key = self.0.api_key.as_str();
 
         let request = self.0.client.delete(uri).bearer_auth(key);
@@ -64,10 +67,10 @@ impl ApiKeys {
         &self,
         api_key: types::CreateApiKeyRequest,
     ) -> Result<types::CreateApiKeyResponse> {
-        let uri = "https://api.resend.com/api-keys";
+        let uri = self.0.base_url.join("/api-keys")?;
         let key = self.0.api_key.as_str();
 
-        let request = self.0.client.get(uri).bearer_auth(key).json(&api_key);
+        let request = self.0.client.post(uri).bearer_auth(key).json(&api_key);
         let response = request.send()?;
         let content = response.json::<types::CreateApiKeyResponse>()?;
 
@@ -80,7 +83,7 @@ impl ApiKeys {
     #[cfg(feature = "blocking")]
     #[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
     pub fn list(&self) -> Result<types::ListApiKeysResponse> {
-        let uri = "https://api.resend.com/api-keys";
+        let uri = self.0.base_url.join("/api-keys")?;
         let key = self.0.api_key.as_str();
 
         let request = self.0.client.get(uri).bearer_auth(key);
@@ -96,13 +99,20 @@ impl ApiKeys {
     #[cfg(feature = "blocking")]
     #[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
     pub fn delete(&self, api_key_id: &str) -> Result<()> {
-        let uri = format!("https://api.resend.com/api-keys/{api_key_id}");
+        let path = format!("/api-keys/{api_key_id}");
+        let uri = self.0.base_url.join(path.as_str())?;
         let key = self.0.api_key.as_str();
 
         let request = self.0.client.delete(uri).bearer_auth(key);
         let _response = request.send()?;
 
         Ok(())
+    }
+}
+
+impl fmt::Debug for ApiKeys {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(&self.0, f)
     }
 }
 

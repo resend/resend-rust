@@ -1,10 +1,11 @@
-use std::fmt;
 use std::sync::Arc;
+use std::{env, fmt};
 
 #[cfg(feature = "blocking")]
 use reqwest::blocking::Client;
 #[cfg(not(feature = "blocking"))]
 use reqwest::Client;
+use reqwest::Url;
 
 use crate::services::{ApiKeys, Emails};
 
@@ -22,6 +23,8 @@ pub struct Resend {
 #[derive(Clone)]
 pub(crate) struct Config {
     pub(crate) api_key: Arc<String>,
+    pub(crate) base_url: Arc<Url>,
+
     #[cfg(feature = "blocking")]
     pub(crate) client: Client,
     #[cfg(not(feature = "blocking"))]
@@ -31,12 +34,19 @@ pub(crate) struct Config {
 impl fmt::Debug for Config {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // Don't output API key.
-        fmt::Debug::fmt(&self.client, f)
+        f.debug_struct("Resend")
+            .field("base_url", &self.base_url)
+            .field("client", &self.client)
+            .finish()
     }
 }
 
 impl Resend {
     /// Creates a new [`Resend`] client.
+    ///
+    /// ### Panics
+    ///
+    /// Panics if the environment variable `RESEND_BASE_URL` is not a valid URL.
     ///
     /// [`Resend`]: https://resend.com
     pub fn new(api_key: &str) -> Self {
@@ -46,10 +56,24 @@ impl Resend {
 
     /// Creates a new [`Resend`] client with a provided [`Client`].
     ///
+    /// ### Panics
+    ///
+    /// Panics if the environment variable `RESEND_BASE_URL` is not a valid URL.
+    ///
     /// [`Resend`]: https://resend.com
     pub fn with_client(api_key: &str, client: Client) -> Self {
-        let api_key = Arc::new(api_key.to_string());
-        let inner = Config { api_key, client };
+        let base_url = env::var("RESEND_BASE_URL")
+            .map_or_else(
+                |_| Url::parse("https://api.resend.com"),
+                |env_base| Url::parse(env_base.as_str()),
+            )
+            .expect("env variable `RESEND_BASE_URL` should be a valid URL");
+
+        let inner = Config {
+            api_key: Arc::new(api_key.to_string()),
+            base_url: Arc::new(base_url),
+            client,
+        };
 
         Self {
             emails: Emails(inner.clone()),
@@ -80,7 +104,7 @@ mod test {
 
     #[test]
     fn new() {
-        let api_key = std::env::var("API_KEY").unwrap();
+        let api_key = std::env::var("RESEND_API_KEY").unwrap();
         let _ = Resend::new(api_key.as_str());
     }
 }

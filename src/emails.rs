@@ -1,7 +1,9 @@
+use std::fmt;
+
 use crate::{Config, Result};
 
 /// TODO.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Emails(pub(crate) Config);
 
 impl Emails {
@@ -11,7 +13,7 @@ impl Emails {
     #[cfg(not(feature = "blocking"))]
     #[cfg_attr(docsrs, doc(cfg(not(feature = "blocking"))))]
     pub async fn send(&self, email: types::SendEmailRequest) -> Result<types::SendEmailResponse> {
-        let uri = "https://api.resend.com/emails";
+        let uri = self.0.base_url.join("/emails")?;
         let key = self.0.api_key.as_str();
 
         let request = self.0.client.post(uri).bearer_auth(key).json(&email);
@@ -33,7 +35,7 @@ impl Emails {
     where
         T: IntoIterator<Item = types::SendEmailRequest> + Send,
     {
-        let uri = "https://api.resend.com/emails/batch";
+        let uri = self.0.base_url.join("/emails/batch")?;
         let key = self.0.api_key.as_str();
         let emails: Vec<_> = emails.into_iter().collect();
 
@@ -50,7 +52,8 @@ impl Emails {
     #[cfg(not(feature = "blocking"))]
     #[cfg_attr(docsrs, doc(cfg(not(feature = "blocking"))))]
     pub async fn retrieve(&self, id: &str) -> Result<types::Email> {
-        let uri = format!("https://api.resend.com/emails/{id}");
+        let path = format!("/emails/{id}");
+        let uri = self.0.base_url.join(path.as_str())?;
         let key = self.0.api_key.as_str();
 
         let request = self.0.client.get(uri).bearer_auth(key);
@@ -66,7 +69,7 @@ impl Emails {
     #[cfg(feature = "blocking")]
     #[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
     pub fn send(&self, email: types::SendEmailRequest) -> Result<types::SendEmailResponse> {
-        let uri = "https://api.resend.com/emails";
+        let uri = self.0.base_url.join("/emails")?;
         let key = self.0.api_key.as_str();
 
         let request = self.0.client.post(uri).bearer_auth(key).json(&email);
@@ -88,7 +91,7 @@ impl Emails {
     where
         T: IntoIterator<Item = types::SendEmailRequest> + Send,
     {
-        let uri = "https://api.resend.com/emails/batch";
+        let uri = self.0.base_url.join("/emails/batch")?;
         let key = self.0.api_key.as_str();
         let emails: Vec<_> = emails.into_iter().collect();
 
@@ -105,7 +108,8 @@ impl Emails {
     #[cfg(feature = "blocking")]
     #[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
     pub fn retrieve(&self, id: &str) -> Result<types::Email> {
-        let uri = format!("https://api.resend.com/emails/{id}");
+        let path = format!("/emails/{id}");
+        let uri = self.0.base_url.join(path.as_str())?;
         let key = self.0.api_key.as_str();
 
         let request = self.0.client.get(uri).bearer_auth(key);
@@ -113,6 +117,12 @@ impl Emails {
         let content = response.json::<types::Email>()?;
 
         Ok(content)
+    }
+}
+
+impl fmt::Debug for Emails {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(&self.0, f)
     }
 }
 
