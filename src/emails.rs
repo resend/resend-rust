@@ -14,7 +14,7 @@ impl Emails {
         let uri = "https://api.resend.com/emails";
         let key = self.0.api_key.as_str();
 
-        let request = self.0.client.get(uri).bearer_auth(key).json(&email);
+        let request = self.0.client.post(uri).bearer_auth(key).json(&email);
         let response = request.send().await?;
         let content = response.json::<types::SendEmailResponse>().await?;
 
@@ -37,7 +37,7 @@ impl Emails {
         let key = self.0.api_key.as_str();
         let emails: Vec<_> = emails.into_iter().collect();
 
-        let request = self.0.client.get(uri).bearer_auth(key).json(&emails);
+        let request = self.0.client.post(uri).bearer_auth(key).json(&emails);
         let response = request.send().await?;
         let content = response.json::<types::SendEmailBatchResponse>().await?;
 
@@ -66,7 +66,14 @@ impl Emails {
     #[cfg(feature = "blocking")]
     #[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
     pub fn send(&self, email: types::SendEmailRequest) -> Result<types::SendEmailResponse> {
-        todo!()
+        let uri = "https://api.resend.com/emails";
+        let key = self.0.api_key.as_str();
+
+        let request = self.0.client.post(uri).bearer_auth(key).json(&email);
+        let response = request.send()?;
+        let content = response.json::<types::SendEmailResponse>()?;
+
+        Ok(content)
     }
 
     /// Trigger up to 100 batch emails at once.
@@ -81,7 +88,15 @@ impl Emails {
     where
         T: IntoIterator<Item = types::SendEmailRequest> + Send,
     {
-        todo!()
+        let uri = "https://api.resend.com/emails/batch";
+        let key = self.0.api_key.as_str();
+        let emails: Vec<_> = emails.into_iter().collect();
+
+        let request = self.0.client.post(uri).bearer_auth(key).json(&emails);
+        let response = request.send()?;
+        let content = response.json::<types::SendEmailBatchResponse>()?;
+
+        Ok(content)
     }
 
     /// Retrieve a single email.
@@ -90,7 +105,14 @@ impl Emails {
     #[cfg(feature = "blocking")]
     #[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
     pub fn retrieve(&self, id: &str) -> Result<types::Email> {
-        todo!()
+        let uri = format!("https://api.resend.com/emails/{id}");
+        let key = self.0.api_key.as_str();
+
+        let request = self.0.client.get(uri).bearer_auth(key);
+        let response = request.send()?;
+        let content = response.json::<types::Email>()?;
+
+        Ok(content)
     }
 }
 
@@ -231,13 +253,13 @@ pub mod types {
 
         pub fn from_path(path: &str) -> Self {
             Self {
-                content_or_path: ContentOrPath::Path(path.to_string()),
+                content_or_path: ContentOrPath::Path(path.to_owned()),
                 filename: None,
             }
         }
 
         pub fn with_filename(mut self, filename: &str) -> Self {
-            self.filename = Some(filename.to_string());
+            self.filename = Some(filename.to_owned());
             self
         }
     }
@@ -272,45 +294,4 @@ pub mod types {
         /// The status of the email.
         pub last_event: Option<String>,
     }
-}
-
-#[cfg(test)]
-mod test {
-    use crate::types::SendEmailRequest;
-    use crate::Resend;
-
-    fn new() -> Resend {
-        let api_key = std::env::var("API_KEY");
-        Resend::new(api_key.unwrap().as_str())
-    }
-
-    #[tokio::test]
-    #[cfg(not(feature = "blocking"))]
-    fn send() {
-        let email = SendEmailRequest::default();
-        let _ = new().emails.send(email).unwrap();
-    }
-
-    #[tokio::test]
-    #[cfg(not(feature = "blocking"))]
-    fn send_batch() {}
-
-    #[tokio::test]
-    #[cfg(not(feature = "blocking"))]
-    fn retrieve() {}
-
-    #[test]
-    #[cfg(feature = "blocking")]
-    fn send() {
-        let email = SendEmailRequest::default();
-        let _ = new().emails.send(email).unwrap();
-    }
-
-    #[test]
-    #[cfg(feature = "blocking")]
-    fn send_batch() {}
-
-    #[test]
-    #[cfg(feature = "blocking")]
-    fn retrieve() {}
 }

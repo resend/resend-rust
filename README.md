@@ -13,3 +13,23 @@ accessible via the `blocking` feature. The crate uses
 Currently, this only supports the `html` Resend parameter as I built this for my
 own use and that's all I need. If anyone else is looking into this, however, I
 would not mind expanding it.
+
+#### Features
+
+- `blocking` to enable the blocking client.
+- `native-tls` to use system-native TLS. **Enabled by default**.
+- `rustls-tls` to use TLS backed by rustls .
+
+#### Examples
+
+```rust
+use resend_rs::{Resend, Result};
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    let resend = Resend::new();
+    let _ = resend.emails.send().await?;
+
+    Ok(())
+}
+```

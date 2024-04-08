@@ -21,7 +21,7 @@ all-features = false
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-default = ["rustls-tls"]
+default = ["native-tls"]
 
 blocking = ["reqwest/blocking"]
 rustls-tls = ["reqwest/rustls-tls"]

@@ -1,6 +1,13 @@
 #![forbid(unsafe_code)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc = include_str!("../README.md")]
+#![warn(
+    clippy::all,
+    clippy::restriction,
+    clippy::pedantic,
+    clippy::nursery,
+    clippy::cargo
+)]
 
 pub(crate) use client::Config;
 pub use client::Resend;
@@ -24,6 +31,7 @@ pub mod types {
 }
 
 /// Error type for operations of a [`Resend`] client.
+#[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("reqwest error: {0}")]

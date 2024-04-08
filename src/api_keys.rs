@@ -12,10 +12,16 @@ impl ApiKeys {
     #[cfg_attr(docsrs, doc(cfg(not(feature = "blocking"))))]
     pub async fn create(
         &self,
-        request: types::CreateApiKeyRequest,
+        api_key: types::CreateApiKeyRequest,
     ) -> Result<types::CreateApiKeyResponse> {
-        let _ = self.0;
-        todo!()
+        let uri = "https://api.resend.com/api-keys";
+        let key = self.0.api_key.as_str();
+
+        let request = self.0.client.get(uri).bearer_auth(key).json(&api_key);
+        let response = request.send().await?;
+        let content = response.json::<types::CreateApiKeyResponse>().await?;
+
+        Ok(content)
     }
 
     /// Retrieve a list of API keys for the authenticated user.
@@ -24,7 +30,14 @@ impl ApiKeys {
     #[cfg(not(feature = "blocking"))]
     #[cfg_attr(docsrs, doc(cfg(not(feature = "blocking"))))]
     pub async fn list(&self) -> Result<types::ListApiKeysResponse> {
-        todo!()
+        let uri = "https://api.resend.com/api-keys";
+        let key = self.0.api_key.as_str();
+
+        let request = self.0.client.get(uri).bearer_auth(key);
+        let response = request.send().await?;
+        let content = response.json::<types::ListApiKeysResponse>().await?;
+
+        Ok(content)
     }
 
     /// Remove an existing API key.
@@ -32,8 +45,64 @@ impl ApiKeys {
     /// <https://resend.com/docs/api-reference/api-keys/delete-api-key>
     #[cfg(not(feature = "blocking"))]
     #[cfg_attr(docsrs, doc(cfg(not(feature = "blocking"))))]
-    pub async fn delete(&self, api_keys: &str) -> Result<()> {
-        todo!()
+    pub async fn delete(&self, api_key_id: &str) -> Result<()> {
+        let uri = format!("https://api.resend.com/api-keys/{api_key_id}");
+        let key = self.0.api_key.as_str();
+
+        let request = self.0.client.delete(uri).bearer_auth(key);
+        let _response = request.send().await?;
+
+        Ok(())
+    }
+
+    /// Add a new API key to authenticate communications with Resend.
+    ///
+    /// <https://resend.com/docs/api-reference/api-keys/create-api-key>
+    #[cfg(feature = "blocking")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
+    pub fn create(
+        &self,
+        api_key: types::CreateApiKeyRequest,
+    ) -> Result<types::CreateApiKeyResponse> {
+        let uri = "https://api.resend.com/api-keys";
+        let key = self.0.api_key.as_str();
+
+        let request = self.0.client.get(uri).bearer_auth(key).json(&api_key);
+        let response = request.send()?;
+        let content = response.json::<types::CreateApiKeyResponse>()?;
+
+        Ok(content)
+    }
+
+    /// Retrieve a list of API keys for the authenticated user.
+    ///
+    /// <https://resend.com/docs/api-reference/api-keys/list-api-keys>
+    #[cfg(feature = "blocking")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
+    pub fn list(&self) -> Result<types::ListApiKeysResponse> {
+        let uri = "https://api.resend.com/api-keys";
+        let key = self.0.api_key.as_str();
+
+        let request = self.0.client.get(uri).bearer_auth(key);
+        let response = request.send()?;
+        let content = response.json::<types::ListApiKeysResponse>()?;
+
+        Ok(content)
+    }
+
+    /// Remove an existing API key.
+    ///
+    /// <https://resend.com/docs/api-reference/api-keys/delete-api-key>
+    #[cfg(feature = "blocking")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
+    pub fn delete(&self, api_key_id: &str) -> Result<()> {
+        let uri = format!("https://api.resend.com/api-keys/{api_key_id}");
+        let key = self.0.api_key.as_str();
+
+        let request = self.0.client.delete(uri).bearer_auth(key);
+        let _response = request.send()?;
+
+        Ok(())
     }
 }
 
@@ -91,6 +160,3 @@ pub mod types {
         pub data: Option<Vec<ApiKey>>,
     }
 }
-
-#[cfg(test)]
-mod test {}

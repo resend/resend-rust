@@ -6,8 +6,7 @@ use reqwest::blocking::Client;
 #[cfg(not(feature = "blocking"))]
 use reqwest::Client;
 
-use crate::api_keys::ApiKeys;
-use crate::services::Emails;
+use crate::services::{ApiKeys, Emails};
 
 // TODO: audiences
 // TODO: contacts
@@ -16,7 +15,6 @@ use crate::services::Emails;
 /// A minimal [Resend](https://resend.com) client.
 #[derive(Clone)]
 pub struct Resend {
-    inner: Config,
     pub emails: Emails,
     pub api_keys: ApiKeys,
 }
@@ -55,26 +53,24 @@ impl Resend {
 
         Self {
             emails: Emails(inner.clone()),
-            api_keys: ApiKeys(inner.clone()),
-
-            inner,
+            api_keys: ApiKeys(inner),
         }
     }
 
     /// Returns the provided `Resend` API key.
     pub fn api_key(&self) -> String {
-        self.inner.api_key.to_string()
+        self.emails.0.api_key.to_string()
     }
 
     /// Returns the underlying [`Client`].
     pub fn client(&self) -> Client {
-        self.inner.client.clone()
+        self.emails.0.client.clone()
     }
 }
 
 impl fmt::Debug for Resend {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Debug::fmt(&self.inner, f)
+        fmt::Debug::fmt(&self.emails.0, f)
     }
 }
 
