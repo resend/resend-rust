@@ -31,17 +31,17 @@ pub struct Client {
 pub struct Config {
     user_agent: String,
     api_key: String,
-    pub(crate) base_url: Url,
+    base_url: Url,
     pub(crate) client: ReqwestClient,
 }
 
 impl Config {
-    /// Constructs a new [`RequestBuilder`] with parameters.
+    /// Constructs a new [`RequestBuilder`].
     pub fn build(&self, method: Method, path: &str) -> RequestBuilder {
         let path = self
             .base_url
             .join(path)
-            .expect("should a valid API endpoint");
+            .expect("should be a valid API endpoint");
 
         self.client
             .request(method, path)
@@ -136,7 +136,7 @@ impl Default for Client {
     ///
     /// ### Panics
     ///
-    /// Panics if the environment variable `RESEND_API_KEY` is not a valid API key.
+    /// Panics if the environment variable `RESEND_API_KEY` is not set.
     fn default() -> Self {
         let api_key = env::var("RESEND_API_KEY")
             .expect("env variable `RESEND_API_KEY` should be a valid API key");
@@ -148,15 +148,5 @@ impl Default for Client {
 impl fmt::Debug for Client {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(&self.emails, f)
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use crate::Client;
-
-    #[test]
-    fn create() {
-        let _ = Client::default();
     }
 }

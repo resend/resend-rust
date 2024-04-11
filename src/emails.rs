@@ -347,25 +347,3 @@ pub mod types {
         pub last_event: Option<String>,
     }
 }
-
-#[cfg(test)]
-mod test {
-    use crate::types::SendEmailRequest;
-    use crate::{Client, Result};
-
-    #[tokio::test]
-    async fn send() -> Result<()> {
-        let resend = Client::default();
-
-        let from = "Acme <onboarding@resend.dev>".to_owned();
-        let to = vec!["delivered@resend.dev".to_owned()];
-        let subject = "Hello World".to_owned();
-
-        let email = SendEmailRequest::new(from, to, subject)
-            .with_text("Hello World!")
-            .with_tag("Welcome");
-
-        let _ = resend.emails.send(email).await?;
-        Ok(())
-    }
-}

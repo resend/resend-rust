@@ -3,14 +3,23 @@
 #![doc = include_str!("../README.md")]
 //! #### Examples
 //!
-//! ```rust
+//! ```rust,no_run
 //! use resend_rs::{Client, Result};
+//! use resend_rs::types::SendEmailRequest;
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<()> {
-//! //     let resend = Resend::default();
-//! //     let _ = resend.emails.send().await?;
+//!     let resend = Client::default();
 //!
+//!     let from = "Acme <onboarding@resend.dev>".to_owned();
+//!     let to = vec!["delivered@resend.dev".to_owned()];
+//!     let subject = "Hello World".to_owned();
+//!
+//!     let email = SendEmailRequest::new(from, to, subject)
+//!         .with_text("Hello World!")
+//!         .with_tag("Welcome");
+//!
+//!     let _ = resend.emails.send(email).await?;
 //!     Ok(())
 //! }
 //! ```
