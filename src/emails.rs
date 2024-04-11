@@ -1,9 +1,9 @@
 use std::fmt;
 
-use crate::{Config, Result};
 use crate::types::{Email, SendEmailBatchResponse, SendEmailRequest, SendEmailResponse};
+use crate::{Config, Result};
 
-/// TODO.
+/// `Resend` APIs for `METHOD /emails` endpoints.
 #[derive(Clone)]
 pub struct Emails(pub(crate) Config);
 
@@ -33,8 +33,8 @@ impl Emails {
     #[cfg(not(feature = "blocking"))]
     #[cfg_attr(docsrs, doc(cfg(not(feature = "blocking"))))]
     pub async fn send_batch<T>(&self, emails: T) -> Result<SendEmailBatchResponse>
-        where
-            T: IntoIterator<Item=SendEmailRequest> + Send,
+    where
+        T: IntoIterator<Item = SendEmailRequest> + Send,
     {
         let uri = self.0.base_url.join("/emails/batch")?;
         let key = self.0.api_key.as_str();
@@ -89,8 +89,8 @@ impl Emails {
     #[cfg(feature = "blocking")]
     #[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
     pub fn send_batch<T>(&self, emails: T) -> Result<SendEmailBatchResponse>
-        where
-            T: IntoIterator<Item=SendEmailRequest> + Send,
+    where
+        T: IntoIterator<Item = SendEmailRequest> + Send,
     {
         let uri = self.0.base_url.join("/emails/batch")?;
         let key = self.0.api_key.as_str();
@@ -130,7 +130,6 @@ impl fmt::Debug for Emails {
 pub mod types {
     use serde::{Deserialize, Serialize};
 
-    /// TODO.
     #[must_use]
     #[derive(Debug, Clone, Serialize)]
     pub struct SendEmailRequest {
@@ -191,12 +190,14 @@ pub mod types {
             }
         }
 
+        /// Adds the HTML version of the message.
         #[inline]
         pub fn with_html(mut self, html: &str) -> Self {
             self.html = Some(html.to_string());
             self
         }
 
+        /// Adds the plain text version of the message.
         #[inline]
         pub fn with_text(mut self, text: &str) -> Self {
             self.text = Some(text.to_string());
@@ -218,21 +219,19 @@ pub mod types {
         }
     }
 
-    /// TODO.
     #[derive(Debug, Clone, Deserialize)]
     pub struct SendEmailResponse {
         /// The ID of the sent email.
         pub id: String,
     }
 
-    /// TODO.
     #[derive(Debug, Clone, Deserialize)]
     pub struct SendEmailBatchResponse {
         /// The IDs of the sent emails.
         pub data: Vec<SendEmailResponse>,
     }
 
-    /// Email tag.
+    /// Name and value of the attached email tag.
     #[must_use]
     #[derive(Debug, Clone, Serialize)]
     pub struct Tag {
@@ -320,7 +319,6 @@ pub mod types {
         }
     }
 
-    /// TODO.
     #[must_use]
     #[derive(Debug, Clone, Deserialize)]
     pub struct Email {

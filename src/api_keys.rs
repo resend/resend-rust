@@ -3,7 +3,7 @@ use std::fmt;
 use crate::types::{CreateApiKeyRequest, CreateApiKeyResponse, ListApiKeysResponse};
 use crate::{Config, Result};
 
-/// TODO.
+/// `Resend` APIs for `METHOD /api-keys` endpoints.
 #[derive(Clone)]
 pub struct ApiKeys(pub(crate) Config);
 
@@ -114,7 +114,6 @@ impl fmt::Debug for ApiKeys {
 pub mod types {
     use serde::{Deserialize, Serialize};
 
-    /// TODO.
     #[must_use]
     #[derive(Debug, Clone, Serialize)]
     pub struct CreateApiKeyRequest {
@@ -166,7 +165,7 @@ pub mod types {
         }
     }
 
-    /// The API key can have full access to Resend’s API or be only restricted to send emails.
+    /// Full access to Resend’s API or restricted to only send emails.
     /// * `full_access` - Can create, delete, get, and update any resource.
     /// * `sending_access` - Can only send emails.
     #[must_use]
@@ -178,7 +177,7 @@ pub mod types {
         SendingAccess,
     }
 
-    /// TODO.
+    #[must_use]
     #[derive(Debug, Clone, Deserialize)]
     pub struct CreateApiKeyResponse {
         /// The ID of the API key.
@@ -187,7 +186,13 @@ pub mod types {
         pub token: String,
     }
 
-    /// TODO.
+    #[must_use]
+    #[derive(Debug, Clone, Deserialize)]
+    pub struct ListApiKeysResponse {
+        pub data: Vec<ApiKey>,
+    }
+
+    #[must_use]
     #[derive(Debug, Clone, Deserialize)]
     pub struct ApiKey {
         /// The ID of the API key.
@@ -196,11 +201,5 @@ pub mod types {
         pub name: String,
         /// The date and time the API key was created.
         pub created_at: String,
-    }
-
-    /// TODO.
-    #[derive(Debug, Clone, Deserialize)]
-    pub struct ListApiKeysResponse {
-        pub data: Vec<ApiKey>,
     }
 }

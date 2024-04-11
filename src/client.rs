@@ -1,5 +1,5 @@
-use std::{env, fmt};
 use std::sync::Arc;
+use std::{env, fmt};
 
 #[cfg(feature = "blocking")]
 use reqwest::blocking::Client as ReqwestClient;
@@ -7,20 +7,22 @@ use reqwest::blocking::Client as ReqwestClient;
 use reqwest::Client as ReqwestClient;
 use reqwest::Url;
 
-use crate::services::{ApiKeys, Emails};
-
-// TODO: audiences
-// TODO: contacts
-// TODO: domains
+use crate::services::{ApiKeys, Audiences, Contacts, Domains, Emails};
 
 /// A minimal [Resend](https://resend.com) client.
 #[must_use]
 #[derive(Clone)]
 pub struct Client {
-    /// TODO.
+    /// `Resend` APIs for `METHOD /emails` endpoints.
     pub emails: Emails,
-    /// TODO.
+    /// `Resend` APIs for `METHOD /api-keys` endpoints.
     pub api_keys: ApiKeys,
+    /// `Resend` APIs for `METHOD /audiences` endpoints.
+    pub audiences: Audiences,
+    /// `Resend` APIs for `METHOD /audiences/:id/contacts` endpoints.
+    pub contacts: Contacts,
+    /// `Resend` APIs for `METHOD /domains` endpoints.
+    pub domains: Domains,
 }
 
 #[derive(Clone)]
@@ -76,8 +78,11 @@ impl Client {
         };
 
         Self {
-            emails: Emails(inner.clone()),
-            api_keys: ApiKeys(inner),
+            api_keys: ApiKeys(inner.clone()),
+            audiences: Audiences(inner.clone()),
+            contacts: Contacts(inner.clone()),
+            domains: Domains(inner.clone()),
+            emails: Emails(inner),
         }
     }
 
