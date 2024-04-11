@@ -1,6 +1,19 @@
 #![forbid(unsafe_code)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc = include_str!("../README.md")]
+//! #### Examples
+//!
+//! ```rust
+//! use resend_rs::{Client, Result};
+//!
+//! #[tokio::main]
+//! async fn main() -> Result<()> {
+//! //     let resend = Resend::default();
+//! //     let _ = resend.emails.send().await?;
+//!
+//!     Ok(())
+//! }
+//! ```
 
 pub use client::Client;
 pub(crate) use client::Config;
@@ -13,7 +26,6 @@ mod domains;
 mod emails;
 
 // TODO: urlencode path params?
-// TODO: blocking everywhere
 
 pub mod services {
     //! TODO.

@@ -36,8 +36,12 @@ impl Contacts {
     /// <https://resend.com/docs/api-reference/contacts/get-contact>
     #[cfg(not(feature = "blocking"))]
     #[cfg_attr(docsrs, doc(cfg(not(feature = "blocking"))))]
-    pub async fn retrieve(&self, id: &str, audience_id: &str) -> Result<GetContactResponse> {
-        let path = format!("/audiences/{audience_id}/contacts/{id}");
+    pub async fn retrieve(
+        &self,
+        contact_id: &str,
+        audience_id: &str,
+    ) -> Result<GetContactResponse> {
+        let path = format!("/audiences/{audience_id}/contacts/{contact_id}");
         let uri = self.0.base_url.join(path.as_str())?;
         let key = self.0.api_key.as_str();
 
@@ -55,11 +59,11 @@ impl Contacts {
     #[cfg_attr(docsrs, doc(cfg(not(feature = "blocking"))))]
     pub async fn update(
         &self,
-        id: &str,
+        contact_id: &str,
         audience_id: &str,
         contact: UpdateContactRequest,
     ) -> Result<UpdateContactResponse> {
-        let path = format!("/audiences/{audience_id}/contacts/{id}");
+        let path = format!("/audiences/{audience_id}/contacts/{contact_id}");
         let uri = self.0.base_url.join(path.as_str())?;
         let key = self.0.api_key.as_str();
 
@@ -129,8 +133,8 @@ impl Contacts {
     /// <https://resend.com/docs/api-reference/contacts/get-contact>
     #[cfg(feature = "blocking")]
     #[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
-    pub fn retrieve(&self, id: &str, audience_id: &str) -> Result<GetContactResponse> {
-        let path = format!("/audiences/{audience_id}/contacts/{id}");
+    pub fn retrieve(&self, contact_id: &str, audience_id: &str) -> Result<GetContactResponse> {
+        let path = format!("/audiences/{audience_id}/contacts/{contact_id}");
         let uri = self.0.base_url.join(path.as_str())?;
         let key = self.0.api_key.as_str();
 
@@ -148,11 +152,11 @@ impl Contacts {
     #[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
     pub fn update(
         &self,
-        id: &str,
+        contact_id: &str,
         audience_id: &str,
         contact: UpdateContactRequest,
     ) -> Result<UpdateContactResponse> {
-        let path = format!("/audiences/{audience_id}/contacts/{id}");
+        let path = format!("/audiences/{audience_id}/contacts/{contact_id}");
         let uri = self.0.base_url.join(path.as_str())?;
         let key = self.0.api_key.as_str();
 
@@ -225,6 +229,47 @@ pub mod types {
         pub audience_id: Option<String>,
     }
 
+    impl CreateContactRequest {
+        /// Creates a new [`CreateContactRequest`].
+        pub fn new(email: &str) -> Self {
+            Self {
+                email: email.to_owned(),
+                first_name: None,
+                last_name: None,
+                unsubscribed: None,
+                audience_id: None,
+            }
+        }
+
+        /// Adds the first name to the contact.
+        #[inline]
+        pub fn with_first_name(mut self, name: &str) -> Self {
+            self.first_name = Some(name.to_owned());
+            self
+        }
+
+        /// Adds the last name to the contact.
+        #[inline]
+        pub fn with_last_name(mut self, name: &str) -> Self {
+            self.last_name = Some(name.to_owned());
+            self
+        }
+
+        /// Toggles the unsubscribe status to `unsubscribe`.
+        #[inline]
+        pub fn with_unsubscribed(mut self, unsubscribed: bool) -> Self {
+            self.unsubscribed = Some(unsubscribed);
+            self
+        }
+
+        /// Adds a contact to the audience.
+        #[inline]
+        pub fn with_audience(mut self, id: &str) -> Self {
+            self.audience_id = Some(id.to_owned());
+            self
+        }
+    }
+
     #[derive(Debug, Clone, Deserialize)]
     pub struct CreateContactResponse {
         /// Type of the response object.
@@ -239,7 +284,7 @@ pub mod types {
         /// Type of the response object.
         pub object: Option<String>,
         /// Array containing contact information.
-        pub data: Option<Vec<ListContactsDataResponse>>,
+        pub data: Option<Vec<ListContactsItem>>,
     }
 
     #[must_use]
@@ -288,7 +333,7 @@ pub mod types {
 
     #[must_use]
     #[derive(Debug, Clone, Deserialize)]
-    pub struct ListContactsDataResponse {
+    pub struct ListContactsItem {
         /// Unique identifier for the contact.
         pub id: Option<String>,
         /// Email address of the contact.

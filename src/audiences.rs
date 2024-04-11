@@ -158,6 +158,15 @@ pub mod types {
         pub name: String,
     }
 
+    impl CreateAudienceRequest {
+        /// Creates a new [`CreateAudienceRequest`].
+        pub fn new(name: &str) -> Self {
+            Self {
+                name: name.to_owned(),
+            }
+        }
+    }
+
     #[derive(Debug, Clone, Deserialize)]
     pub struct CreateAudienceResponse {
         /// The ID of the audience.
@@ -197,12 +206,12 @@ pub mod types {
         /// Type of the response object.
         pub object: Option<String>,
         /// Array containing audience information.
-        pub data: Option<Vec<ListAudiencesDataResponse>>,
+        pub data: Option<Vec<ListAudiencesItem>>,
     }
 
     #[must_use]
     #[derive(Debug, Clone, Deserialize)]
-    pub struct ListAudiencesDataResponse {
+    pub struct ListAudiencesItem {
         /// Unique identifier for the audience.
         pub id: Option<String>,
         /// Name of the audience.

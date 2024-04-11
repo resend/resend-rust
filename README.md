@@ -1,21 +1,27 @@
-# resend-rs
+## resend-rs
 
-[![Crates.io](https://img.shields.io/crates/v/resend-rs)](https://crates.io/crates/resend-rs)
-[![docs.rs](https://img.shields.io/docsrs/resend-rs)](https://docs.rs/resend-rs)
+[![Build Status][action-badge]][action-url]
+[![Crate Docs][docs-badge]][docs-url]
+[![Crate Version][crates-badge]][crates-url]
 
 A minimal [Resend](https://resend.com) client.
 
-Emails are sent via the [`Client`] which provides both a synchronous and
+[action-badge]: https://img.shields.io/github/actions/workflow/status/AntoniosBarotsis/resend-rs/ci.yml
+[action-url]: https://github.com/spire-rs/AntoniosBarotsis/resend-rs/workflows/build.yaml
+[crates-badge]: https://img.shields.io/crates/v/resend-rs
+[crates-url]: https://crates.io/crates/resend-rs
+[docs-badge]: https://img.shields.io/docsrs/resend-rs
+[docs-url]: https://docs.rs/resend-rs
+
+Emails are sent via the `Client` which provides both a synchronous and
 asynchronous send method. The two are mutually exclusive and accessible via the
-`blocking` feature. The crate uses
-[`reqwest`](https://github.com/seanmonstar/reqwest) internally.
+`blocking` feature. The crate uses [reqwest][reqwest] and [serde][serde]
+internally.
 
-Currently, this only supports the `html` Resend parameter as I built this for my
-own use and that's all I need. If anyone else is looking into this, however, I
-would not mind expanding it.
+[reqwest]: https://github.com/seanmonstar/reqwest
+[serde]: https://github.com/serde-rs/serde
 
-- `RESEND_BASE_URL`
-- `RESEND_API_KEY`
+If anyone else is looking into this, however, I would not mind expanding it.
 
 #### Features
 
@@ -23,16 +29,7 @@ would not mind expanding it.
 - `native-tls` to use system-native TLS. **Enabled by default**.
 - `rustls-tls` to use TLS backed by rustls .
 
-#### Examples
+#### Variables
 
-```rust
-use resend_rs::{Client, Result};
-
-#[tokio::main]
-async fn main() -> Result<()> {
-//     let resend = Resend::default();
-//     let _ = resend.emails.send().await?;
-
-    Ok(())
-}
-```
+- `RESEND_BASE_URL` to replace the default base address.
+- `RESEND_API_KEY` to enable `impl Default` for a `Client`.

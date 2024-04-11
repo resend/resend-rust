@@ -355,12 +355,14 @@ pub mod types {
         pub object: Option<String>,
     }
 
+    #[must_use]
     #[derive(Debug, Clone, Deserialize)]
     pub struct ListDomainsResponse {
         #[serde(rename = "data", skip_serializing_if = "Option::is_none")]
         pub data: Option<Vec<ListDomainsItem>>,
     }
 
+    #[must_use]
     #[derive(Debug, Clone, Deserialize)]
     pub struct ListDomainsItem {
         /// The ID of the domain.
