@@ -1,4 +1,7 @@
 use std::fmt;
+use std::sync::Arc;
+
+use reqwest::Method;
 
 use crate::types::{CreateContactRequest, CreateContactResponse};
 use crate::types::{GetContactResponse, ListContactsResponse};
@@ -7,7 +10,7 @@ use crate::{Config, Result};
 
 /// `Resend` APIs for `METHOD /audiences/:id/contacts` endpoints.
 #[derive(Clone)]
-pub struct Contacts(pub(crate) Config);
+pub struct Contacts(pub(crate) Arc<Config>);
 
 impl Contacts {
     /// Create a contact inside an audience.
@@ -21,11 +24,9 @@ impl Contacts {
         contact: CreateContactRequest,
     ) -> Result<CreateContactResponse> {
         let path = format!("/audiences/{audience_id}/contacts");
-        let uri = self.0.base_url.join(path.as_str())?;
-        let key = self.0.api_key.as_str();
 
-        let request = self.0.client.post(uri).bearer_auth(key).json(&contact);
-        let response = request.send().await?;
+        let request = self.0.build(Method::POST, &path);
+        let response = request.json(&contact).send().await?;
         let content = response.json::<CreateContactResponse>().await?;
 
         Ok(content)
@@ -42,10 +43,8 @@ impl Contacts {
         audience_id: &str,
     ) -> Result<GetContactResponse> {
         let path = format!("/audiences/{audience_id}/contacts/{contact_id}");
-        let uri = self.0.base_url.join(path.as_str())?;
-        let key = self.0.api_key.as_str();
 
-        let request = self.0.client.get(uri).bearer_auth(key);
+        let request = self.0.build(Method::GET, &path);
         let response = request.send().await?;
         let content = response.json::<GetContactResponse>().await?;
 
@@ -64,11 +63,9 @@ impl Contacts {
         contact: UpdateContactRequest,
     ) -> Result<UpdateContactResponse> {
         let path = format!("/audiences/{audience_id}/contacts/{contact_id}");
-        let uri = self.0.base_url.join(path.as_str())?;
-        let key = self.0.api_key.as_str();
 
-        let request = self.0.client.patch(uri).bearer_auth(key).json(&contact);
-        let response = request.send().await?;
+        let request = self.0.build(Method::PATCH, &path);
+        let response = request.json(&contact).send().await?;
         let content = response.json::<UpdateContactResponse>().await?;
 
         Ok(content)
@@ -81,10 +78,8 @@ impl Contacts {
     #[cfg_attr(docsrs, doc(cfg(not(feature = "blocking"))))]
     pub async fn delete(&self, audience_id: &str, email_or_id: &str) -> Result<()> {
         let path = format!("/audiences/{audience_id}/contacts/{email_or_id}");
-        let uri = self.0.base_url.join(path.as_str())?;
-        let key = self.0.api_key.as_str();
 
-        let request = self.0.client.delete(uri).bearer_auth(key);
+        let request = self.0.build(Method::DELETE, &path);
         let _response = request.send().await?;
 
         Ok(())
@@ -97,10 +92,8 @@ impl Contacts {
     #[cfg_attr(docsrs, doc(cfg(not(feature = "blocking"))))]
     pub async fn list(&self, audience_id: &str) -> Result<ListContactsResponse> {
         let path = format!("/audiences/{audience_id}/contacts");
-        let uri = self.0.base_url.join(path.as_str())?;
-        let key = self.0.api_key.as_str();
 
-        let request = self.0.client.get(uri).bearer_auth(key);
+        let request = self.0.build(Method::GET, &path);
         let response = request.send().await?;
         let content = response.json::<ListContactsResponse>().await?;
 
@@ -118,11 +111,9 @@ impl Contacts {
         contact: CreateContactRequest,
     ) -> Result<CreateContactResponse> {
         let path = format!("/audiences/{audience_id}/contacts");
-        let uri = self.0.base_url.join(path.as_str())?;
-        let key = self.0.api_key.as_str();
 
-        let request = self.0.client.post(uri).bearer_auth(key).json(&contact);
-        let response = request.send()?;
+        let request = self.0.build(Method::POST, &path);
+        let response = request.json(&contact).send()?;
         let content = response.json::<CreateContactResponse>()?;
 
         Ok(content)
@@ -135,10 +126,8 @@ impl Contacts {
     #[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
     pub fn retrieve(&self, contact_id: &str, audience_id: &str) -> Result<GetContactResponse> {
         let path = format!("/audiences/{audience_id}/contacts/{contact_id}");
-        let uri = self.0.base_url.join(path.as_str())?;
-        let key = self.0.api_key.as_str();
 
-        let request = self.0.client.get(uri).bearer_auth(key);
+        let request = self.0.build(Method::GET, &path);
         let response = request.send()?;
         let content = response.json::<GetContactResponse>()?;
 
@@ -157,11 +146,9 @@ impl Contacts {
         contact: UpdateContactRequest,
     ) -> Result<UpdateContactResponse> {
         let path = format!("/audiences/{audience_id}/contacts/{contact_id}");
-        let uri = self.0.base_url.join(path.as_str())?;
-        let key = self.0.api_key.as_str();
 
-        let request = self.0.client.patch(uri).bearer_auth(key).json(&contact);
-        let response = request.send()?;
+        let request = self.0.build(Method::PATCH, &path);
+        let response = request.json(&contact).send()?;
         let content = response.json::<UpdateContactResponse>()?;
 
         Ok(content)
@@ -174,10 +161,8 @@ impl Contacts {
     #[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
     pub fn delete(&self, audience_id: &str, email_or_id: &str) -> Result<()> {
         let path = format!("/audiences/{audience_id}/contacts/{email_or_id}");
-        let uri = self.0.base_url.join(path.as_str())?;
-        let key = self.0.api_key.as_str();
 
-        let request = self.0.client.delete(uri).bearer_auth(key);
+        let request = self.0.build(Method::DELETE, &path);
         let _response = request.send()?;
 
         Ok(())
@@ -190,10 +175,8 @@ impl Contacts {
     #[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
     pub fn list(&self, audience_id: &str) -> Result<ListContactsResponse> {
         let path = format!("/audiences/{audience_id}/contacts");
-        let uri = self.0.base_url.join(path.as_str())?;
-        let key = self.0.api_key.as_str();
 
-        let request = self.0.client.get(uri).bearer_auth(key);
+        let request = self.0.build(Method::GET, &path);
         let response = request.send()?;
         let content = response.json::<ListContactsResponse>()?;
 

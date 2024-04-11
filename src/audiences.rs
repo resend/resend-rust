@@ -1,4 +1,7 @@
 use std::fmt;
+use std::sync::Arc;
+
+use reqwest::Method;
 
 use crate::types::{CreateAudienceRequest, CreateAudienceResponse};
 use crate::types::{GetAudienceResponse, ListAudiencesResponse, RemoveAudienceResponse};
@@ -6,7 +9,7 @@ use crate::{Config, Result};
 
 /// `Resend` APIs for `METHOD /audiences` endpoints.
 #[derive(Clone)]
-pub struct Audiences(pub(crate) Config);
+pub struct Audiences(pub(crate) Arc<Config>);
 
 impl Audiences {
     /// Create a list of contacts.
@@ -15,11 +18,8 @@ impl Audiences {
     #[cfg(not(feature = "blocking"))]
     #[cfg_attr(docsrs, doc(cfg(not(feature = "blocking"))))]
     pub async fn create(&self, audience: CreateAudienceRequest) -> Result<CreateAudienceResponse> {
-        let uri = self.0.base_url.join("/audiences")?;
-        let key = self.0.api_key.as_str();
-
-        let request = self.0.client.post(uri).bearer_auth(key).json(&audience);
-        let response = request.send().await?;
+        let request = self.0.build(Method::POST, "/audiences");
+        let response = request.json(&audience).send().await?;
         let content = response.json::<CreateAudienceResponse>().await?;
 
         Ok(content)
@@ -32,10 +32,7 @@ impl Audiences {
     #[cfg_attr(docsrs, doc(cfg(not(feature = "blocking"))))]
     pub async fn retrieve(&self, id: &str) -> Result<GetAudienceResponse> {
         let path = format!("/audiences/{id}");
-        let uri = self.0.base_url.join(path.as_str())?;
-        let key = self.0.api_key.as_str();
-
-        let request = self.0.client.get(uri).bearer_auth(key);
+        let request = self.0.build(Method::GET, &path);
         let response = request.send().await?;
         let content = response.json::<GetAudienceResponse>().await?;
 
@@ -49,10 +46,8 @@ impl Audiences {
     #[cfg_attr(docsrs, doc(cfg(not(feature = "blocking"))))]
     pub async fn delete(&self, id: &str) -> Result<RemoveAudienceResponse> {
         let path = format!("/audiences/{id}");
-        let uri = self.0.base_url.join(path.as_str())?;
-        let key = self.0.api_key.as_str();
 
-        let request = self.0.client.delete(uri).bearer_auth(key);
+        let request = self.0.build(Method::DELETE, &path);
         let response = request.send().await?;
         let content = response.json::<RemoveAudienceResponse>().await?;
 
@@ -65,10 +60,7 @@ impl Audiences {
     #[cfg(not(feature = "blocking"))]
     #[cfg_attr(docsrs, doc(cfg(not(feature = "blocking"))))]
     pub async fn list(&self) -> Result<ListAudiencesResponse> {
-        let uri = self.0.base_url.join("/audiences")?;
-        let key = self.0.api_key.as_str();
-
-        let request = self.0.client.get(uri).bearer_auth(key);
+        let request = self.0.build(Method::GET, "/audiences");
         let response = request.send().await?;
         let content = response.json::<ListAudiencesResponse>().await?;
 
@@ -81,11 +73,8 @@ impl Audiences {
     #[cfg(feature = "blocking")]
     #[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
     pub fn create(&self, audience: CreateAudienceRequest) -> Result<CreateAudienceResponse> {
-        let uri = self.0.base_url.join("/audiences")?;
-        let key = self.0.api_key.as_str();
-
-        let request = self.0.client.post(uri).bearer_auth(key).json(&audience);
-        let response = request.send()?;
+        let request = self.0.build(Method::POST, "/audiences");
+        let response = request.json(&audience).send()?;
         let content = response.json::<CreateAudienceResponse>()?;
 
         Ok(content)
@@ -98,10 +87,8 @@ impl Audiences {
     #[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
     pub fn retrieve(&self, id: &str) -> Result<GetAudienceResponse> {
         let path = format!("/audiences/{id}");
-        let uri = self.0.base_url.join(path.as_str())?;
-        let key = self.0.api_key.as_str();
 
-        let request = self.0.client.get(uri).bearer_auth(key);
+        let request = self.0.build(Method::GET, &path);
         let response = request.send()?;
         let content = response.json::<GetAudienceResponse>()?;
 
@@ -115,10 +102,8 @@ impl Audiences {
     #[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
     pub fn delete(&self, id: &str) -> Result<RemoveAudienceResponse> {
         let path = format!("/audiences/{id}");
-        let uri = self.0.base_url.join(path.as_str())?;
-        let key = self.0.api_key.as_str();
 
-        let request = self.0.client.delete(uri).bearer_auth(key);
+        let request = self.0.build(Method::DELETE, &path);
         let response = request.send()?;
         let content = response.json::<RemoveAudienceResponse>()?;
 
@@ -131,10 +116,7 @@ impl Audiences {
     #[cfg(feature = "blocking")]
     #[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
     pub fn list(&self) -> Result<ListAudiencesResponse> {
-        let uri = self.0.base_url.join("/audiences")?;
-        let key = self.0.api_key.as_str();
-
-        let request = self.0.client.get(uri).bearer_auth(key);
+        let request = self.0.build(Method::GET, "/audiences");
         let response = request.send()?;
         let content = response.json::<ListAudiencesResponse>()?;
 

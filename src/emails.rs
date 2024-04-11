@@ -1,11 +1,15 @@
 use std::fmt;
+use std::sync::Arc;
 
-use crate::types::{Email, SendEmailBatchResponse, SendEmailRequest, SendEmailResponse};
+use reqwest::Method;
+
+use crate::types::{Email, SendEmailBatchResponse};
+use crate::types::{SendEmailRequest, SendEmailResponse};
 use crate::{Config, Result};
 
 /// `Resend` APIs for `METHOD /emails` endpoints.
 #[derive(Clone)]
-pub struct Emails(pub(crate) Config);
+pub struct Emails(pub(crate) Arc<Config>);
 
 impl Emails {
     /// Start sending emails through the Resend Email API.
@@ -14,11 +18,8 @@ impl Emails {
     #[cfg(not(feature = "blocking"))]
     #[cfg_attr(docsrs, doc(cfg(not(feature = "blocking"))))]
     pub async fn send(&self, email: SendEmailRequest) -> Result<SendEmailResponse> {
-        let uri = self.0.base_url.join("/emails")?;
-        let key = self.0.api_key.as_str();
-
-        let request = self.0.client.post(uri).bearer_auth(key).json(&email);
-        let response = request.send().await?;
+        let request = self.0.build(Method::POST, "/emails");
+        let response = request.json(&email).send().await?;
         let content = response.json::<SendEmailResponse>().await?;
 
         Ok(content)
@@ -36,12 +37,10 @@ impl Emails {
     where
         T: IntoIterator<Item = SendEmailRequest> + Send,
     {
-        let uri = self.0.base_url.join("/emails/batch")?;
-        let key = self.0.api_key.as_str();
         let emails: Vec<_> = emails.into_iter().collect();
 
-        let request = self.0.client.post(uri).bearer_auth(key).json(&emails);
-        let response = request.send().await?;
+        let request = self.0.build(Method::POST, "/emails/batch");
+        let response = request.json(&emails).send().await?;
         let content = response.json::<SendEmailBatchResponse>().await?;
 
         Ok(content)
@@ -54,10 +53,8 @@ impl Emails {
     #[cfg_attr(docsrs, doc(cfg(not(feature = "blocking"))))]
     pub async fn retrieve(&self, id: &str) -> Result<Email> {
         let path = format!("/emails/{id}");
-        let uri = self.0.base_url.join(path.as_str())?;
-        let key = self.0.api_key.as_str();
 
-        let request = self.0.client.get(uri).bearer_auth(key);
+        let request = self.0.build(Method::GET, &path);
         let response = request.send().await?;
         let content = response.json::<Email>().await?;
 
@@ -70,11 +67,8 @@ impl Emails {
     #[cfg(feature = "blocking")]
     #[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
     pub fn send(&self, email: SendEmailRequest) -> Result<SendEmailResponse> {
-        let uri = self.0.base_url.join("/emails")?;
-        let key = self.0.api_key.as_str();
-
-        let request = self.0.client.post(uri).bearer_auth(key).json(&email);
-        let response = request.send()?;
+        let request = self.0.build(Method::POST, "/emails");
+        let response = request.json(&email).send()?;
         let content = response.json::<SendEmailResponse>()?;
 
         Ok(content)
@@ -92,12 +86,10 @@ impl Emails {
     where
         T: IntoIterator<Item = SendEmailRequest> + Send,
     {
-        let uri = self.0.base_url.join("/emails/batch")?;
-        let key = self.0.api_key.as_str();
         let emails: Vec<_> = emails.into_iter().collect();
 
-        let request = self.0.client.post(uri).bearer_auth(key).json(&emails);
-        let response = request.send()?;
+        let request = self.0.build(Method::POST, "/emails/batch");
+        let response = request.json(&emails).send()?;
         let content = response.json::<SendEmailBatchResponse>()?;
 
         Ok(content)
@@ -110,10 +102,8 @@ impl Emails {
     #[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
     pub fn retrieve(&self, id: &str) -> Result<Email> {
         let path = format!("/emails/{id}");
-        let uri = self.0.base_url.join(path.as_str())?;
-        let key = self.0.api_key.as_str();
 
-        let request = self.0.client.get(uri).bearer_auth(key);
+        let request = self.0.build(Method::GET, &path);
         let response = request.send()?;
         let content = response.json::<Email>()?;
 
@@ -213,8 +203,8 @@ pub mod types {
 
         /// Adds additional email tag.
         #[inline]
-        pub fn with_tag(mut self, tag: Tag) -> Self {
-            self.tags.get_or_insert_with(Vec::new).push(tag);
+        pub fn with_tag(mut self, tag: impl Into<Tag>) -> Self {
+            self.tags.get_or_insert_with(Vec::new).push(tag.into());
             self
         }
     }
@@ -265,6 +255,12 @@ pub mod types {
         pub fn with_value(mut self, value: &str) -> Self {
             self.value = Some(value.to_owned());
             self
+        }
+    }
+
+    impl<T: AsRef<str>> From<T> for Tag {
+        fn from(value: T) -> Self {
+            Self::new(value.as_ref())
         }
     }
 
@@ -349,5 +345,27 @@ pub mod types {
         pub reply_to: Option<Vec<String>>,
         /// The status of the email.
         pub last_event: Option<String>,
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::types::SendEmailRequest;
+    use crate::{Client, Result};
+
+    #[tokio::test]
+    async fn send() -> Result<()> {
+        let resend = Client::default();
+
+        let from = "Acme <onboarding@resend.dev>".to_owned();
+        let to = vec!["delivered@resend.dev".to_owned()];
+        let subject = "Hello World".to_owned();
+
+        let email = SendEmailRequest::new(from, to, subject)
+            .with_text("Hello World!")
+            .with_tag("Welcome");
+
+        let _ = resend.emails.send(email).await?;
+        Ok(())
     }
 }

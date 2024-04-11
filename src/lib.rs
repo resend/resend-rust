@@ -55,9 +55,6 @@ pub mod types {
 pub enum Error {
     #[error("http client error: {0}")]
     Reqwest(#[from] reqwest::Error),
-    // TODO: Remove Error::ParseUrl.
-    #[error("url parsing error: {0}")]
-    ParseUrl(#[from] url::ParseError),
 }
 
 /// Specialized [`Result`] type for an [`Error`].

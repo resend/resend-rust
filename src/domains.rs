@@ -1,4 +1,7 @@
 use std::fmt;
+use std::sync::Arc;
+
+use reqwest::Method;
 
 use crate::types::{CreateDomainRequest, CreateDomainResponse};
 use crate::types::{DeleteDomainResponse, Domain, ListDomainsResponse, VerifyDomainResponse};
@@ -7,7 +10,7 @@ use crate::{Config, Result};
 
 /// `Resend` APIs for `METHOD /domains` endpoints.
 #[derive(Clone)]
-pub struct Domains(pub(crate) Config);
+pub struct Domains(pub(crate) Arc<Config>);
 
 impl Domains {
     /// Create a domain through the Resend Email API.
@@ -16,11 +19,8 @@ impl Domains {
     #[cfg(not(feature = "blocking"))]
     #[cfg_attr(docsrs, doc(cfg(not(feature = "blocking"))))]
     pub async fn add(&self, domain: CreateDomainRequest) -> Result<CreateDomainResponse> {
-        let uri = self.0.base_url.join("/domains")?;
-        let key = self.0.api_key.as_str();
-
-        let request = self.0.client.post(uri).bearer_auth(key).json(&domain);
-        let response = request.send().await?;
+        let request = self.0.build(Method::POST, "/domains");
+        let response = request.json(&domain).send().await?;
         let content = response.json::<CreateDomainResponse>().await?;
 
         Ok(content)
@@ -33,10 +33,8 @@ impl Domains {
     #[cfg_attr(docsrs, doc(cfg(not(feature = "blocking"))))]
     pub async fn retrieve(&self, domain_id: &str) -> Result<Domain> {
         let path = format!("/domains/{domain_id}");
-        let uri = self.0.base_url.join(path.as_str())?;
-        let key = self.0.api_key.as_str();
 
-        let request = self.0.client.get(uri).bearer_auth(key);
+        let request = self.0.build(Method::GET, &path);
         let response = request.send().await?;
         let content = response.json::<Domain>().await?;
 
@@ -50,10 +48,8 @@ impl Domains {
     #[cfg_attr(docsrs, doc(cfg(not(feature = "blocking"))))]
     pub async fn verify(&self, domain_id: &str) -> Result<VerifyDomainResponse> {
         let path = format!("/domains/{domain_id}/verify");
-        let uri = self.0.base_url.join(path.as_str())?;
-        let key = self.0.api_key.as_str();
 
-        let request = self.0.client.post(uri).bearer_auth(key);
+        let request = self.0.build(Method::POST, &path);
         let response = request.send().await?;
         let content = response.json::<VerifyDomainResponse>().await?;
 
@@ -71,11 +67,9 @@ impl Domains {
         update: UpdateDomainRequest,
     ) -> Result<UpdateDomainResponse> {
         let path = format!("/domains/{domain_id}");
-        let uri = self.0.base_url.join(path.as_str())?;
-        let key = self.0.api_key.as_str();
 
-        let request = self.0.client.patch(uri).bearer_auth(key).json(&update);
-        let response = request.send().await?;
+        let request = self.0.build(Method::PATCH, &path);
+        let response = request.json(&update).send().await?;
         let content = response.json::<UpdateDomainResponse>().await?;
 
         Ok(content)
@@ -87,10 +81,7 @@ impl Domains {
     #[cfg(not(feature = "blocking"))]
     #[cfg_attr(docsrs, doc(cfg(not(feature = "blocking"))))]
     pub async fn list(&self) -> Result<ListDomainsResponse> {
-        let uri = self.0.base_url.join("/domains")?;
-        let key = self.0.api_key.as_str();
-
-        let request = self.0.client.post(uri).bearer_auth(key);
+        let request = self.0.build(Method::GET, "/domains");
         let response = request.send().await?;
         let content = response.json::<ListDomainsResponse>().await?;
 
@@ -104,10 +95,8 @@ impl Domains {
     #[cfg_attr(docsrs, doc(cfg(not(feature = "blocking"))))]
     pub async fn delete(&self, domain_id: &str) -> Result<DeleteDomainResponse> {
         let path = format!("/domains/{domain_id}");
-        let uri = self.0.base_url.join(path.as_str())?;
-        let key = self.0.api_key.as_str();
 
-        let request = self.0.client.delete(uri).bearer_auth(key);
+        let request = self.0.build(Method::DELETE, &path);
         let response = request.send().await?;
         let content = response.json::<DeleteDomainResponse>().await?;
 
@@ -120,11 +109,8 @@ impl Domains {
     #[cfg(feature = "blocking")]
     #[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
     pub fn add(&self, domain: CreateDomainRequest) -> Result<CreateDomainResponse> {
-        let uri = self.0.base_url.join("/domains")?;
-        let key = self.0.api_key.as_str();
-
-        let request = self.0.client.post(uri).bearer_auth(key).json(&domain);
-        let response = request.send()?;
+        let request = self.0.build(Method::POST, "/domains");
+        let response = request.json(&domain).send()?;
         let content = response.json::<CreateDomainResponse>()?;
 
         Ok(content)
@@ -137,10 +123,8 @@ impl Domains {
     #[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
     pub fn retrieve(&self, domain_id: &str) -> Result<Domain> {
         let path = format!("/domains/{domain_id}");
-        let uri = self.0.base_url.join(path.as_str())?;
-        let key = self.0.api_key.as_str();
 
-        let request = self.0.client.get(uri).bearer_auth(key);
+        let request = self.0.build(Method::GET, &path);
         let response = request.send()?;
         let content = response.json::<Domain>()?;
 
@@ -154,10 +138,8 @@ impl Domains {
     #[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
     pub fn verify(&self, domain_id: &str) -> Result<VerifyDomainResponse> {
         let path = format!("/domains/{domain_id}/verify");
-        let uri = self.0.base_url.join(path.as_str())?;
-        let key = self.0.api_key.as_str();
 
-        let request = self.0.client.post(uri).bearer_auth(key);
+        let request = self.0.build(Method::POST, &path);
         let response = request.send()?;
         let content = response.json::<VerifyDomainResponse>()?;
 
@@ -175,11 +157,9 @@ impl Domains {
         update: UpdateDomainRequest,
     ) -> Result<UpdateDomainResponse> {
         let path = format!("/domains/{domain_id}");
-        let uri = self.0.base_url.join(path.as_str())?;
-        let key = self.0.api_key.as_str();
 
-        let request = self.0.client.patch(uri).bearer_auth(key).json(&update);
-        let response = request.send()?;
+        let request = self.0.build(Method::PATCH, &path);
+        let response = request.json(&update).send()?;
         let content = response.json::<UpdateDomainResponse>()?;
 
         Ok(content)
@@ -191,10 +171,7 @@ impl Domains {
     #[cfg(feature = "blocking")]
     #[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
     pub fn list(&self) -> Result<ListDomainsResponse> {
-        let uri = self.0.base_url.join("/domains")?;
-        let key = self.0.api_key.as_str();
-
-        let request = self.0.client.post(uri).bearer_auth(key);
+        let request = self.0.build(Method::GET, "/domains");
         let response = request.send()?;
         let content = response.json::<ListDomainsResponse>()?;
 
@@ -208,10 +185,8 @@ impl Domains {
     #[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
     pub fn delete(&self, domain_id: &str) -> Result<DeleteDomainResponse> {
         let path = format!("/domains/{domain_id}");
-        let uri = self.0.base_url.join(path.as_str())?;
-        let key = self.0.api_key.as_str();
 
-        let request = self.0.client.delete(uri).bearer_auth(key);
+        let request = self.0.build(Method::DELETE, &path);
         let response = request.send()?;
         let content = response.json::<DeleteDomainResponse>()?;
 
