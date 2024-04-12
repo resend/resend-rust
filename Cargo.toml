@@ -16,22 +16,19 @@ categories = ["email", "web-programming"]
 keywords = ["email", "resend"]
 description = "A minimal Resend client."
 
-[package.metadata.docs.rs]
-all-features = true
-rustdoc-args = ["--cfg", "docsrs"]
-
 [features]
 default = ["native-tls"]
 
-blocking = ["reqwest/blocking"]
+blocking = ["reqwest/blocking", "maybe-async/is_sync"]
 native-tls = ["reqwest/native-tls"]
 rustls-tls = ["reqwest/rustls-tls"]
 
 [dependencies]
 reqwest = { version = "0.12.3", default-features = false, features = ["json"] }
 serde = { version = "1.0.197", features = ["derive"] }
-serde_json = { version = "1.0.115", features = [] }
-thiserror = { version = "1.0.58", features = [] }
+serde_json = { version = "1.0.115" }
+thiserror = { version = "1.0.58" }
+maybe-async = { version = "0.2.10" }
 
 [dev-dependencies]
 tokio = { version = "1.37.0", features = ["macros", "test-util", "rt-multi-thread"] }

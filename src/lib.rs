@@ -1,5 +1,4 @@
 #![forbid(unsafe_code)]
-#![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc = include_str!("../README.md")]
 //! #### Examples
 //!
@@ -27,13 +26,36 @@
 pub use client::Client;
 pub(crate) use config::Config;
 
+mod api_keys;
+mod audiences;
 mod client;
 mod config;
-
-pub mod services;
-pub mod types;
+mod contacts;
+mod domains;
+mod emails;
 
 // TODO: urlencode path params?
+
+pub mod services {
+    //! TODO.
+
+    pub use super::api_keys::ApiKeys;
+    pub use super::audiences::Audiences;
+    pub use super::contacts::Contacts;
+    pub use super::domains::Domains;
+    pub use super::emails::Emails;
+}
+
+pub mod types {
+    //! TODO.
+
+    pub use super::api_keys::types::*;
+    pub use super::audiences::types::*;
+    pub use super::config::types::*;
+    pub use super::contacts::types::*;
+    pub use super::domains::types::*;
+    pub use super::emails::types::*;
+}
 
 /// Error type for operations of a [`Client`].
 ///
