@@ -18,8 +18,8 @@ impl Emails {
     #[cfg(not(feature = "blocking"))]
     #[cfg_attr(docsrs, doc(cfg(not(feature = "blocking"))))]
     pub async fn send(&self, email: SendEmailRequest) -> Result<SendEmailResponse> {
-        let request = self.0.build(Method::POST, "/emails");
-        let response = request.json(&email).send().await?;
+        let request = self.0.json(Method::POST, "/emails", email)?;
+        let response = self.0.send(request).await?;
         let content = response.json::<SendEmailResponse>().await?;
 
         Ok(content)
@@ -39,9 +39,12 @@ impl Emails {
     {
         let emails: Vec<_> = emails.into_iter().collect();
 
-        let request = self.0.build(Method::POST, "/emails/batch");
-        let response = request.json(&emails).send().await?;
-        let content = response.json::<SendEmailBatchResponse>().await?;
+        let request = self.0.build(Method::POST, "/emails/batch").json(&emails);
+        let response = request.send().await?;
+        let content = response
+            .error_for_status()?
+            .json::<SendEmailBatchResponse>()
+            .await?;
 
         Ok(content)
     }
@@ -56,7 +59,7 @@ impl Emails {
 
         let request = self.0.build(Method::GET, &path);
         let response = request.send().await?;
-        let content = response.json::<Email>().await?;
+        let content = response.error_for_status()?.json::<Email>().await?;
 
         Ok(content)
     }
@@ -345,5 +348,28 @@ pub mod types {
         pub reply_to: Option<Vec<String>>,
         /// The status of the email.
         pub last_event: Option<String>,
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::types::SendEmailRequest;
+    use crate::{Client, Result};
+
+    #[tokio::test]
+    async fn send() -> Result<()> {
+        let resend = Client::default();
+
+        let from = "Acme <onboarding@resend.dev>".to_owned();
+        // let to = vec!["delivered@resend.dev".to_owned()];
+        let to = vec!["josh@me.org".to_owned()];
+        let subject = "Hello World".to_owned();
+
+        let email = SendEmailRequest::new(from, to, subject)
+            .with_text("Hello World!")
+            .with_tag("Welcome");
+
+        let _ = resend.emails.send(email).await?;
+        Ok(())
     }
 }

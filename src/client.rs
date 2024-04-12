@@ -1,14 +1,17 @@
-use std::{env, fmt};
 use std::sync::Arc;
+use std::{env, fmt};
 
-#[cfg(not(feature = "blocking"))]
-use reqwest::{Client as ReqwestClient, RequestBuilder};
-use reqwest::{Method, Url};
 #[cfg(feature = "blocking")]
 use reqwest::blocking::{Client as ReqwestClient, RequestBuilder};
 use reqwest::header::USER_AGENT;
+#[cfg(not(feature = "blocking"))]
+use reqwest::{Client as ReqwestClient, RequestBuilder};
+use reqwest::{Method, Request, Response, Url};
+use serde::Serialize;
 
 use crate::services::{ApiKeys, Audiences, Contacts, Domains, Emails};
+use crate::types::ErrorResponse;
+use crate::{Error, Result};
 
 /// A minimal [Resend](https://resend.com) client.
 // TODO: Arc<ClientInner> + impl Deref?
@@ -47,6 +50,28 @@ impl Config {
             .request(method, path)
             .bearer_auth(self.api_key.as_str())
             .header(USER_AGENT, self.user_agent.as_str())
+    }
+
+    pub fn plain(&self, method: Method, path: &str) -> Result<Request> {
+        self.build(method, path).build().map_err(Into::into)
+    }
+
+    pub fn json<T: Serialize>(&self, method: Method, path: &str, data: T) -> Result<Request> {
+        self.build(method, path)
+            .json(&data)
+            .build()
+            .map_err(Into::into)
+    }
+
+    pub async fn send(&self, request: Request) -> Result<Response> {
+        let response = self.client.execute(request).await?;
+        match response.status() {
+            x if x.is_client_error() || x.is_server_error() => {
+                let error = response.json::<ErrorResponse>().await?;
+                Err(Error::from(error))
+            }
+            _ => Ok(response),
+        }
     }
 }
 

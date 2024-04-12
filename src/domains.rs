@@ -215,7 +215,8 @@ pub mod types {
     }
 
     /// The region where emails will be sent from.
-    /// Possible values are us-east-1' | 'eu-west-1' | 'sa-east-1' | 'ap-northeast-1'
+    ///
+    /// Possible values are 'us-east-1' | 'eu-west-1' | 'sa-east-1' | 'ap-northeast-1'.
     // TODO: Custom region.
     #[derive(Debug, Copy, Clone, Serialize)]
     pub enum Region {
