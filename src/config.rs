@@ -61,6 +61,8 @@ impl fmt::Debug for Config {
 pub mod types {
     use serde::Deserialize;
 
+    /// Error returned as a response.
+    ///
     /// <https://resend.com/docs/api-reference/errors>
     #[derive(Debug, Clone, Deserialize, thiserror::Error)]
     #[error("resend error: {message}")]
@@ -86,6 +88,7 @@ pub mod types {
     #[non_exhaustive]
     #[derive(Debug, Copy, Clone)]
     pub enum ErrorKind {
+        /// Error name is not in the API spec.
         Unrecognized,
 
         /// 401 Unauthorized.

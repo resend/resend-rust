@@ -31,8 +31,8 @@ If anyone else is looking into this, however, I would not mind expanding it.
 
 #### Variables
 
-- (Required) `RESEND_API_KEY` to enable `impl Default` for a `Client`.
-- (Optional) `RESEND_BASE_URL` to override the default base address:
-  `https://api.resend.com`.
-- (Optional) `RESEND_USER_AGENT` to override the default user-agent:
-  `resend-rs/0.1.0`.
+- `RESEND_API_KEY` to enable `impl Default` for a `Client` (Required).
+- `RESEND_BASE_URL` to override the default base address:
+  `https://api.resend.com` (Optional).
+- `RESEND_USER_AGENT` to override the default `User-Agent`: `resend-rs/0.1.0`
+  (Optional).

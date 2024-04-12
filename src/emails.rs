@@ -317,15 +317,14 @@ mod test {
     use crate::types::SendEmailRequest;
     use crate::{Client, Result};
 
-    #[tokio::test]
+    #[tokio_macros::test]
     #[cfg(not(feature = "blocking"))]
     async fn send() -> Result<()> {
-        let resend = Client::default();
-
         let from = "Acme <onboarding@resend.dev>".to_owned();
         let to = vec!["delivered@resend.dev".to_owned()];
         let subject = "Hello World".to_owned();
 
+        let resend = Client::default();
         let email = SendEmailRequest::new(from, to, subject)
             .with_text("Hello World!")
             .with_tag("Welcome");
@@ -337,12 +336,11 @@ mod test {
     #[test]
     #[cfg(feature = "blocking")]
     fn send_blocking() -> Result<()> {
-        let resend = Client::default();
-
         let from = "Acme <onboarding@resend.dev>".to_owned();
         let to = vec!["delivered@resend.dev".to_owned()];
         let subject = "Hello World".to_owned();
 
+        let resend = Client::default();
         let email = SendEmailRequest::new(from, to, subject)
             .with_text("Hello World!")
             .with_tag("Welcome");

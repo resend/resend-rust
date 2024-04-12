@@ -10,20 +10,41 @@ use reqwest::Url;
 use crate::config::Config;
 use crate::services::{ApiKeys, Audiences, Contacts, Domains, Emails};
 
-/// A minimal [Resend](https://resend.com) client.
 // TODO: Arc<ClientInner> + impl Deref?
+
+/// A minimal [Resend](https://resend.com) client.
+///
+/// #### Example
+///
+/// ```rust,no_run
+/// use resend_rs::{Client, Result};
+/// use resend_rs::types::SendEmailRequest;
+///
+/// let from = "Acme <onboarding@resend.dev>".to_owned();
+/// let to = vec!["delivered@resend.dev".to_owned()];
+/// let sub = "Hello World".to_owned();
+///
+/// let email = SendEmailRequest::new(from, to, sub)
+///     .with_text("Hello World!");
+///
+/// let resend = Client::default();
+/// # tokio_test::block_on(async {
+/// let resp = resend.emails.send(email).await?;
+/// println!("id: {}", resp.id);
+/// # });
+/// ```
 #[must_use]
 #[derive(Clone)]
 pub struct Client {
-    /// `Resend` APIs for `METHOD /emails` endpoints.
+    /// `Resend` APIs for `/emails` endpoints.
     pub emails: Emails,
-    /// `Resend` APIs for `METHOD /api-keys` endpoints.
+    /// `Resend` APIs for `/api-keys` endpoints.
     pub api_keys: ApiKeys,
-    /// `Resend` APIs for `METHOD /audiences` endpoints.
+    /// `Resend` APIs for `/audiences` endpoints.
     pub audiences: Audiences,
-    /// `Resend` APIs for `METHOD /audiences/:id/contacts` endpoints.
+    /// `Resend` APIs for `/audiences/:id/contacts` endpoints.
     pub contacts: Contacts,
-    /// `Resend` APIs for `METHOD /domains` endpoints.
+    /// `Resend` APIs for `/domains` endpoints.
     pub domains: Domains,
 }
 
