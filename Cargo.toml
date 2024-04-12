@@ -17,7 +17,7 @@ keywords = ["email", "resend"]
 description = "A minimal Resend client."
 
 [package.metadata.docs.rs]
-all-features = false
+all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]

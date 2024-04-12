@@ -18,8 +18,8 @@ impl Emails {
     #[cfg(not(feature = "blocking"))]
     #[cfg_attr(docsrs, doc(cfg(not(feature = "blocking"))))]
     pub async fn send(&self, email: SendEmailRequest) -> Result<SendEmailResponse> {
-        let request = self.0.json(Method::POST, "/emails", email)?;
-        let response = self.0.send(request).await?;
+        let request = self.0.build(Method::POST, "/emails");
+        let response = self.0.send(request.json(&email)).await?;
         let content = response.json::<SendEmailResponse>().await?;
 
         Ok(content)
@@ -39,12 +39,9 @@ impl Emails {
     {
         let emails: Vec<_> = emails.into_iter().collect();
 
-        let request = self.0.build(Method::POST, "/emails/batch").json(&emails);
-        let response = request.send().await?;
-        let content = response
-            .error_for_status()?
-            .json::<SendEmailBatchResponse>()
-            .await?;
+        let request = self.0.build(Method::POST, "/emails/batch");
+        let response = self.0.send(request.json(&emails)).await?;
+        let content = response.json::<SendEmailBatchResponse>().await?;
 
         Ok(content)
     }
@@ -58,8 +55,8 @@ impl Emails {
         let path = format!("/emails/{id}");
 
         let request = self.0.build(Method::GET, &path);
-        let response = request.send().await?;
-        let content = response.error_for_status()?.json::<Email>().await?;
+        let response = self.0.send(request).await?;
+        let content = response.json::<Email>().await?;
 
         Ok(content)
     }
@@ -71,7 +68,7 @@ impl Emails {
     #[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
     pub fn send(&self, email: SendEmailRequest) -> Result<SendEmailResponse> {
         let request = self.0.build(Method::POST, "/emails");
-        let response = request.json(&email).send()?;
+        let response = self.0.send(request.json(&email))?;
         let content = response.json::<SendEmailResponse>()?;
 
         Ok(content)
@@ -92,7 +89,7 @@ impl Emails {
         let emails: Vec<_> = emails.into_iter().collect();
 
         let request = self.0.build(Method::POST, "/emails/batch");
-        let response = request.json(&emails).send()?;
+        let response = self.0.send(request.json(&emails))?;
         let content = response.json::<SendEmailBatchResponse>()?;
 
         Ok(content)
@@ -107,7 +104,7 @@ impl Emails {
         let path = format!("/emails/{id}");
 
         let request = self.0.build(Method::GET, &path);
-        let response = request.send()?;
+        let response = self.0.send(request)?;
         let content = response.json::<Email>()?;
 
         Ok(content)

@@ -2,16 +2,13 @@ use std::sync::Arc;
 use std::{env, fmt};
 
 #[cfg(feature = "blocking")]
-use reqwest::blocking::{Client as ReqwestClient, RequestBuilder};
-use reqwest::header::USER_AGENT;
+use reqwest::blocking::Client as ReqwestClient;
 #[cfg(not(feature = "blocking"))]
-use reqwest::{Client as ReqwestClient, RequestBuilder};
-use reqwest::{Method, Request, Response, Url};
-use serde::Serialize;
+use reqwest::Client as ReqwestClient;
+use reqwest::Url;
 
+use crate::config::Config;
 use crate::services::{ApiKeys, Audiences, Contacts, Domains, Emails};
-use crate::types::ErrorResponse;
-use crate::{Error, Result};
 
 /// A minimal [Resend](https://resend.com) client.
 // TODO: Arc<ClientInner> + impl Deref?
@@ -28,63 +25,6 @@ pub struct Client {
     pub contacts: Contacts,
     /// `Resend` APIs for `METHOD /domains` endpoints.
     pub domains: Domains,
-}
-
-#[derive(Clone)]
-pub struct Config {
-    user_agent: String,
-    api_key: String,
-    base_url: Url,
-    pub(crate) client: ReqwestClient,
-}
-
-impl Config {
-    /// Constructs a new [`RequestBuilder`].
-    pub fn build(&self, method: Method, path: &str) -> RequestBuilder {
-        let path = self
-            .base_url
-            .join(path)
-            .expect("should be a valid API endpoint");
-
-        self.client
-            .request(method, path)
-            .bearer_auth(self.api_key.as_str())
-            .header(USER_AGENT, self.user_agent.as_str())
-    }
-
-    pub fn plain(&self, method: Method, path: &str) -> Result<Request> {
-        self.build(method, path).build().map_err(Into::into)
-    }
-
-    pub fn json<T: Serialize>(&self, method: Method, path: &str, data: T) -> Result<Request> {
-        self.build(method, path)
-            .json(&data)
-            .build()
-            .map_err(Into::into)
-    }
-
-    pub async fn send(&self, request: Request) -> Result<Response> {
-        let response = self.client.execute(request).await?;
-        match response.status() {
-            x if x.is_client_error() || x.is_server_error() => {
-                let error = response.json::<ErrorResponse>().await?;
-                Err(Error::from(error))
-            }
-            _ => Ok(response),
-        }
-    }
-}
-
-impl fmt::Debug for Config {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // Don't output API key.
-        f.debug_struct("Client")
-            .field("api_key", &"re_*********")
-            .field("user_agent", &self.user_agent.as_str())
-            .field("base_url", &self.base_url.as_str())
-            // .field("client", &self.client)
-            .finish()
-    }
 }
 
 impl Client {
