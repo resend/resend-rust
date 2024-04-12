@@ -28,7 +28,7 @@ use crate::services::{ApiKeys, Audiences, Contacts, Domains, Emails};
 ///     .with_text("Hello World!");
 ///
 /// let resend = Client::default();
-/// # tokio_test::block_on(async {
+/// # tokio::runtime::Handle::block_on(async {
 /// let resp = resend.emails.send(email).await?;
 /// println!("id: {}", resp.id);
 /// # });

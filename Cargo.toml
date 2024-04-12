@@ -31,5 +31,4 @@ thiserror = { version = "1.0.58" }
 maybe-async = { version = "0.2.10" }
 
 [dev-dependencies]
-tokio-test = { version = "0.4.4" }
-tokio-macros = { version = "2.2.0" }
+tokio = { version = "1.37.0", features = ["macros", "test-util", "rt-multi-thread"] }

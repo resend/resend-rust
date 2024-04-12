@@ -317,7 +317,7 @@ mod test {
     use crate::types::SendEmailRequest;
     use crate::{Client, Result};
 
-    #[tokio_macros::test]
+    #[tokio::test]
     #[cfg(not(feature = "blocking"))]
     async fn send() -> Result<()> {
         let from = "Acme <onboarding@resend.dev>".to_owned();
