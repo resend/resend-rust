@@ -1,15 +1,15 @@
 use std::fmt;
 
-#[cfg(not(feature = "blocking"))]
-use reqwest::{Client, Request, RequestBuilder, Response};
-use reqwest::{Method, Url};
 #[cfg(feature = "blocking")]
 use reqwest::blocking::{Client, Request, RequestBuilder, Response};
 use reqwest::header::USER_AGENT;
+#[cfg(not(feature = "blocking"))]
+use reqwest::{Client, Request, RequestBuilder, Response};
+use reqwest::{Method, Url};
 use serde::Serialize;
 
-use crate::{Error, Result};
 use crate::types::ErrorResponse;
+use crate::{Error, Result};
 
 #[derive(Clone)]
 pub struct Config {
