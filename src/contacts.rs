@@ -3,26 +3,22 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
+use crate::types::{Contact, Contacts};
 use crate::types::{CreateContactRequest, CreateContactResponse};
-use crate::types::{GetContactResponse, ListContactsResponse};
 use crate::types::{UpdateContactRequest, UpdateContactResponse};
 use crate::{Config, Result};
 
-/// `Resend` APIs for `METHOD /audiences/:id/contacts` endpoints.
+/// `Resend` APIs for `/audiences/:id/contacts` endpoints.
 #[derive(Clone)]
-pub struct Contacts(pub(crate) Arc<Config>);
+pub struct ContactsService(pub(crate) Arc<Config>);
 
-impl Contacts {
+impl ContactsService {
     /// Create a contact inside an audience.
     ///
     /// <https://resend.com/docs/api-reference/contacts/create-contact>
     #[maybe_async::maybe_async]
-    pub async fn add(
-        &self,
-        audience_id: &str,
-        contact: CreateContactRequest,
-    ) -> Result<CreateContactResponse> {
-        let path = format!("/audiences/{audience_id}/contacts");
+    pub async fn add(&self, contact: CreateContactRequest) -> Result<CreateContactResponse> {
+        let path = format!("/audiences/{}/contacts", &contact.audience_id);
 
         let request = self.0.build(Method::POST, &path);
         let response = self.0.send(request.json(&contact)).await?;
@@ -35,16 +31,12 @@ impl Contacts {
     ///
     /// <https://resend.com/docs/api-reference/contacts/get-contact>
     #[maybe_async::maybe_async]
-    pub async fn retrieve(
-        &self,
-        contact_id: &str,
-        audience_id: &str,
-    ) -> Result<GetContactResponse> {
+    pub async fn retrieve(&self, contact_id: &str, audience_id: &str) -> Result<Contact> {
         let path = format!("/audiences/{audience_id}/contacts/{contact_id}");
 
         let request = self.0.build(Method::GET, &path);
         let response = self.0.send(request).await?;
-        let content = response.json::<GetContactResponse>().await?;
+        let content = response.json::<Contact>().await?;
 
         Ok(content)
     }
@@ -85,18 +77,18 @@ impl Contacts {
     ///
     /// <https://resend.com/docs/api-reference/contacts/list-contacts>
     #[maybe_async::maybe_async]
-    pub async fn list(&self, audience_id: &str) -> Result<ListContactsResponse> {
+    pub async fn list(&self, audience_id: &str) -> Result<Contacts> {
         let path = format!("/audiences/{audience_id}/contacts");
 
         let request = self.0.build(Method::GET, &path);
         let response = self.0.send(request).await?;
-        let content = response.json::<ListContactsResponse>().await?;
+        let content = response.json::<Contacts>().await?;
 
         Ok(content)
     }
 }
 
-impl fmt::Debug for Contacts {
+impl fmt::Debug for ContactsService {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(&self.0, f)
     }
@@ -110,6 +102,9 @@ pub mod types {
     pub struct CreateContactRequest {
         /// Email address of the contact.
         pub email: String,
+        /// Unique identifier of the audience to which the contact belongs.
+        pub audience_id: String,
+
         /// First name of the contact.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub first_name: Option<String>,
@@ -119,20 +114,17 @@ pub mod types {
         /// Indicates if the contact is unsubscribed.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub unsubscribed: Option<bool>,
-        /// Unique identifier of the audience to which the contact belongs.
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub audience_id: Option<String>,
     }
 
     impl CreateContactRequest {
         /// Creates a new [`CreateContactRequest`].
-        pub fn new(email: &str) -> Self {
+        pub fn new(email: &str, audience_id: &str) -> Self {
             Self {
                 email: email.to_owned(),
+                audience_id: audience_id.to_owned(),
                 first_name: None,
                 last_name: None,
                 unsubscribed: None,
-                audience_id: None,
             }
         }
 
@@ -156,49 +148,36 @@ pub mod types {
             self.unsubscribed = Some(unsubscribed);
             self
         }
-
-        /// Adds a contact to the audience.
-        #[inline]
-        pub fn with_audience(mut self, id: &str) -> Self {
-            self.audience_id = Some(id.to_owned());
-            self
-        }
     }
 
     #[derive(Debug, Clone, Deserialize)]
     pub struct CreateContactResponse {
-        /// Type of the response object.
-        pub object: Option<String>,
         /// Unique identifier for the created contact.
         pub id: Option<String>,
     }
 
     #[must_use]
     #[derive(Debug, Clone, Deserialize)]
-    pub struct ListContactsResponse {
-        /// Type of the response object.
-        pub object: Option<String>,
+    pub struct Contacts {
         /// Array containing contact information.
-        pub data: Option<Vec<ListContactsItem>>,
+        pub data: Vec<Contact>,
     }
 
     #[must_use]
     #[derive(Debug, Clone, Deserialize)]
-    pub struct GetContactResponse {
-        /// Type of the response object.
-        pub object: Option<String>,
+    pub struct Contact {
         /// Unique identifier for the contact.
-        pub id: Option<String>,
+        pub id: String,
         /// Email address of the contact.
-        pub email: Option<String>,
+        pub email: String,
         /// First name of the contact.
-        pub first_name: Option<String>,
+        pub first_name: String,
         /// Last name of the contact.
-        pub last_name: Option<String>,
+        pub last_name: String,
         /// Timestamp indicating when the contact was created.
-        pub created_at: Option<String>,
+        pub created_at: String,
         /// Indicates if the contact is unsubscribed.
-        pub unsubscribed: Option<bool>,
+        pub unsubscribed: String,
     }
 
     #[must_use]
@@ -220,26 +199,31 @@ pub mod types {
 
     #[derive(Debug, Clone, Deserialize)]
     pub struct UpdateContactResponse {
-        /// Type of the response object.
-        pub object: Option<String>,
         /// Unique identifier for the updated contact.
         pub id: Option<String>,
     }
+}
 
-    #[must_use]
-    #[derive(Debug, Clone, Deserialize)]
-    pub struct ListContactsItem {
-        /// Unique identifier for the contact.
-        pub id: Option<String>,
-        /// Email address of the contact.
-        pub email: Option<String>,
-        /// First name of the contact.
-        pub first_name: Option<String>,
-        /// Last name of the contact.
-        pub last_name: Option<String>,
-        /// Timestamp indicating when the contact was created.
-        pub created_at: Option<String>,
-        /// Indicates if the contact is unsubscribed.
-        pub unsubscribed: Option<bool>,
+#[cfg(test)]
+mod test {
+    use crate::{Client, Result};
+
+    #[tokio::test]
+    #[cfg(not(feature = "blocking"))]
+    async fn all() -> Result<()> {
+        let resend = Client::default();
+
+        // Create audience.
+        let audience = "test_";
+        let status = resend.audiences.create(audience).await?;
+        let audience_id = status.id.as_str();
+
+        // TODO.
+
+        // Delete audience.
+        let deleted = resend.audiences.delete(audience_id).await?;
+        assert!(deleted);
+
+        Ok(())
     }
 }

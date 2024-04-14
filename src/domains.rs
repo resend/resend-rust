@@ -4,16 +4,15 @@ use std::sync::Arc;
 use reqwest::Method;
 
 use crate::types::{CreateDomainRequest, CreateDomainResponse};
-use crate::types::{DeleteDomainResponse, Domain};
-use crate::types::{ListDomainsResponse, VerifyDomainResponse};
+use crate::types::{DeleteDomainResponse, Domain, Domains, VerifyDomain};
 use crate::types::{UpdateDomainRequest, UpdateDomainResponse};
 use crate::{Config, Result};
 
-/// `Resend` APIs for `METHOD /domains` endpoints.
+/// `Resend` APIs for `/domains` endpoints.
 #[derive(Clone)]
-pub struct Domains(pub(crate) Arc<Config>);
+pub struct DomainsService(pub(crate) Arc<Config>);
 
-impl Domains {
+impl DomainsService {
     /// Create a domain through the Resend Email API.
     ///
     /// <https://resend.com/docs/api-reference/domains/create-domain>
@@ -44,12 +43,12 @@ impl Domains {
     ///
     /// <https://resend.com/docs/api-reference/domains/verify-domain>
     #[maybe_async::maybe_async]
-    pub async fn verify(&self, domain_id: &str) -> Result<VerifyDomainResponse> {
+    pub async fn verify(&self, domain_id: &str) -> Result<VerifyDomain> {
         let path = format!("/domains/{domain_id}/verify");
 
         let request = self.0.build(Method::POST, &path);
         let response = self.0.send(request).await?;
-        let content = response.json::<VerifyDomainResponse>().await?;
+        let content = response.json::<VerifyDomain>().await?;
 
         Ok(content)
     }
@@ -76,15 +75,17 @@ impl Domains {
     ///
     /// <https://resend.com/docs/api-reference/domains/list-domains>
     #[maybe_async::maybe_async]
-    pub async fn list(&self) -> Result<ListDomainsResponse> {
+    pub async fn list(&self) -> Result<Domains> {
         let request = self.0.build(Method::GET, "/domains");
         let response = self.0.send(request).await?;
-        let content = response.json::<ListDomainsResponse>().await?;
+        let content = response.json::<Domains>().await?;
 
         Ok(content)
     }
 
     /// Remove an existing domain.
+    ///
+    /// Returns whether the domain was deleted successfully.
     ///
     /// <https://resend.com/docs/api-reference/domains/delete-domain>
     #[maybe_async::maybe_async]
@@ -99,7 +100,7 @@ impl Domains {
     }
 }
 
-impl fmt::Debug for Domains {
+impl fmt::Debug for DomainsService {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(&self.0, f)
     }
@@ -120,7 +121,7 @@ pub mod types {
         pub region: Option<Region>,
     }
 
-    /// The region where emails will be sent from.
+    /// Region where emails will be sent from.
     ///
     /// Possible values are 'us-east-1' | 'eu-west-1' | 'sa-east-1' | 'ap-northeast-1'.
     // TODO: Custom region.
@@ -139,25 +140,29 @@ pub mod types {
     #[derive(Debug, Clone, Deserialize)]
     pub struct CreateDomainResponse {
         /// The ID of the domain.
-        pub id: Option<String>,
+        pub id: String,
         /// The name of the domain.
-        pub name: Option<String>,
+        pub name: String,
         /// The date and time the domain was created.
-        pub created_at: Option<String>,
+        pub created_at: String,
         /// The status of the domain.
-        pub status: Option<String>,
+        pub status: String,
         /// The records of the domain.
-        pub records: Option<Vec<DomainRecord>>,
+        pub records: Vec<DomainRecord>,
         /// The region where the domain is hosted.
-        pub region: Option<String>,
+        pub region: String,
+        /// The service that runs DNS server.
+        #[serde(rename = "dnsProvider")]
+        pub dns_provider: String,
     }
 
     #[derive(Debug, Clone, Deserialize)]
     pub struct DomainRecord {
         /// The type of record.
-        pub record: Option<String>,
+        pub record: String,
         /// The name of the record.
-        pub name: Option<String>,
+        pub name: String,
+
         /// The type of record.
         #[serde(rename = "type")]
         pub d_type: Option<String>,
@@ -173,28 +178,24 @@ pub mod types {
 
     #[derive(Debug, Clone, Deserialize)]
     pub struct Domain {
-        /// The type of object.
-        pub object: Option<String>,
         /// The ID of the domain.
-        pub id: Option<String>,
+        pub id: String,
         /// The name of the domain.
-        pub name: Option<String>,
+        pub name: String,
         /// The status of the domain.
-        pub status: Option<String>,
+        pub status: String,
         /// The date and time the domain was created.
-        pub created_at: Option<String>,
+        pub created_at: String,
         /// The region where the domain is hosted.
-        pub region: Option<String>,
+        pub region: String,
         /// The records of the domain.
-        pub records: Option<Vec<DomainRecord>>,
+        pub records: Vec<DomainRecord>,
     }
 
     #[derive(Debug, Clone, Deserialize)]
-    pub struct VerifyDomainResponse {
-        /// The type of object.
-        pub object: Option<String>,
+    pub struct VerifyDomain {
         /// The ID of the domain.
-        pub id: Option<String>,
+        pub id: String,
     }
 
     #[must_use]
@@ -232,40 +233,39 @@ pub mod types {
     #[derive(Debug, Clone, Deserialize)]
     pub struct UpdateDomainResponse {
         /// The ID of the updated domain.
-        pub id: Option<String>,
-        /// The object type representing the updated domain.
-        pub object: Option<String>,
+        pub id: String,
     }
 
     #[must_use]
     #[derive(Debug, Clone, Deserialize)]
-    pub struct ListDomainsResponse {
-        #[serde(rename = "data", skip_serializing_if = "Option::is_none")]
-        pub data: Option<Vec<ListDomainsItem>>,
-    }
-
-    #[must_use]
-    #[derive(Debug, Clone, Deserialize)]
-    pub struct ListDomainsItem {
-        /// The ID of the domain.
-        pub id: Option<String>,
-        /// The name of the domain.
-        pub name: Option<String>,
-        /// The status of the domain.
-        pub status: Option<String>,
-        /// The date and time the domain was created.
-        pub created_at: Option<String>,
-        /// The region where the domain is hosted.
-        pub region: Option<String>,
+    pub struct Domains {
+        #[serde(rename = "data")]
+        pub domains: Vec<Domain>,
     }
 
     #[derive(Debug, Clone, Deserialize)]
     pub struct DeleteDomainResponse {
-        /// The type of object.
-        pub object: Option<String>,
         /// The ID of the domain.
-        pub id: Option<String>,
+        pub id: String,
         /// Indicates whether the domain was deleted successfully.
-        pub deleted: Option<bool>,
+        pub deleted: bool,
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::{Client, Result};
+
+    #[tokio::test]
+    #[cfg(not(feature = "blocking"))]
+    async fn all() -> Result<()> {
+        let resend = Client::default();
+
+        // TODO.
+
+        // List.
+        let _ = resend.domains.list().await?;
+
+        Ok(())
     }
 }

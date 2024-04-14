@@ -18,7 +18,8 @@
 //!         .with_text("Hello World!")
 //!         .with_tag("Welcome");
 //!
-//!     let _ = resend.emails.send(email).await?;
+//!     let resp = resend.emails.send(email).await?;
+//!     println!("id: {}", resp.id);
 //!     Ok(())
 //! }
 //! ```
@@ -39,35 +40,45 @@ mod emails;
 pub mod services {
     //! TODO.
 
-    pub use super::api_keys::ApiKeys;
-    pub use super::audiences::Audiences;
-    pub use super::contacts::Contacts;
-    pub use super::domains::Domains;
-    pub use super::emails::Emails;
+    pub use super::api_keys::ApiKeysService;
+    pub use super::audiences::AudiencesService;
+    pub use super::contacts::ContactsService;
+    pub use super::domains::DomainsService;
+    pub use super::emails::EmailsService;
 }
 
 pub mod types {
-    //! TODO.
+    //! Request and response types.
 
-    pub use super::api_keys::types::*;
-    pub use super::audiences::types::*;
-    pub use super::config::types::*;
-    pub use super::contacts::types::*;
-    pub use super::domains::types::*;
-    pub use super::emails::types::*;
+    pub use super::api_keys::types::{
+        ApiKey, ApiKeys, CreateApiKeyRequest, CreateApiKeyResponse, Permission,
+    };
+    pub use super::audiences::types::{Audience, Audiences, CreateAudienceResponse};
+    pub use super::config::types::{ErrorKind, ErrorResponse};
+    pub use super::contacts::types::{
+        Contact, Contacts, CreateContactRequest, CreateContactResponse, UpdateContactRequest,
+        UpdateContactResponse,
+    };
+    pub use super::domains::types::{
+        CreateDomainRequest, CreateDomainResponse, DeleteDomainResponse, Domain, DomainRecord,
+        Domains, Region, UpdateDomainRequest, UpdateDomainResponse, VerifyDomain,
+    };
+    pub use super::emails::types::{
+        Attachment, ContentOrPath, Email, SendEmailBatchResponse, SendEmailRequest,
+        SendEmailResponse, Tag,
+    };
 }
 
 /// Error type for operations of a [`Client`].
 ///
 /// <https://resend.com/docs/api-reference/errors>
-#[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    /// TODO.
+    /// Errors that may occur during the processing an HTTP request.
     #[error("http error: {0}")]
     Http(#[from] reqwest::Error),
 
-    /// TODO.
+    /// Errors that may occur during the processing of the API request.
     #[error("resend error: {0}")]
     Resend(#[from] types::ErrorResponse),
 }

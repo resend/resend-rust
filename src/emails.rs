@@ -7,11 +7,11 @@ use crate::types::{Email, SendEmailBatchResponse};
 use crate::types::{SendEmailRequest, SendEmailResponse};
 use crate::{Config, Result};
 
-/// `Resend` APIs for `METHOD /emails` endpoints.
+/// `Resend` APIs for `/emails` endpoints.
 #[derive(Clone)]
-pub struct Emails(pub(crate) Arc<Config>);
+pub struct EmailsService(pub(crate) Arc<Config>);
 
-impl Emails {
+impl EmailsService {
     /// Start sending emails through the Resend Email API.
     ///
     /// <https://resend.com/docs/api-reference/emails/send-email>
@@ -59,7 +59,7 @@ impl Emails {
     }
 }
 
-impl fmt::Debug for Emails {
+impl fmt::Debug for EmailsService {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(&self.0, f)
     }
@@ -67,6 +67,7 @@ impl fmt::Debug for Emails {
 
 pub mod types {
     use serde::{Deserialize, Serialize};
+    use serde_json::{Map, Value};
 
     #[must_use]
     #[derive(Debug, Clone, Serialize)]
@@ -97,7 +98,7 @@ pub mod types {
         pub reply_to: Option<Vec<String>>,
         /// Custom headers to add to the email.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub headers: Option<serde_json::Value>,
+        pub headers: Option<Map<String, Value>>,
         /// Filename and content of attachments (max 40mb per email).
         #[serde(skip_serializing_if = "Option::is_none")]
         pub attachments: Option<Vec<Attachment>>,
@@ -128,45 +129,68 @@ pub mod types {
             }
         }
 
-        /// Adds the HTML version of the message.
+        /// Adds or overwrites the HTML version of the message.
         #[inline]
         pub fn with_html(mut self, html: &str) -> Self {
-            self.html = Some(html.to_string());
+            self.html = Some(html.to_owned());
             self
         }
 
-        /// Adds the plain text version of the message.
+        /// Adds or overwrites the plain text version of the message.
         #[inline]
         pub fn with_text(mut self, text: &str) -> Self {
-            self.text = Some(text.to_string());
+            self.text = Some(text.to_owned());
             self
         }
 
-        /// Attaches additional `reply_to` address to the email.
+        /// Attaches `bcc` recipient email address.
+        #[inline]
+        pub fn with_bcc(mut self, address: &str) -> Self {
+            let bcc = self.bcc.get_or_insert_with(Vec::new);
+            bcc.push(address.to_owned());
+            self
+        }
+
+        /// Attaches `cc` recipient email address.
+        #[inline]
+        pub fn with_cc(mut self, address: &str) -> Self {
+            let cc = self.cc.get_or_insert_with(Vec::new);
+            cc.push(address.to_owned());
+            self
+        }
+
+        /// Adds another `reply_to` address to the email.
         #[inline]
         pub fn with_reply(mut self, to: &str) -> Self {
-            let to = to.to_owned();
-            self.reply_to.get_or_insert_with(Vec::new).push(to);
+            let reply_to = self.reply_to.get_or_insert_with(Vec::new);
+            reply_to.push(to.to_owned());
             self
         }
 
-        /// Attaches additional header to the email.
+        /// Adds or overwrites an email header.
         #[inline]
-        pub fn with_header(mut self) -> Self {
-            todo!()
+        pub fn with_header(mut self, name: &str, value: &str) -> Self {
+            let headers = self.headers.get_or_insert_with(Map::new);
+            let _ = headers.insert(name.to_owned(), Value::String(value.to_owned()));
+
+            self
         }
 
-        /// Adds another attachment (max 40mb per email).
+        /// Adds another attachment.
+        ///
+        /// Limited to max 40mb per email.
         #[inline]
-        pub fn with_attachment(mut self, file: Attachment) -> Self {
-            self.attachments.get_or_insert_with(Vec::new).push(file);
+        pub fn with_attachment(mut self, file: impl Into<Attachment>) -> Self {
+            let attachments = self.attachments.get_or_insert_with(Vec::new);
+            attachments.push(file.into());
             self
         }
 
         /// Adds additional email tag.
         #[inline]
         pub fn with_tag(mut self, tag: impl Into<Tag>) -> Self {
-            self.tags.get_or_insert_with(Vec::new).push(tag.into());
+            let tags = self.tags.get_or_insert_with(Vec::new);
+            tags.push(tag.into());
             self
         }
     }
@@ -279,11 +303,21 @@ pub mod types {
         }
     }
 
+    impl From<&[u8]> for Attachment {
+        fn from(value: &[u8]) -> Self {
+            Self::from_content(value.into())
+        }
+    }
+
+    impl From<Vec<u8>> for Attachment {
+        fn from(value: Vec<u8>) -> Self {
+            Self::from_content(value)
+        }
+    }
+
     #[must_use]
     #[derive(Debug, Clone, Deserialize)]
     pub struct Email {
-        /// The type of object.
-        pub object: Option<String>,
         /// The ID of the email.
         pub id: Option<String>,
 
@@ -319,6 +353,14 @@ mod test {
 
     #[tokio::test]
     #[cfg(not(feature = "blocking"))]
+    async fn all() -> Result<()> {
+        // TODO.
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[cfg(not(feature = "blocking"))]
     async fn send() -> Result<()> {
         let from = "Acme <onboarding@resend.dev>".to_owned();
         let to = vec!["delivered@resend.dev".to_owned()];
@@ -327,6 +369,7 @@ mod test {
         let resend = Client::default();
         let email = SendEmailRequest::new(from, to, subject)
             .with_text("Hello World!")
+            .with_attachment("Hello World as file.".as_bytes())
             .with_tag("Welcome");
 
         let _ = resend.emails.send(email).await?;

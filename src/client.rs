@@ -8,9 +8,9 @@ use reqwest::Client as ReqwestClient;
 use reqwest::Url;
 
 use crate::config::Config;
-use crate::services::{ApiKeys, Audiences, Contacts, Domains, Emails};
-
-// TODO: Arc<ClientInner> + impl Deref?
+use crate::services::{
+    ApiKeysService, AudiencesService, ContactsService, DomainsService, EmailsService,
+};
 
 /// A minimal [Resend](https://resend.com) client.
 ///
@@ -27,25 +27,25 @@ use crate::services::{ApiKeys, Audiences, Contacts, Domains, Emails};
 /// let email = SendEmailRequest::new(from, to, sub)
 ///     .with_text("Hello World!");
 ///
+/// # let _ = async {
 /// let resend = Client::default();
-/// # tokio::runtime::Handle::block_on(async {
 /// let resp = resend.emails.send(email).await?;
 /// println!("id: {}", resp.id);
-/// # });
+/// # };
 /// ```
 #[must_use]
 #[derive(Clone)]
 pub struct Client {
     /// `Resend` APIs for `/emails` endpoints.
-    pub emails: Emails,
+    pub emails: EmailsService,
     /// `Resend` APIs for `/api-keys` endpoints.
-    pub api_keys: ApiKeys,
+    pub api_keys: ApiKeysService,
     /// `Resend` APIs for `/audiences` endpoints.
-    pub audiences: Audiences,
+    pub audiences: AudiencesService,
     /// `Resend` APIs for `/audiences/:id/contacts` endpoints.
-    pub contacts: Contacts,
+    pub contacts: ContactsService,
     /// `Resend` APIs for `/domains` endpoints.
-    pub domains: Domains,
+    pub domains: DomainsService,
 }
 
 impl Client {
@@ -88,11 +88,11 @@ impl Client {
         });
 
         Self {
-            api_keys: ApiKeys(inner.clone()),
-            audiences: Audiences(inner.clone()),
-            contacts: Contacts(inner.clone()),
-            domains: Domains(inner.clone()),
-            emails: Emails(inner),
+            api_keys: ApiKeysService(inner.clone()),
+            audiences: AudiencesService(inner.clone()),
+            contacts: ContactsService(inner.clone()),
+            domains: DomainsService(inner.clone()),
+            emails: EmailsService(inner),
         }
     }
 

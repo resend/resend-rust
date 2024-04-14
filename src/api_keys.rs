@@ -3,21 +3,20 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
-use crate::types::ListApiKeysResponse;
-use crate::types::{CreateApiKeyRequest, CreateApiKeyResponse};
+use crate::types::{ApiKeys, CreateApiKeyRequest, CreateApiKeyResponse};
 use crate::{Config, Result};
 
-/// `Resend` APIs for `METHOD /api-keys` endpoints.
+/// `Resend` APIs for `/api-keys` endpoints.
 #[derive(Clone)]
-pub struct ApiKeys(pub(crate) Arc<Config>);
+pub struct ApiKeysService(pub(crate) Arc<Config>);
 
-impl ApiKeys {
+impl ApiKeysService {
     /// Add a new API key to authenticate communications with Resend.
     ///
     /// <https://resend.com/docs/api-reference/api-keys/create-api-key>
     #[maybe_async::maybe_async]
     pub async fn create(&self, api_key: CreateApiKeyRequest) -> Result<CreateApiKeyResponse> {
-        let request = self.0.build(Method::POST, "/api-key");
+        let request = self.0.build(Method::POST, "/api-keys");
         let response = self.0.send(request.json(&api_key)).await?;
         let content = response.json::<CreateApiKeyResponse>().await?;
 
@@ -28,10 +27,10 @@ impl ApiKeys {
     ///
     /// <https://resend.com/docs/api-reference/api-keys/list-api-keys>
     #[maybe_async::maybe_async]
-    pub async fn list(&self) -> Result<ListApiKeysResponse> {
-        let request = self.0.build(Method::GET, "/api-key");
+    pub async fn list(&self) -> Result<ApiKeys> {
+        let request = self.0.build(Method::GET, "/api-keys");
         let response = self.0.send(request).await?;
-        let content = response.json::<ListApiKeysResponse>().await?;
+        let content = response.json::<ApiKeys>().await?;
 
         Ok(content)
     }
@@ -50,7 +49,7 @@ impl ApiKeys {
     }
 }
 
-impl fmt::Debug for ApiKeys {
+impl fmt::Debug for ApiKeysService {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(&self.0, f)
     }
@@ -133,8 +132,9 @@ pub mod types {
 
     #[must_use]
     #[derive(Debug, Clone, Deserialize)]
-    pub struct ListApiKeysResponse {
-        pub data: Vec<ApiKey>,
+    pub struct ApiKeys {
+        #[serde(rename = "data")]
+        pub api_keys: Vec<ApiKey>,
     }
 
     #[must_use]
@@ -146,5 +146,32 @@ pub mod types {
         pub name: String,
         /// The date and time the API key was created.
         pub created_at: String,
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::types::CreateApiKeyRequest;
+    use crate::{Client, Result};
+
+    #[tokio::test]
+    #[cfg(not(feature = "blocking"))]
+    async fn all() -> Result<()> {
+        let resend = Client::default();
+        let api_key = "test_";
+
+        // Create.
+        let request = CreateApiKeyRequest::new(api_key).with_full_access();
+        let response = resend.api_keys.create(request).await?;
+        let id = response.id.as_str();
+
+        // List.
+        let list = resend.api_keys.list().await?;
+        assert!(list.api_keys.len() > 2);
+
+        // Delete.
+        resend.api_keys.delete(id).await?;
+
+        Ok(())
     }
 }
