@@ -5,7 +5,7 @@ use reqwest::Method;
 
 use crate::types::{CreateDomainRequest, CreateDomainResponse};
 use crate::types::{DeleteDomainResponse, Domain, Domains, VerifyDomain};
-use crate::types::{UpdateDomainRequest, UpdateDomainResponse};
+use crate::types::{DomainChanges, UpdateDomainResponse};
 use crate::{Config, Result};
 
 /// `Resend` APIs for `/domains` endpoints.
@@ -60,7 +60,7 @@ impl DomainsService {
     pub async fn update(
         &self,
         domain_id: &str,
-        update: UpdateDomainRequest,
+        update: DomainChanges,
     ) -> Result<UpdateDomainResponse> {
         let path = format!("/domains/{domain_id}");
 
@@ -200,7 +200,7 @@ pub mod types {
 
     #[must_use]
     #[derive(Debug, Default, Copy, Clone, Serialize)]
-    pub struct UpdateDomainRequest {
+    pub struct DomainChanges {
         /// Enable or disable click tracking for the domain.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub click_tracking: Option<bool>,
@@ -209,8 +209,8 @@ pub mod types {
         pub open_tracking: Option<bool>,
     }
 
-    impl UpdateDomainRequest {
-        /// Creates a new [`UpdateDomainRequest`].
+    impl DomainChanges {
+        /// Creates a new [`DomainChanges`].
         pub fn new() -> Self {
             Self::default()
         }

@@ -56,12 +56,12 @@ pub mod types {
     pub use super::audiences::types::{Audience, Audiences, CreateAudienceResponse};
     pub use super::config::types::{ErrorKind, ErrorResponse};
     pub use super::contacts::types::{
-        Contact, Contacts, CreateContactRequest, CreateContactResponse, UpdateContactRequest,
+        Contact, ContactChanges, Contacts, CreateContactResponse, NewContact,
         UpdateContactResponse,
     };
     pub use super::domains::types::{
-        CreateDomainRequest, CreateDomainResponse, DeleteDomainResponse, Domain, DomainRecord,
-        Domains, Region, UpdateDomainRequest, UpdateDomainResponse, VerifyDomain,
+        CreateDomainRequest, CreateDomainResponse, DeleteDomainResponse, Domain, DomainChanges,
+        DomainRecord, Domains, Region, UpdateDomainResponse, VerifyDomain,
     };
     pub use super::emails::types::{
         Attachment, ContentOrPath, Email, SendEmailBatchResponse, SendEmailRequest,
