@@ -1,5 +1,8 @@
 # add the below section to `.cargo/config.toml`
 
+[alias]
+t = "test -- --test-threads=1"
+
 [target.'cfg(all())']
 rustflags = [
     # BEGIN - Embark standard lints v6 for Rust 1.55+
