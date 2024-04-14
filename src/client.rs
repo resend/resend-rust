@@ -19,7 +19,10 @@ use crate::services::{
 /// ```rust,no_run
 /// use resend_rs::{Client, Result};
 /// use resend_rs::types::SendEmailRequest;
-///
+/// # use std::error::Error;
+/// 
+/// # #[tokio::main]
+/// # async fn main() -> Result<(), Box<dyn Error>> {
 /// let from = "Acme <onboarding@resend.dev>".to_owned();
 /// let to = vec!["delivered@resend.dev".to_owned()];
 /// let sub = "Hello World".to_owned();
@@ -27,11 +30,11 @@ use crate::services::{
 /// let email = SendEmailRequest::new(from, to, sub)
 ///     .with_text("Hello World!");
 ///
-/// # let _ = async {
 /// let resend = Client::default();
 /// let resp = resend.emails.send(email).await?;
 /// println!("id: {}", resp.id);
-/// # };
+/// # Ok(())
+/// # }
 /// ```
 #[must_use]
 #[derive(Clone)]
