@@ -3,8 +3,8 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
-use crate::types::{AudienceId, Contact, ContactId, CreateContact, UpdateContact};
 use crate::{Config, Result};
+use crate::types::{AudienceId, Contact, ContactId, CreateContact, UpdateContact};
 
 /// `Resend` APIs for `/audiences/:id/contacts` endpoints.
 #[derive(Clone)]
@@ -65,8 +65,8 @@ impl ContactsService {
     /// <https://resend.com/docs/api-reference/contacts/delete-contact>
     #[maybe_async::maybe_async]
     pub async fn delete<T>(&self, audience: &AudienceId, email_or_id: &T) -> Result<()>
-    where
-        T: AsRef<str>,
+        where
+            T: AsRef<str>,
     {
         let email_or_id = email_or_id.as_ref();
         let path = format!("/audiences/{audience}/contacts/{email_or_id}");
@@ -107,6 +107,13 @@ pub mod types {
     /// Unique [`Contact`] identifier.
     #[derive(Debug, Clone, Deserialize)]
     pub struct ContactId(EcoString);
+
+    impl ContactId {
+        /// Creates a new [`ContactId`].
+        pub fn new(id: &str) -> Self {
+            Self(EcoString::from(id))
+        }
+    }
 
     impl AsRef<str> for ContactId {
         #[inline]
@@ -263,8 +270,8 @@ pub mod types {
 
 #[cfg(test)]
 mod test {
-    use crate::types::{CreateContact, UpdateContact};
     use crate::{Client, Result};
+    use crate::types::{CreateContact, UpdateContact};
 
     #[tokio::test]
     #[cfg(not(feature = "blocking"))]

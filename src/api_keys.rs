@@ -168,8 +168,8 @@ mod test {
         let id = response.id.as_str();
 
         // List.
-        let list = resend.api_keys.list().await?;
-        assert!(list.api_keys.len() > 2);
+        let api_keys = resend.api_keys.list().await?;
+        assert!(api_keys.len() > 2);
 
         // Delete.
         resend.api_keys.delete(id).await?;
