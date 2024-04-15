@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
-use crate::types::{ApiKeys, CreateApiKey, NewApiKey};
+use crate::types::{ApiKey, CreateApiKey, CreateApiKeyResponse};
 use crate::{Config, Result};
 
 /// `Resend` APIs for `/api-keys` endpoints.
@@ -15,10 +15,10 @@ impl ApiKeysService {
     ///
     /// <https://resend.com/docs/api-reference/api-keys/create-api-key>
     #[maybe_async::maybe_async]
-    pub async fn create(&self, api_key: CreateApiKey) -> Result<NewApiKey> {
+    pub async fn create(&self, api_key: CreateApiKey) -> Result<CreateApiKeyResponse> {
         let request = self.0.build(Method::POST, "/api-keys");
         let response = self.0.send(request.json(&api_key)).await?;
-        let content = response.json::<NewApiKey>().await?;
+        let content = response.json::<CreateApiKeyResponse>().await?;
 
         Ok(content)
     }
@@ -27,12 +27,12 @@ impl ApiKeysService {
     ///
     /// <https://resend.com/docs/api-reference/api-keys/list-api-keys>
     #[maybe_async::maybe_async]
-    pub async fn list(&self) -> Result<ApiKeys> {
+    pub async fn list(&self) -> Result<Vec<ApiKey>> {
         let request = self.0.build(Method::GET, "/api-keys");
         let response = self.0.send(request).await?;
-        let content = response.json::<ApiKeys>().await?;
+        let content = response.json::<types::ListApiKeyResponse>().await?;
 
-        Ok(content)
+        Ok(content.data)
     }
 
     /// Remove an existing API key.
@@ -57,6 +57,9 @@ impl fmt::Debug for ApiKeysService {
 
 pub mod types {
     use serde::{Deserialize, Serialize};
+
+    // TODO.
+    // pub type Token = String;
 
     #[must_use]
     #[derive(Debug, Clone, Serialize)]
@@ -123,7 +126,7 @@ pub mod types {
 
     #[must_use]
     #[derive(Debug, Clone, Deserialize)]
-    pub struct NewApiKey {
+    pub struct CreateApiKeyResponse {
         /// The ID of the API key.
         pub id: String,
         /// The token of the API key.
@@ -132,9 +135,8 @@ pub mod types {
 
     #[must_use]
     #[derive(Debug, Clone, Deserialize)]
-    pub struct ApiKeys {
-        #[serde(rename = "data")]
-        pub api_keys: Vec<ApiKey>,
+    pub struct ListApiKeyResponse {
+        pub data: Vec<ApiKey>,
     }
 
     #[must_use]

@@ -3,9 +3,8 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
-use crate::types::{CreateDomainRequest, CreateDomainResponse};
-use crate::types::{DeleteDomainResponse, Domain, Domains, VerifyDomain};
-use crate::types::{DomainChanges, UpdateDomainResponse};
+use crate::types::{CreateDomain, CreateDomainResponse};
+use crate::types::{Domain, DomainId, UpdateDomain};
 use crate::{Config, Result};
 
 /// `Resend` APIs for `/domains` endpoints.
@@ -13,11 +12,11 @@ use crate::{Config, Result};
 pub struct DomainsService(pub(crate) Arc<Config>);
 
 impl DomainsService {
-    /// Create a domain through the Resend Email API.
+    /// Creates a domain through the Resend Email API.
     ///
     /// <https://resend.com/docs/api-reference/domains/create-domain>
     #[maybe_async::maybe_async]
-    pub async fn add(&self, domain: CreateDomainRequest) -> Result<CreateDomainResponse> {
+    pub async fn add(&self, domain: CreateDomain) -> Result<CreateDomainResponse> {
         let request = self.0.build(Method::POST, "/domains");
         let response = self.0.send(request.json(&domain)).await?;
         let content = response.json::<CreateDomainResponse>().await?;
@@ -25,11 +24,11 @@ impl DomainsService {
         Ok(content)
     }
 
-    /// Retrieve a single domain for the authenticated user.
+    /// Retrieves a single domain for the authenticated user.
     ///
     /// <https://resend.com/docs/api-reference/domains/get-domain>
     #[maybe_async::maybe_async]
-    pub async fn retrieve(&self, domain_id: &str) -> Result<Domain> {
+    pub async fn get(&self, domain_id: &DomainId) -> Result<Domain> {
         let path = format!("/domains/{domain_id}");
 
         let request = self.0.build(Method::GET, &path);
@@ -39,64 +38,60 @@ impl DomainsService {
         Ok(content)
     }
 
-    /// Verify an existing domain.
+    /// Verifies an existing domain.
     ///
     /// <https://resend.com/docs/api-reference/domains/verify-domain>
     #[maybe_async::maybe_async]
-    pub async fn verify(&self, domain_id: &str) -> Result<VerifyDomain> {
+    pub async fn verify(&self, domain_id: &DomainId) -> Result<()> {
         let path = format!("/domains/{domain_id}/verify");
 
         let request = self.0.build(Method::POST, &path);
         let response = self.0.send(request).await?;
-        let content = response.json::<VerifyDomain>().await?;
+        let _content = response.json::<types::VerifyDomainResponse>().await?;
 
-        Ok(content)
+        Ok(())
     }
 
-    /// Update an existing domain.
+    /// Updates an existing domain.
     ///
     /// <https://resend.com/docs/api-reference/domains/update-domain>
     #[maybe_async::maybe_async]
-    pub async fn update(
-        &self,
-        domain_id: &str,
-        update: DomainChanges,
-    ) -> Result<UpdateDomainResponse> {
+    pub async fn update(&self, domain_id: &DomainId, update: UpdateDomain) -> Result<()> {
         let path = format!("/domains/{domain_id}");
 
         let request = self.0.build(Method::PATCH, &path);
         let response = self.0.send(request.json(&update)).await?;
-        let content = response.json::<UpdateDomainResponse>().await?;
+        let _content = response.json::<types::UpdateDomainResponse>().await?;
 
-        Ok(content)
+        Ok(())
     }
 
-    /// Retrieve a list of domains for the authenticated user.
+    /// Retrieves a list of domains for the authenticated user.
     ///
     /// <https://resend.com/docs/api-reference/domains/list-domains>
     #[maybe_async::maybe_async]
-    pub async fn list(&self) -> Result<Domains> {
+    pub async fn list(&self) -> Result<Vec<Domain>> {
         let request = self.0.build(Method::GET, "/domains");
         let response = self.0.send(request).await?;
-        let content = response.json::<Domains>().await?;
+        let content = response.json::<types::ListDomainResponse>().await?;
 
-        Ok(content)
+        Ok(content.data)
     }
 
-    /// Remove an existing domain.
+    /// Removes an existing domain.
     ///
     /// Returns whether the domain was deleted successfully.
     ///
     /// <https://resend.com/docs/api-reference/domains/delete-domain>
     #[maybe_async::maybe_async]
-    pub async fn delete(&self, domain_id: &str) -> Result<DeleteDomainResponse> {
+    pub async fn delete(&self, domain_id: &DomainId) -> Result<bool> {
         let path = format!("/domains/{domain_id}");
 
         let request = self.0.build(Method::DELETE, &path);
         let response = self.0.send(request).await?;
-        let content = response.json::<DeleteDomainResponse>().await?;
+        let content = response.json::<types::DeleteDomainResponse>().await?;
 
-        Ok(content)
+        Ok(content.deleted)
     }
 }
 
@@ -107,11 +102,31 @@ impl fmt::Debug for DomainsService {
 }
 
 pub mod types {
+    use std::fmt;
+
+    use ecow::EcoString;
     use serde::{Deserialize, Serialize};
+
+    /// Unique [`Domain`] identifier.
+    #[derive(Debug, Clone, Deserialize)]
+    pub struct DomainId(EcoString);
+
+    impl AsRef<str> for DomainId {
+        #[inline]
+        fn as_ref(&self) -> &str {
+            self.0.as_str()
+        }
+    }
+
+    impl fmt::Display for DomainId {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            fmt::Display::fmt(self.as_ref(), f)
+        }
+    }
 
     #[must_use]
     #[derive(Debug, Clone, Serialize)]
-    pub struct CreateDomainRequest {
+    pub struct CreateDomain {
         /// The name of the domain you want to create.
         #[serde(rename = "name")]
         pub name: String,
@@ -140,7 +155,7 @@ pub mod types {
     #[derive(Debug, Clone, Deserialize)]
     pub struct CreateDomainResponse {
         /// The ID of the domain.
-        pub id: String,
+        pub id: DomainId,
         /// The name of the domain.
         pub name: String,
         /// The date and time the domain was created.
@@ -193,14 +208,14 @@ pub mod types {
     }
 
     #[derive(Debug, Clone, Deserialize)]
-    pub struct VerifyDomain {
+    pub struct VerifyDomainResponse {
         /// The ID of the domain.
         pub id: String,
     }
 
     #[must_use]
     #[derive(Debug, Default, Copy, Clone, Serialize)]
-    pub struct DomainChanges {
+    pub struct UpdateDomain {
         /// Enable or disable click tracking for the domain.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub click_tracking: Option<bool>,
@@ -209,8 +224,8 @@ pub mod types {
         pub open_tracking: Option<bool>,
     }
 
-    impl DomainChanges {
-        /// Creates a new [`DomainChanges`].
+    impl UpdateDomain {
+        /// Creates a new [`UpdateDomain`].
         pub fn new() -> Self {
             Self::default()
         }
@@ -238,9 +253,8 @@ pub mod types {
 
     #[must_use]
     #[derive(Debug, Clone, Deserialize)]
-    pub struct Domains {
-        #[serde(rename = "data")]
-        pub domains: Vec<Domain>,
+    pub struct ListDomainResponse {
+        pub data: Vec<Domain>,
     }
 
     #[derive(Debug, Clone, Deserialize)]

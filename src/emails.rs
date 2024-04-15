@@ -3,8 +3,7 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
-use crate::types::{Email, SendEmailBatchResponse};
-use crate::types::{SendEmailRequest, SendEmailResponse};
+use crate::types::{Email, EmailId, SendEmail};
 use crate::{Config, Result};
 
 /// `Resend` APIs for `/emails` endpoints.
@@ -12,16 +11,16 @@ use crate::{Config, Result};
 pub struct EmailsService(pub(crate) Arc<Config>);
 
 impl EmailsService {
-    /// Start sending emails through the Resend Email API.
+    /// Start sending emails through the `Resend` Email API.
     ///
     /// <https://resend.com/docs/api-reference/emails/send-email>
     #[maybe_async::maybe_async]
-    pub async fn send(&self, email: SendEmailRequest) -> Result<SendEmailResponse> {
+    pub async fn send(&self, email: SendEmail) -> Result<EmailId> {
         let request = self.0.build(Method::POST, "/emails");
         let response = self.0.send(request.json(&email)).await?;
-        let content = response.json::<SendEmailResponse>().await?;
+        let content = response.json::<types::SendEmailResponse>().await?;
 
-        Ok(content)
+        Ok(content.id)
     }
 
     /// Trigger up to 100 batch emails at once.
@@ -31,24 +30,24 @@ impl EmailsService {
     ///
     /// <https://resend.com/docs/api-reference/emails/send-batch-emails>
     #[maybe_async::maybe_async]
-    pub async fn send_batch<T>(&self, emails: T) -> Result<SendEmailBatchResponse>
+    pub async fn send_batch<T>(&self, emails: T) -> Result<Vec<EmailId>>
     where
-        T: IntoIterator<Item = SendEmailRequest> + Send,
+        T: IntoIterator<Item = SendEmail> + Send,
     {
         let emails: Vec<_> = emails.into_iter().collect();
 
         let request = self.0.build(Method::POST, "/emails/batch");
         let response = self.0.send(request.json(&emails)).await?;
-        let content = response.json::<SendEmailBatchResponse>().await?;
+        let content = response.json::<types::SendEmailBatchResponse>().await?;
 
-        Ok(content)
+        Ok(content.data.into_iter().map(|x| x.id).collect())
     }
 
     /// Retrieve a single email.
     ///
     /// <https://resend.com/docs/api-reference/emails/retrieve-email>
     #[maybe_async::maybe_async]
-    pub async fn retrieve(&self, id: &str) -> Result<Email> {
+    pub async fn retrieve(&self, id: &EmailId) -> Result<Email> {
         let path = format!("/emails/{id}");
 
         let request = self.0.build(Method::GET, &path);
@@ -66,12 +65,39 @@ impl fmt::Debug for EmailsService {
 }
 
 pub mod types {
+    use std::fmt;
+
+    use ecow::EcoString;
     use serde::{Deserialize, Serialize};
     use serde_json::{Map, Value};
 
+    /// Unique [`SendEmail`] and [`Email`] identifier.
+    #[derive(Debug, Clone, Deserialize)]
+    pub struct EmailId(EcoString);
+
+    impl EmailId {
+        /// Creates a new [`EmailId`].
+        pub fn new(id: &str) -> Self {
+            Self(EcoString::from(id))
+        }
+    }
+
+    impl AsRef<str> for EmailId {
+        #[inline]
+        fn as_ref(&self) -> &str {
+            self.0.as_str()
+        }
+    }
+
+    impl fmt::Display for EmailId {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            fmt::Display::fmt(self.as_ref(), f)
+        }
+    }
+
     #[must_use]
     #[derive(Debug, Clone, Serialize)]
-    pub struct SendEmailRequest {
+    pub struct SendEmail {
         /// Sender email address.
         /// To include a friendly name, use the format "Your Name <sender@domain.com>".
         pub from: String,
@@ -107,16 +133,13 @@ pub mod types {
         pub tags: Option<Vec<Tag>>,
     }
 
-    impl SendEmailRequest {
-        /// Creates a new [`SendEmailRequest`].
+    impl SendEmail {
+        /// Creates a new [`SendEmail`].
         /// TODO: Think of something better.
-        #[inline]
-        pub fn new<F, T, E, S>(from: F, to: T, subject: S) -> Self
+        pub fn new<T, A>(from: impl Into<String>, to: T, subject: impl Into<String>) -> Self
         where
-            F: Into<String>,
-            T: IntoIterator<Item = E>,
-            E: Into<String>,
-            S: Into<String>,
+            T: IntoIterator<Item = A>,
+            A: Into<String>,
         {
             Self {
                 from: from.into(),
@@ -186,7 +209,6 @@ pub mod types {
         /// Adds another attachment.
         ///
         /// Limited to max 40mb per email.
-        #[inline]
         pub fn with_attachment(mut self, file: impl Into<Attachment>) -> Self {
             let attachments = self.attachments.get_or_insert_with(Vec::new);
             attachments.push(file.into());
@@ -194,7 +216,6 @@ pub mod types {
         }
 
         /// Adds additional email tag.
-        #[inline]
         pub fn with_tag(mut self, tag: impl Into<Tag>) -> Self {
             let tags = self.tags.get_or_insert_with(Vec::new);
             tags.push(tag.into());
@@ -205,7 +226,7 @@ pub mod types {
     #[derive(Debug, Clone, Deserialize)]
     pub struct SendEmailResponse {
         /// The ID of the sent email.
-        pub id: String,
+        pub id: EmailId,
     }
 
     #[derive(Debug, Clone, Deserialize)]
@@ -322,11 +343,12 @@ pub mod types {
         }
     }
 
+    /// Received email.
     #[must_use]
     #[derive(Debug, Clone, Deserialize)]
     pub struct Email {
         /// The ID of the email.
-        pub id: Option<String>,
+        pub id: EmailId,
 
         /// Sender email address.
         pub from: Option<String>,
@@ -355,26 +377,18 @@ pub mod types {
 
 #[cfg(test)]
 mod test {
-    use crate::types::SendEmailRequest;
+    use crate::types::SendEmail;
     use crate::{Client, Result};
 
     #[tokio::test]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> Result<()> {
-        // TODO.
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    #[cfg(not(feature = "blocking"))]
-    async fn send() -> Result<()> {
-        let from = "Acme <onboarding@resend.dev>".to_owned();
-        let to = vec!["delivered@resend.dev".to_owned()];
-        let subject = "Hello World".to_owned();
+        let from = "Acme <onboarding@resend.dev>";
+        let to = ["delivered@resend.dev"];
+        let subject = "Hello World!";
 
         let resend = Client::default();
-        let email = SendEmailRequest::new(from, to, subject)
+        let email = SendEmail::new(from, to, subject)
             .with_text("Hello World!")
             .with_attachment("Hello World as file.".as_bytes())
             .with_tag("Welcome");
@@ -385,13 +399,13 @@ mod test {
 
     #[test]
     #[cfg(feature = "blocking")]
-    fn send_blocking() -> Result<()> {
-        let from = "Acme <onboarding@resend.dev>".to_owned();
-        let to = vec!["delivered@resend.dev".to_owned()];
-        let subject = "Hello World".to_owned();
+    fn all_blocking() -> Result<()> {
+        let from = "Acme <onboarding@resend.dev>";
+        let to = ["delivered@resend.dev"];
+        let subject = "Hello World!";
 
         let resend = Client::default();
-        let email = SendEmailRequest::new(from, to, subject)
+        let email = SendEmail::new(from, to, subject)
             .with_text("Hello World!")
             .with_tag("Welcome");
 

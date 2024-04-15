@@ -4,22 +4,22 @@
 //!
 //! ```rust,no_run
 //! use resend_rs::{Client, Result};
-//! use resend_rs::types::SendEmailRequest;
+//! use resend_rs::types::SendEmail;
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<()> {
 //!     let resend = Client::default();
 //!
-//!     let from = "Acme <onboarding@resend.dev>".to_owned();
-//!     let to = vec!["delivered@resend.dev".to_owned()];
-//!     let subject = "Hello World".to_owned();
+//!     let from = "Acme <onboarding@resend.dev>";
+//!     let to = ["delivered@resend.dev"];
+//!     let subject = "Hello World!";
 //!
-//!     let email = SendEmailRequest::new(from, to, subject)
+//!     let email = SendEmail::new(from, to, subject)
 //!         .with_text("Hello World!")
 //!         .with_tag("Welcome");
 //!
-//!     let resp = resend.emails.send(email).await?;
-//!     println!("id: {}", resp.id);
+//!     let id = resend.emails.send(email).await?;
+//!     println!("id: {id}");
 //!     Ok(())
 //! }
 //! ```
@@ -54,18 +54,14 @@ pub mod services {
 pub mod types {
     //! Request and response types.
 
-    pub use super::api_keys::types::{ApiKey, ApiKeys, CreateApiKey, NewApiKey, Permission};
-    pub use super::audiences::types::{Audience, Audiences, CreateAudienceResponse};
+    pub use super::api_keys::types::{ApiKey, CreateApiKey, CreateApiKeyResponse, Permission};
+    pub use super::audiences::types::{Audience, AudienceId};
     pub use super::config::types::{ErrorKind, ErrorResponse};
-    pub use super::contacts::types::{Contact, Contacts, CreateContact, UpdateContact};
+    pub use super::contacts::types::{Contact, ContactId, CreateContact, UpdateContact};
     pub use super::domains::types::{
-        CreateDomainRequest, CreateDomainResponse, DeleteDomainResponse, Domain, DomainChanges,
-        DomainRecord, Domains, Region, UpdateDomainResponse, VerifyDomain,
+        CreateDomain, CreateDomainResponse, Domain, DomainId, DomainRecord, Region, UpdateDomain,
     };
-    pub use super::emails::types::{
-        Attachment, ContentOrPath, Email, SendEmailBatchResponse, SendEmailRequest,
-        SendEmailResponse, Tag,
-    };
+    pub use super::emails::types::{Attachment, ContentOrPath, Email, EmailId, SendEmail, Tag};
 }
 
 /// Error type for operations of a [`Client`].

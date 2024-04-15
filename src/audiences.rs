@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
-use crate::types::{Audience, Audiences, CreateAudienceResponse};
+use crate::types::{Audience, AudienceId};
 use crate::{Config, Result};
 
 /// `Resend` APIs for `/audiences` endpoints.
@@ -11,28 +11,29 @@ use crate::{Config, Result};
 pub struct AudiencesService(pub(crate) Arc<Config>);
 
 impl AudiencesService {
-    /// Create a list of contacts.
+    /// Creates a new list of contacts.
     ///
     /// Returns an `id` of a created audience.
     ///
     /// <https://resend.com/docs/api-reference/audiences/create-audience>
     #[maybe_async::maybe_async]
-    pub async fn create(&self, audience: &str) -> Result<CreateAudienceResponse> {
-        let audience = types::CreateAudienceRequest::new(audience);
+    pub async fn create(&self, name: &str) -> Result<AudienceId> {
+        let audience = types::CreateAudienceRequest {
+            name: name.to_owned(),
+        };
 
-        // TODO: Returns only id?
         let request = self.0.build(Method::POST, "/audiences");
         let response = self.0.send(request.json(&audience)).await?;
-        let content = response.json::<CreateAudienceResponse>().await?;
+        let content = response.json::<types::CreateAudienceResponse>().await?;
 
-        Ok(content)
+        Ok(content.id)
     }
 
-    /// Retrieve a single audience.
+    /// Retrieves a single audience.
     ///
     /// <https://resend.com/docs/api-reference/audiences/get-audience>
     #[maybe_async::maybe_async]
-    pub async fn get(&self, id: &str) -> Result<Audience> {
+    pub async fn get(&self, id: &AudienceId) -> Result<Audience> {
         let path = format!("/audiences/{id}");
 
         let request = self.0.build(Method::GET, &path);
@@ -42,13 +43,13 @@ impl AudiencesService {
         Ok(content)
     }
 
-    /// Remove an existing audience.
+    /// Removes an existing audience.
     ///
     /// Returns `true` if the audience is deleted.
     ///
     /// <https://resend.com/docs/api-reference/audiences/delete-audience>
     #[maybe_async::maybe_async]
-    pub async fn delete(&self, id: &str) -> Result<bool> {
+    pub async fn delete(&self, id: &AudienceId) -> Result<bool> {
         let path = format!("/audiences/{id}");
 
         let request = self.0.build(Method::DELETE, &path);
@@ -58,16 +59,16 @@ impl AudiencesService {
         Ok(content.deleted)
     }
 
-    /// Retrieve a list of audiences.
+    /// Retrieves a list of audiences.
     ///
     /// <https://resend.com/docs/api-reference/audiences/list-audiences>
     #[maybe_async::maybe_async]
-    pub async fn list(&self) -> Result<Audiences> {
+    pub async fn list(&self) -> Result<Vec<Audience>> {
         let request = self.0.build(Method::GET, "/audiences");
         let response = self.0.send(request).await?;
-        let content = response.json::<Audiences>().await?;
+        let content = response.json::<types::ListAudienceResponse>().await?;
 
-        Ok(content)
+        Ok(content.data)
     }
 }
 
@@ -78,7 +79,27 @@ impl fmt::Debug for AudiencesService {
 }
 
 pub mod types {
+    use std::fmt;
+
+    use ecow::EcoString;
     use serde::{Deserialize, Serialize};
+
+    /// Unique [`Audience`] identifier.
+    #[derive(Debug, Clone, Deserialize)]
+    pub struct AudienceId(EcoString);
+
+    impl AsRef<str> for AudienceId {
+        #[inline]
+        fn as_ref(&self) -> &str {
+            self.0.as_str()
+        }
+    }
+
+    impl fmt::Display for AudienceId {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            fmt::Display::fmt(self.as_ref(), f)
+        }
+    }
 
     #[must_use]
     #[derive(Debug, Clone, Serialize)]
@@ -87,23 +108,15 @@ pub mod types {
         pub name: String,
     }
 
-    impl CreateAudienceRequest {
-        /// Creates a new [`CreateAudienceRequest`].
-        pub fn new(name: &str) -> Self {
-            Self {
-                name: name.to_owned(),
-            }
-        }
-    }
-
     #[derive(Debug, Clone, Deserialize)]
     pub struct CreateAudienceResponse {
         /// The ID of the audience.
-        pub id: String,
+        pub id: AudienceId,
         /// The name of the audience.
         pub name: String,
     }
 
+    /// TODO.
     #[must_use]
     #[derive(Debug, Clone, Deserialize)]
     pub struct Audience {
@@ -127,10 +140,9 @@ pub mod types {
 
     #[must_use]
     #[derive(Debug, Clone, Deserialize)]
-    pub struct Audiences {
+    pub struct ListAudienceResponse {
         /// Array containing audience information.
-        #[serde(rename = "data")]
-        pub audiences: Vec<Audience>,
+        pub data: Vec<Audience>,
     }
 }
 
@@ -142,22 +154,21 @@ mod test {
     #[cfg(not(feature = "blocking"))]
     async fn all() -> Result<()> {
         let resend = Client::default();
-        let audience = "test_";
 
         // Create.
-        let status = resend.audiences.create(audience).await?;
-        let id = status.id.as_str();
+        let audience = "test_audiences";
+        let id = resend.audiences.create(audience).await?;
 
         // Get.
-        let data = resend.audiences.get(id).await?;
+        let data = resend.audiences.get(&id).await?;
         assert_eq!(data.name.as_str(), audience);
 
         // List.
-        let list = resend.audiences.list().await?;
-        assert!(list.audiences.len() > 1);
+        let audiences = resend.audiences.list().await?;
+        assert!(audiences.len() > 1);
 
         // Delete.
-        let deleted = resend.audiences.delete(id).await?;
+        let deleted = resend.audiences.delete(&id).await?;
         assert!(deleted);
 
         Ok(())
