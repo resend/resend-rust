@@ -28,6 +28,7 @@ If anyone else is looking into this, however, I would not mind expanding it.
 - `blocking` to enable the blocking client.
 - `native-tls` to use system-native TLS. **Enabled by default**.
 - `rustls-tls` to use TLS backed by rustls .
+- `time` to enable `ISO8601` timestamp parsing.
 
 #### Variables
 

@@ -22,14 +22,19 @@ default = ["native-tls"]
 blocking = ["reqwest/blocking", "maybe-async/is_sync"]
 native-tls = ["reqwest/native-tls"]
 rustls-tls = ["reqwest/rustls-tls"]
+time = ["dep:time"]
 
 [dependencies]
 reqwest = { version = "0.12.3", default-features = false, features = ["json"] }
 serde = { version = "1.0.197", features = ["derive"] }
-serde_json = { version = "1.0.115" }
+time = { version = "0.3.36", optional = true, features = ["serde", "parsing"] }
+ecow = { version = "0.2.2", features = ["serde"] }
+
 thiserror = { version = "1.0.58" }
 maybe-async = { version = "0.2.10" }
-ecow = { version = "0.2.2", features = ["serde"] }
+
+# TODO: Rate & concurrency limit?
+# tower = { version = "0.4.13", features = ["limit"] }
 
 [dev-dependencies]
 tokio = { version = "1.37.0", features = ["macros", "test-util", "rt-multi-thread"] }

@@ -88,6 +88,13 @@ pub mod types {
     #[derive(Debug, Clone, Deserialize)]
     pub struct AudienceId(EcoString);
 
+    impl AudienceId {
+        /// Creates a new [`AudienceId`].
+        pub fn new(id: &str) -> Self {
+            Self(EcoString::from(id))
+        }
+    }
+
     impl AsRef<str> for AudienceId {
         #[inline]
         fn as_ref(&self) -> &str {
@@ -116,24 +123,29 @@ pub mod types {
         pub name: String,
     }
 
-    /// TODO.
+    /// Name and ID of an existing contact list.
     #[must_use]
     #[derive(Debug, Clone, Deserialize)]
     pub struct Audience {
         /// The ID of the audience.
-        pub id: String,
+        pub id: AudienceId,
         // /// The object of the audience.
         // pub object: String,
         /// The name of the audience.
         pub name: String,
+
         /// The date that the object was created.
+        #[cfg(not(feature = "time"))]
         pub created_at: String,
+        #[cfg(feature = "time")]
+        #[serde(with = "time::serde::iso8601")]
+        pub created_at: time::OffsetDateTime,
     }
 
     #[derive(Debug, Clone, Deserialize)]
     pub struct RemoveAudienceResponse {
         /// The ID of the audience.
-        pub id: String,
+        pub id: AudienceId,
         /// The deleted attribute indicates that the corresponding audience has been deleted.
         pub deleted: bool,
     }
@@ -154,9 +166,9 @@ mod test {
     #[cfg(not(feature = "blocking"))]
     async fn all() -> Result<()> {
         let resend = Client::default();
+        let audience = "test_audiences";
 
         // Create.
-        let audience = "test_audiences";
         let id = resend.audiences.create(audience).await?;
 
         // Get.
@@ -166,6 +178,7 @@ mod test {
         // List.
         let audiences = resend.audiences.list().await?;
         assert!(audiences.len() > 1);
+        println!("{:?}", &audiences);
 
         // Delete.
         let deleted = resend.audiences.delete(&id).await?;

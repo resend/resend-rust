@@ -65,13 +65,13 @@ impl fmt::Debug for EmailsService {
 }
 
 pub mod types {
+    use std::collections::HashMap;
     use std::fmt;
 
     use ecow::EcoString;
     use serde::{Deserialize, Serialize};
-    use serde_json::{Map, Value};
 
-    /// Unique [`SendEmail`] and [`Email`] identifier.
+    /// Unique [`Email`] identifier.
     #[derive(Debug, Clone, Deserialize)]
     pub struct EmailId(EcoString);
 
@@ -95,6 +95,7 @@ pub mod types {
         }
     }
 
+    /// All requisite components and associated data to send an email.
     #[must_use]
     #[derive(Debug, Clone, Serialize)]
     pub struct SendEmail {
@@ -124,7 +125,7 @@ pub mod types {
         pub reply_to: Option<Vec<String>>,
         /// Custom headers to add to the email.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub headers: Option<Map<String, Value>>,
+        pub headers: Option<HashMap<String, String>>,
         /// Filename and content of attachments (max 40mb per email).
         #[serde(skip_serializing_if = "Option::is_none")]
         pub attachments: Option<Vec<Attachment>>,
@@ -200,8 +201,8 @@ pub mod types {
         /// Adds or overwrites an email header.
         #[inline]
         pub fn with_header(mut self, name: &str, value: &str) -> Self {
-            let headers = self.headers.get_or_insert_with(Map::new);
-            let _ = headers.insert(name.to_owned(), Value::String(value.to_owned()));
+            let headers = self.headers.get_or_insert_with(HashMap::new);
+            let _ = headers.insert(name.to_owned(), value.to_owned());
 
             self
         }
@@ -235,7 +236,7 @@ pub mod types {
         pub data: Vec<SendEmailResponse>,
     }
 
-    /// Name and value of the attached email tag.
+    /// Name and value of the attached [`Email`] tag.
     #[must_use]
     #[derive(Debug, Clone, Serialize)]
     pub struct Tag {
@@ -278,7 +279,7 @@ pub mod types {
         }
     }
 
-    /// Filename and content of attachment.
+    /// Filename and content of the [`SendEmail`] attachment.
     ///
     /// Limited to max 40mb per email.
     #[must_use]
@@ -292,7 +293,7 @@ pub mod types {
         pub filename: Option<String>,
     }
 
-    /// Content or path of an attached file.
+    /// Content or path of the [`Attachment`].
     #[must_use]
     #[derive(Debug, Clone, Serialize)]
     pub enum ContentOrPath {
@@ -356,8 +357,13 @@ pub mod types {
         pub to: Option<Vec<String>>,
         /// The subject line of the email.
         pub subject: Option<String>,
+
         /// The date and time the email was created.
+        #[cfg(not(feature = "time"))]
         pub created_at: Option<String>,
+        #[cfg(feature = "time")]
+        #[serde(with = "time::serde::iso8601")]
+        pub created_at: Option<time::OffsetDateTime>,
 
         /// The HTML body of the email.
         pub html: Option<String>,

@@ -3,8 +3,8 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
+use crate::types::{AudienceId, Contact, ContactChanges, ContactData, ContactId};
 use crate::{Config, Result};
-use crate::types::{AudienceId, Contact, ContactId, CreateContact, UpdateContact};
 
 /// `Resend` APIs for `/audiences/:id/contacts` endpoints.
 #[derive(Clone)]
@@ -17,7 +17,7 @@ impl ContactsService {
     ///
     /// <https://resend.com/docs/api-reference/contacts/create-contact>
     #[maybe_async::maybe_async]
-    pub async fn create(&self, audience: &AudienceId, contact: CreateContact) -> Result<ContactId> {
+    pub async fn create(&self, audience: &AudienceId, contact: ContactData) -> Result<ContactId> {
         let path = format!("/audiences/{audience}/contacts");
 
         let request = self.0.build(Method::POST, &path);
@@ -49,7 +49,7 @@ impl ContactsService {
         &self,
         contact: &ContactId,
         audience: &AudienceId,
-        update: UpdateContact,
+        update: ContactChanges,
     ) -> Result<()> {
         let path = format!("/audiences/{audience}/contacts/{contact}");
 
@@ -65,8 +65,8 @@ impl ContactsService {
     /// <https://resend.com/docs/api-reference/contacts/delete-contact>
     #[maybe_async::maybe_async]
     pub async fn delete<T>(&self, audience: &AudienceId, email_or_id: &T) -> Result<()>
-        where
-            T: AsRef<str>,
+    where
+        T: AsRef<str> + Sync,
     {
         let email_or_id = email_or_id.as_ref();
         let path = format!("/audiences/{audience}/contacts/{email_or_id}");
@@ -128,9 +128,10 @@ pub mod types {
         }
     }
 
+    /// Details of a new [`Contact`].
     #[must_use]
     #[derive(Debug, Clone, Serialize)]
-    pub struct CreateContact {
+    pub struct ContactData {
         /// Email address of the contact.
         pub email: String,
 
@@ -145,8 +146,8 @@ pub mod types {
         pub unsubscribed: Option<bool>,
     }
 
-    impl CreateContact {
-        /// Creates a new [`CreateContact`].
+    impl ContactData {
+        /// Creates a new [`ContactData`].
         pub fn new(email: &str) -> Self {
             Self {
                 email: email.to_owned(),
@@ -191,6 +192,7 @@ pub mod types {
         pub data: Vec<Contact>,
     }
 
+    /// Details of an existing contact.
     #[must_use]
     #[derive(Debug, Clone, Deserialize)]
     pub struct Contact {
@@ -202,15 +204,21 @@ pub mod types {
         pub first_name: String,
         /// Last name of the contact.
         pub last_name: String,
-        /// Timestamp indicating when the contact was created.
-        pub created_at: String,
         /// Indicates if the contact is unsubscribed.
         pub unsubscribed: bool,
+
+        /// Timestamp indicating when the contact was created.
+        #[cfg(not(feature = "time"))]
+        pub created_at: String,
+        #[cfg(feature = "time")]
+        #[serde(with = "time::serde::iso8601")]
+        pub created_at: time::OffsetDateTime,
     }
 
+    /// List of changes to apply to a [`Contact`].
     #[must_use]
     #[derive(Debug, Default, Clone, Serialize)]
-    pub struct UpdateContact {
+    pub struct ContactChanges {
         /// Email address of the contact.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub email: Option<String>,
@@ -225,8 +233,8 @@ pub mod types {
         pub unsubscribed: Option<bool>,
     }
 
-    impl UpdateContact {
-        /// Creates a new [`UpdateContact`].
+    impl ContactChanges {
+        /// Creates a new [`ContactChanges`].
         #[inline]
         pub fn new() -> Self {
             Self::default()
@@ -270,27 +278,27 @@ pub mod types {
 
 #[cfg(test)]
 mod test {
+    use crate::types::{ContactChanges, ContactData};
     use crate::{Client, Result};
-    use crate::types::{CreateContact, UpdateContact};
 
     #[tokio::test]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> Result<()> {
         let resend = Client::default();
+        let audience = "test_contacts";
 
         // Create audience.
-        let audience = "test_contacts";
         let audience_id = resend.audiences.create(audience).await?;
 
         // Create.
-        let contact = CreateContact::new("antonios.barotsis@pm.me")
+        let contact = ContactData::new("antonios.barotsis@pm.me")
             .with_first_name("Antonios")
             .with_last_name("Barotsis")
             .with_unsubscribed(false);
         let id = resend.contacts.create(&audience_id, contact).await?;
 
         // Update.
-        let changes = UpdateContact::new().with_unsubscribed(true);
+        let changes = ContactChanges::new().with_unsubscribed(true);
         resend.contacts.update(&id, &audience_id, changes).await?;
 
         // Retrieve.

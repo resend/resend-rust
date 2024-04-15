@@ -39,10 +39,10 @@ mod contacts;
 mod domains;
 mod emails;
 
-// TODO: urlencode path params?
+// TODO: Urlencode path params?
 
 pub mod services {
-    //! TODO.
+    //! `Resend` API services.
 
     pub use super::api_keys::ApiKeysService;
     pub use super::audiences::AudiencesService;
@@ -54,12 +54,12 @@ pub mod services {
 pub mod types {
     //! Request and response types.
 
-    pub use super::api_keys::types::{ApiKey, CreateApiKey, CreateApiKeyResponse, Permission};
+    pub use super::api_keys::types::{ApiKey, ApiKeyData, ApiKeyId, ApiKeyToken, Permission};
     pub use super::audiences::types::{Audience, AudienceId};
     pub use super::config::types::{ErrorKind, ErrorResponse};
-    pub use super::contacts::types::{Contact, ContactId, CreateContact, UpdateContact};
+    pub use super::contacts::types::{Contact, ContactChanges, ContactData, ContactId};
     pub use super::domains::types::{
-        CreateDomain, CreateDomainResponse, Domain, DomainId, DomainRecord, Region, UpdateDomain,
+        Domain, DomainChanges, DomainData, DomainId, DomainRecord, DomainReply, Region,
     };
     pub use super::emails::types::{Attachment, ContentOrPath, Email, EmailId, SendEmail, Tag};
 }

@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
-use crate::types::{ApiKey, CreateApiKey, CreateApiKeyResponse};
+use crate::types::{ApiKey, ApiKeyData, ApiKeyId, ApiKeyToken};
 use crate::{Config, Result};
 
 /// `Resend` APIs for `/api-keys` endpoints.
@@ -15,10 +15,10 @@ impl ApiKeysService {
     ///
     /// <https://resend.com/docs/api-reference/api-keys/create-api-key>
     #[maybe_async::maybe_async]
-    pub async fn create(&self, api_key: CreateApiKey) -> Result<CreateApiKeyResponse> {
+    pub async fn create(&self, api_key: ApiKeyData) -> Result<ApiKeyToken> {
         let request = self.0.build(Method::POST, "/api-keys");
         let response = self.0.send(request.json(&api_key)).await?;
-        let content = response.json::<CreateApiKeyResponse>().await?;
+        let content = response.json::<ApiKeyToken>().await?;
 
         Ok(content)
     }
@@ -39,7 +39,7 @@ impl ApiKeysService {
     ///
     /// <https://resend.com/docs/api-reference/api-keys/delete-api-key>
     #[maybe_async::maybe_async]
-    pub async fn delete(&self, api_key_id: &str) -> Result<()> {
+    pub async fn delete(&self, api_key_id: &ApiKeyId) -> Result<()> {
         let path = format!("/api-keys/{api_key_id}");
 
         let request = self.0.build(Method::DELETE, &path);
@@ -56,14 +56,39 @@ impl fmt::Debug for ApiKeysService {
 }
 
 pub mod types {
+    use std::fmt;
+
+    use ecow::EcoString;
     use serde::{Deserialize, Serialize};
 
-    // TODO.
-    // pub type Token = String;
+    /// Unique [`ApiKey`] identifier.
+    #[derive(Debug, Clone, Deserialize)]
+    pub struct ApiKeyId(EcoString);
 
+    impl ApiKeyId {
+        /// Creates a new [`ApiKeyId`].
+        pub fn new(id: &str) -> Self {
+            Self(EcoString::from(id))
+        }
+    }
+
+    impl AsRef<str> for ApiKeyId {
+        #[inline]
+        fn as_ref(&self) -> &str {
+            self.0.as_str()
+        }
+    }
+
+    impl fmt::Display for ApiKeyId {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            fmt::Display::fmt(self.as_ref(), f)
+        }
+    }
+
+    /// Name and permissions of the new [`ApiKey`].
     #[must_use]
     #[derive(Debug, Clone, Serialize)]
-    pub struct CreateApiKey {
+    pub struct ApiKeyData {
         /// The API key name.
         pub name: String,
 
@@ -78,8 +103,8 @@ pub mod types {
         pub domain_id: Option<String>,
     }
 
-    impl CreateApiKey {
-        /// Creates a new [`CreateApiKey`].
+    impl ApiKeyData {
+        /// Creates a new [`ApiKeyData`].
         #[inline]
         pub fn new(name: &str) -> Self {
             Self {
@@ -112,7 +137,8 @@ pub mod types {
         }
     }
 
-    /// Full or restricted access to the API.
+    /// Full or restricted access of the [`ApiKey`].
+    ///
     /// * `full_access` - Can create, delete, get, and update any resource.
     /// * `sending_access` - Can only send emails.
     #[must_use]
@@ -124,11 +150,12 @@ pub mod types {
         SendingAccess,
     }
 
+    /// Token and ID of the newly created [`ApiKey`].
     #[must_use]
     #[derive(Debug, Clone, Deserialize)]
-    pub struct CreateApiKeyResponse {
+    pub struct ApiKeyToken {
         /// The ID of the API key.
-        pub id: String,
+        pub id: ApiKeyId,
         /// The token of the API key.
         pub token: String,
     }
@@ -139,21 +166,27 @@ pub mod types {
         pub data: Vec<ApiKey>,
     }
 
+    /// Name and ID of an existing API key.
     #[must_use]
     #[derive(Debug, Clone, Deserialize)]
     pub struct ApiKey {
         /// The ID of the API key.
-        pub id: String,
+        pub id: ApiKeyId,
         /// The name of the API key.
         pub name: String,
+
         /// The date and time the API key was created.
+        #[cfg(not(feature = "time"))]
         pub created_at: String,
+        #[cfg(feature = "time")]
+        #[serde(with = "time::serde::iso8601")]
+        pub created_at: time::OffsetDateTime,
     }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::types::CreateApiKey;
+    use crate::types::ApiKeyData;
     use crate::{Client, Result};
 
     #[tokio::test]
@@ -163,16 +196,16 @@ mod test {
         let api_key = "test_";
 
         // Create.
-        let request = CreateApiKey::new(api_key).with_full_access();
+        let request = ApiKeyData::new(api_key).with_full_access();
         let response = resend.api_keys.create(request).await?;
-        let id = response.id.as_str();
+        let id = response.id;
 
         // List.
         let api_keys = resend.api_keys.list().await?;
         assert!(api_keys.len() > 2);
 
         // Delete.
-        resend.api_keys.delete(id).await?;
+        resend.api_keys.delete(&id).await?;
 
         Ok(())
     }

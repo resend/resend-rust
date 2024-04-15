@@ -10,7 +10,6 @@ use reqwest::{Method, Url};
 use crate::types::ErrorResponse;
 use crate::{Error, Result};
 
-#[derive(Clone)]
 pub struct Config {
     pub(crate) user_agent: String,
     pub(crate) api_key: String,
