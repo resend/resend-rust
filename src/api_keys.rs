@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
-use crate::types::{ApiKeys, CreateApiKeyRequest, CreateApiKeyResponse};
+use crate::types::{ApiKeys, CreateApiKey, NewApiKey};
 use crate::{Config, Result};
 
 /// `Resend` APIs for `/api-keys` endpoints.
@@ -15,10 +15,10 @@ impl ApiKeysService {
     ///
     /// <https://resend.com/docs/api-reference/api-keys/create-api-key>
     #[maybe_async::maybe_async]
-    pub async fn create(&self, api_key: CreateApiKeyRequest) -> Result<CreateApiKeyResponse> {
+    pub async fn create(&self, api_key: CreateApiKey) -> Result<NewApiKey> {
         let request = self.0.build(Method::POST, "/api-keys");
         let response = self.0.send(request.json(&api_key)).await?;
-        let content = response.json::<CreateApiKeyResponse>().await?;
+        let content = response.json::<NewApiKey>().await?;
 
         Ok(content)
     }
@@ -60,7 +60,7 @@ pub mod types {
 
     #[must_use]
     #[derive(Debug, Clone, Serialize)]
-    pub struct CreateApiKeyRequest {
+    pub struct CreateApiKey {
         /// The API key name.
         pub name: String,
 
@@ -75,8 +75,8 @@ pub mod types {
         pub domain_id: Option<String>,
     }
 
-    impl CreateApiKeyRequest {
-        /// Creates a new [`CreateApiKeyRequest`].
+    impl CreateApiKey {
+        /// Creates a new [`CreateApiKey`].
         #[inline]
         pub fn new(name: &str) -> Self {
             Self {
@@ -123,7 +123,7 @@ pub mod types {
 
     #[must_use]
     #[derive(Debug, Clone, Deserialize)]
-    pub struct CreateApiKeyResponse {
+    pub struct NewApiKey {
         /// The ID of the API key.
         pub id: String,
         /// The token of the API key.
@@ -151,7 +151,7 @@ pub mod types {
 
 #[cfg(test)]
 mod test {
-    use crate::types::CreateApiKeyRequest;
+    use crate::types::CreateApiKey;
     use crate::{Client, Result};
 
     #[tokio::test]
@@ -161,7 +161,7 @@ mod test {
         let api_key = "test_";
 
         // Create.
-        let request = CreateApiKeyRequest::new(api_key).with_full_access();
+        let request = CreateApiKey::new(api_key).with_full_access();
         let response = resend.api_keys.create(request).await?;
         let id = response.id.as_str();
 

@@ -50,15 +50,10 @@ pub mod services {
 pub mod types {
     //! Request and response types.
 
-    pub use super::api_keys::types::{
-        ApiKey, ApiKeys, CreateApiKeyRequest, CreateApiKeyResponse, Permission,
-    };
+    pub use super::api_keys::types::{ApiKey, ApiKeys, CreateApiKey, NewApiKey, Permission};
     pub use super::audiences::types::{Audience, Audiences, CreateAudienceResponse};
     pub use super::config::types::{ErrorKind, ErrorResponse};
-    pub use super::contacts::types::{
-        Contact, ContactChanges, Contacts, CreateContactResponse, NewContact,
-        UpdateContactResponse,
-    };
+    pub use super::contacts::types::{Contact, Contacts, CreateContact, UpdateContact};
     pub use super::domains::types::{
         CreateDomainRequest, CreateDomainResponse, DeleteDomainResponse, Domain, DomainChanges,
         DomainRecord, Domains, Region, UpdateDomainResponse, VerifyDomain,

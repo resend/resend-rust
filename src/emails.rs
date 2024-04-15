@@ -3,9 +3,9 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
-use crate::{Config, Result};
 use crate::types::{Email, SendEmailBatchResponse};
 use crate::types::{SendEmailRequest, SendEmailResponse};
+use crate::{Config, Result};
 
 /// `Resend` APIs for `/emails` endpoints.
 #[derive(Clone)]
@@ -32,8 +32,8 @@ impl EmailsService {
     /// <https://resend.com/docs/api-reference/emails/send-batch-emails>
     #[maybe_async::maybe_async]
     pub async fn send_batch<T>(&self, emails: T) -> Result<SendEmailBatchResponse>
-        where
-            T: IntoIterator<Item=SendEmailRequest> + Send,
+    where
+        T: IntoIterator<Item = SendEmailRequest> + Send,
     {
         let emails: Vec<_> = emails.into_iter().collect();
 
@@ -112,11 +112,11 @@ pub mod types {
         /// TODO: Think of something better.
         #[inline]
         pub fn new<F, T, E, S>(from: F, to: T, subject: S) -> Self
-            where
-                F: Into<String>,
-                T: IntoIterator<Item=E>,
-                E: Into<String>,
-                S: Into<String>,
+        where
+            F: Into<String>,
+            T: IntoIterator<Item = E>,
+            E: Into<String>,
+            S: Into<String>,
         {
             Self {
                 from: from.into(),
@@ -355,8 +355,8 @@ pub mod types {
 
 #[cfg(test)]
 mod test {
-    use crate::{Client, Result};
     use crate::types::SendEmailRequest;
+    use crate::{Client, Result};
 
     #[tokio::test]
     #[cfg(not(feature = "blocking"))]

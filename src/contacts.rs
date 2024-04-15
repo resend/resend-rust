@@ -3,10 +3,8 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
+use crate::types::{Contact, Contacts, CreateContact, UpdateContact};
 use crate::{Config, Result};
-use crate::types::{Contact, Contacts};
-use crate::types::{ContactChanges, UpdateContactResponse};
-use crate::types::{CreateContactResponse, NewContact};
 
 /// `Resend` APIs for `/audiences/:id/contacts` endpoints.
 #[derive(Clone)]
@@ -15,24 +13,26 @@ pub struct ContactsService(pub(crate) Arc<Config>);
 impl ContactsService {
     /// Create a contact inside an audience.
     ///
+    /// Returns a contact id.
+    ///
     /// <https://resend.com/docs/api-reference/contacts/create-contact>
     #[maybe_async::maybe_async]
-    pub async fn create(&self, contact: NewContact) -> Result<CreateContactResponse> {
-        let path = format!("/audiences/{}/contacts", &contact.audience_id);
+    pub async fn create(&self, audience_id: &str, contact: CreateContact) -> Result<String> {
+        let path = format!("/audiences/{}/contacts", audience_id);
 
         let request = self.0.build(Method::POST, &path);
         let response = self.0.send(request.json(&contact)).await?;
-        let content = response.json::<CreateContactResponse>().await?;
+        let content = response.json::<types::CreateContactResponse>().await?;
 
-        Ok(content)
+        Ok(content.id)
     }
 
     /// Retrieve a single contact from an audience.
     ///
     /// <https://resend.com/docs/api-reference/contacts/get-contact>
     #[maybe_async::maybe_async]
-    pub async fn retrieve(&self, contact_id: &str, audience_id: &str) -> Result<Contact> {
-        let path = format!("/audiences/{audience_id}/contacts/{contact_id}");
+    pub async fn retrieve(&self, id: &str, audience_id: &str) -> Result<Contact> {
+        let path = format!("/audiences/{audience_id}/contacts/{id}");
 
         let request = self.0.build(Method::GET, &path);
         let response = self.0.send(request).await?;
@@ -45,19 +45,12 @@ impl ContactsService {
     ///
     /// <https://resend.com/docs/api-reference/contacts/update-contact>
     #[maybe_async::maybe_async]
-    pub async fn update(
-        &self,
-        contact_id: &str,
-        audience_id: &str,
-        contact: ContactChanges,
-    ) -> Result<()> {
-        let path = format!("/audiences/{audience_id}/contacts/{contact_id}");
+    pub async fn update(&self, id: &str, audience_id: &str, contact: UpdateContact) -> Result<()> {
+        let path = format!("/audiences/{audience_id}/contacts/{id}");
 
         let request = self.0.build(Method::PATCH, &path);
         let response = self.0.send(request.json(&contact)).await?;
-        let content = response.json::<UpdateContactResponse>().await?;
-        println!("contact_id: {}", contact_id);
-        println!("content_id: {}", content.id.as_str());
+        let _content = response.json::<types::UpdateContactResponse>().await?;
 
         Ok(())
     }
@@ -101,12 +94,9 @@ pub mod types {
 
     #[must_use]
     #[derive(Debug, Clone, Serialize)]
-    pub struct NewContact {
+    pub struct CreateContact {
         /// Email address of the contact.
         pub email: String,
-        /// Unique identifier of the audience to which the contact belongs.
-        // TODO: Should it really be here?
-        pub audience_id: String,
 
         /// First name of the contact.
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -119,12 +109,11 @@ pub mod types {
         pub unsubscribed: Option<bool>,
     }
 
-    impl NewContact {
-        /// Creates a new [`NewContact`].
-        pub fn new(email: &str, audience_id: &str) -> Self {
+    impl CreateContact {
+        /// Creates a new [`CreateContact`].
+        pub fn new(email: &str) -> Self {
             Self {
                 email: email.to_owned(),
-                audience_id: audience_id.to_owned(),
                 first_name: None,
                 last_name: None,
                 unsubscribed: None,
@@ -186,7 +175,7 @@ pub mod types {
 
     #[must_use]
     #[derive(Debug, Default, Clone, Serialize)]
-    pub struct ContactChanges {
+    pub struct UpdateContact {
         /// Email address of the contact.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub email: Option<String>,
@@ -201,8 +190,8 @@ pub mod types {
         pub unsubscribed: Option<bool>,
     }
 
-    impl ContactChanges {
-        /// Creates a new [`ContactChanges`].
+    impl UpdateContact {
+        /// Creates a new [`UpdateContact`].
         #[inline]
         pub fn new() -> Self {
             Self::default()
@@ -246,8 +235,8 @@ pub mod types {
 
 #[cfg(test)]
 mod test {
+    use crate::types::{CreateContact, UpdateContact};
     use crate::{Client, Result};
-    use crate::types::{ContactChanges, NewContact};
 
     #[tokio::test]
     #[cfg(not(feature = "blocking"))]
@@ -260,19 +249,18 @@ mod test {
         let audience_id = status.id.as_str();
 
         // Create.
-        let contact = NewContact::new("antonios.barotsis@pm.me", audience_id)
+        let contact = CreateContact::new("antonios.barotsis@pm.me")
             .with_first_name("Antonios")
             .with_last_name("Barotsis")
             .with_unsubscribed(false);
-        let response = resend.contacts.create(contact).await?;
-        let id = response.id.as_str();
+        let id = resend.contacts.create(audience_id, contact).await?;
 
         // Update.
-        let changes = ContactChanges::new().with_unsubscribed(true);
-        resend.contacts.update(id, audience_id, changes).await?;
+        let changes = UpdateContact::new().with_unsubscribed(true);
+        resend.contacts.update(&id, audience_id, changes).await?;
 
         // Retrieve.
-        let contact = resend.contacts.retrieve(id, audience_id).await?;
+        let contact = resend.contacts.retrieve(&id, audience_id).await?;
         assert!(contact.unsubscribed);
 
         // List.
@@ -280,7 +268,7 @@ mod test {
         assert_eq!(response.contacts.len(), 1);
 
         // Delete.
-        resend.contacts.delete(audience_id, id).await?;
+        resend.contacts.delete(audience_id, &id).await?;
 
         // Delete audience.
         let _ = resend.audiences.delete(audience_id).await?;
