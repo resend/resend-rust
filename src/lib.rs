@@ -24,6 +24,10 @@
 //! }
 //! ```
 
+// FIXME: Tests can fail due to rate limit constraints (max 10 req/s). Running the tests on one
+//        thread seems to work for now but this is just a workaround. For now, an alias is provided
+//        for `cargo t` which automatically passes `-- --test-threads=1` to the tests.
+
 pub use client::Client;
 pub(crate) use config::Config;
 
