@@ -208,11 +208,10 @@ pub mod types {
         pub unsubscribed: bool,
 
         /// Timestamp indicating when the contact was created.
-        #[cfg(not(feature = "time"))]
         pub created_at: String,
-        #[cfg(feature = "time")]
-        #[serde(with = "time::serde::iso8601")]
-        pub created_at: time::OffsetDateTime,
+        // #[cfg(feature = "time")]
+        // #[serde(with = "time::serde::iso8601")]
+        // pub created_at_time: time::OffsetDateTime,
     }
 
     /// List of changes to apply to a [`Contact`].

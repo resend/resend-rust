@@ -3,8 +3,8 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
-use crate::types::{Domain, DomainChanges, DomainData, DomainId, DomainReply};
 use crate::{Config, Result};
+use crate::types::{Domain, DomainChanges, DomainData, DomainId, DomainReply};
 
 /// `Resend` APIs for `/domains` endpoints.
 #[derive(Clone)]
@@ -104,8 +104,7 @@ pub mod types {
     use std::fmt;
 
     use ecow::EcoString;
-    use serde::de::{Error, Visitor};
-    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+    use serde::{Deserialize, Serialize};
 
     /// Unique [`Domain`] identifier.
     #[derive(Debug, Clone, Deserialize)]
@@ -168,76 +167,21 @@ pub mod types {
     /// Possible values are 'us-east-1' | 'eu-west-1' | 'sa-east-1' | 'ap-northeast-1'.
     ///
     /// [`SendEmail`]: crate::types::SendEmail
-    #[derive(Debug, Clone)]
+    #[non_exhaustive]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub enum Region {
         /// 'us-east-1'
+        #[serde(rename = "us-east-1")]
         UsEast1,
         /// 'eu-west-1'
+        #[serde(rename = "eu-west-1")]
         EuWest1,
         /// 'sa-east-1'
+        #[serde(rename = "sa-east-1")]
         SaEast1,
         /// 'ap-northeast-1'
+        #[serde(rename = "ap-northeast-1")]
         ApNorthEast1,
-        /// Custom or unrecognized region.
-        Custom(String),
-    }
-
-    impl Region {
-        /// Creates a new custom [`Region`].
-        pub fn new(name: &str) -> Self {
-            Self::Custom(name.to_owned())
-        }
-    }
-
-    impl Serialize for Region {
-        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            let name = match self {
-                Self::UsEast1 => "us-east-1",
-                Self::EuWest1 => "eu-west-1",
-                Self::SaEast1 => "sa-east-1",
-                Self::ApNorthEast1 => "ap-northeast-1",
-                Self::Custom(x) => x.as_str(),
-            };
-
-            serializer.serialize_str(name)
-        }
-    }
-
-    impl<'de> Deserialize<'de> for Region {
-        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            struct RegionVisitor;
-
-            impl<'de> Visitor<'de> for RegionVisitor {
-                type Value = Region;
-
-                fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                    f.write_str("a valid region name")
-                }
-
-                fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
-                where
-                    E: Error,
-                {
-                    let value = match v {
-                        "us-east-1" => Region::UsEast1,
-                        "eu-west-1" => Region::EuWest1,
-                        "sa-east-1" => Region::SaEast1,
-                        "ap-northeast-1" => Region::ApNorthEast1,
-                        x => Region::Custom(x.to_owned()),
-                    };
-
-                    Ok(value)
-                }
-            }
-
-            deserializer.deserialize_str(RegionVisitor)
-        }
     }
 
     /// Details of a newly created [`Domain`].
@@ -253,12 +197,10 @@ pub mod types {
         pub status: String,
 
         /// The date and time the domain was created.
-        #[cfg(not(feature = "time"))]
         pub created_at: String,
-        #[cfg(feature = "time")]
-        #[serde(with = "time::serde::iso8601")]
-        pub created_at: time::OffsetDateTime,
-
+        // #[cfg(feature = "time")]
+        // #[serde(with = "time::serde::iso8601")]
+        // pub created_at_time: time::OffsetDateTime,
         /// The records of the domain.
         pub records: Vec<DomainRecord>,
         /// The region where the domain is hosted.
@@ -301,12 +243,10 @@ pub mod types {
         pub status: String,
 
         /// The date and time the domain was created.
-        #[cfg(not(feature = "time"))]
         pub created_at: String,
-        #[cfg(feature = "time")]
-        #[serde(with = "time::serde::iso8601")]
-        pub created_at: time::OffsetDateTime,
-
+        // #[cfg(feature = "time")]
+        // #[serde(with = "time::serde::iso8601")]
+        // pub created_at_time: time::OffsetDateTime,
         /// The region where the domain is hosted.
         pub region: Region,
         /// The records of the domain.
@@ -376,8 +316,8 @@ pub mod types {
 
 #[cfg(test)]
 mod test {
-    use crate::types::{DomainData, Region};
     use crate::{Client, Result};
+    use crate::types::{DomainData, Region};
 
     #[tokio::test]
     #[cfg(not(feature = "blocking"))]

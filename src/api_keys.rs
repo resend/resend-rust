@@ -176,11 +176,10 @@ pub mod types {
         pub name: String,
 
         /// The date and time the API key was created.
-        #[cfg(not(feature = "time"))]
         pub created_at: String,
-        #[cfg(feature = "time")]
-        #[serde(with = "time::serde::iso8601")]
-        pub created_at: time::OffsetDateTime,
+        // #[cfg(feature = "time")]
+        // #[serde(with = "time::serde::iso8601")]
+        // pub created_at_time: time::OffsetDateTime,
     }
 }
 

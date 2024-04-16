@@ -359,12 +359,10 @@ pub mod types {
         pub subject: Option<String>,
 
         /// The date and time the email was created.
-        #[cfg(not(feature = "time"))]
         pub created_at: Option<String>,
-        #[cfg(feature = "time")]
-        #[serde(with = "time::serde::iso8601")]
-        pub created_at: Option<time::OffsetDateTime>,
-
+        // #[cfg(feature = "time")]
+        // #[serde(with = "time::serde::iso8601")]
+        // pub created_at: Option<time::OffsetDateTime>,
         /// The HTML body of the email.
         pub html: Option<String>,
         /// The plain text body of the email.
