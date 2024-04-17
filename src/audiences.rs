@@ -3,8 +3,8 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
-use crate::{Config, Result};
 use crate::types::{Audience, AudienceId};
+use crate::{Config, Result};
 
 /// `Resend` APIs for `/audiences` endpoints.
 #[derive(Clone)]
@@ -83,6 +83,7 @@ pub mod types {
 
     use ecow::EcoString;
     use serde::{Deserialize, Serialize};
+    use time::OffsetDateTime;
 
     /// Unique [`Audience`] identifier.
     #[derive(Debug, Clone, Deserialize)]
@@ -135,10 +136,8 @@ pub mod types {
         pub name: String,
 
         /// The date that the object was created.
-        pub created_at: String,
-        // #[cfg(feature = "time")]
-        // #[serde(with = "time::serde::iso8601")]
-        // pub created_at_time: time::OffsetDateTime,
+        #[serde(with = "time::serde::iso8601")]
+        pub created_at: OffsetDateTime,
     }
 
     #[derive(Debug, Clone, Deserialize)]

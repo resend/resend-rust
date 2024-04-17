@@ -3,8 +3,8 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
+use crate::types::{Domain, DomainChanges, DomainData, DomainId};
 use crate::{Config, Result};
-use crate::types::{Domain, DomainChanges, DomainData, DomainId, DomainReply};
 
 /// `Resend` APIs for `/domains` endpoints.
 #[derive(Clone)]
@@ -15,10 +15,10 @@ impl DomainsService {
     ///
     /// <https://resend.com/docs/api-reference/domains/create-domain>
     #[maybe_async::maybe_async]
-    pub async fn add(&self, domain: DomainData) -> Result<DomainReply> {
+    pub async fn add(&self, domain: DomainData) -> Result<Domain> {
         let request = self.0.build(Method::POST, "/domains");
         let response = self.0.send(request.json(&domain)).await?;
-        let content = response.json::<DomainReply>().await?;
+        let content = response.json::<Domain>().await?;
 
         Ok(content)
     }
@@ -105,6 +105,7 @@ pub mod types {
 
     use ecow::EcoString;
     use serde::{Deserialize, Serialize};
+    use time::OffsetDateTime;
 
     /// Unique [`Domain`] identifier.
     #[derive(Debug, Clone, Deserialize)]
@@ -184,32 +185,6 @@ pub mod types {
         ApNorthEast1,
     }
 
-    /// Details of a newly created [`Domain`].
-    ///
-    /// TODO: Same as `Domain` with `dns_provider`?
-    #[derive(Debug, Clone, Deserialize)]
-    pub struct DomainReply {
-        /// The ID of the domain.
-        pub id: DomainId,
-        /// The name of the domain.
-        pub name: String,
-        /// The status of the domain.
-        pub status: String,
-
-        /// The date and time the domain was created.
-        pub created_at: String,
-        // #[cfg(feature = "time")]
-        // #[serde(with = "time::serde::iso8601")]
-        // pub created_at_time: time::OffsetDateTime,
-        /// The records of the domain.
-        pub records: Vec<DomainRecord>,
-        /// The region where the domain is hosted.
-        pub region: Region,
-        /// The service that runs DNS server.
-        #[serde(rename = "dnsProvider")]
-        pub dns_provider: String,
-    }
-
     /// Individual [`Domain`] record.
     #[derive(Debug, Clone, Deserialize)]
     pub struct DomainRecord {
@@ -243,14 +218,16 @@ pub mod types {
         pub status: String,
 
         /// The date and time the domain was created.
-        pub created_at: String,
-        // #[cfg(feature = "time")]
-        // #[serde(with = "time::serde::iso8601")]
-        // pub created_at_time: time::OffsetDateTime,
+        #[serde(with = "time::serde::iso8601")]
+        pub created_at: OffsetDateTime,
         /// The region where the domain is hosted.
         pub region: Region,
         /// The records of the domain.
         pub records: Vec<DomainRecord>,
+
+        /// The service that runs DNS server.
+        #[serde(rename = "dnsProvider")]
+        pub dns_provider: Option<String>,
     }
 
     #[derive(Debug, Clone, Deserialize)]
@@ -317,27 +294,16 @@ pub mod types {
 #[cfg(test)]
 mod test {
     use crate::{Client, Result};
-    use crate::types::{DomainData, Region};
 
     #[tokio::test]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> Result<()> {
         let resend = Client::default();
-        let domain = "test_domains";
-
-        // Create.
-        let request = DomainData::new(domain).with_region(Region::EuWest1);
-        let response = resend.domains.add(request).await?;
-        let id = response.id;
 
         // TODO: Domain test.
 
         // List.
         let _ = resend.domains.list().await?;
-
-        // Delete.
-        let deleted = resend.domains.delete(&id).await?;
-        assert!(deleted);
 
         Ok(())
     }

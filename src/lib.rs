@@ -59,7 +59,7 @@ pub mod types {
     pub use super::config::types::{ErrorKind, ErrorResponse};
     pub use super::contacts::types::{Contact, ContactChanges, ContactData, ContactId};
     pub use super::domains::types::{
-        Domain, DomainChanges, DomainData, DomainId, DomainRecord, DomainReply, Region,
+        Domain, DomainChanges, DomainData, DomainId, DomainRecord, Region,
     };
     pub use super::emails::types::{Attachment, ContentOrPath, Email, EmailId, SendEmail, Tag};
 }

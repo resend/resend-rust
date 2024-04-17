@@ -70,6 +70,7 @@ pub mod types {
 
     use ecow::EcoString;
     use serde::{Deserialize, Serialize};
+    use time::OffsetDateTime;
 
     /// Unique [`Email`] identifier.
     #[derive(Debug, Clone, Deserialize)]
@@ -352,30 +353,27 @@ pub mod types {
         pub id: EmailId,
 
         /// Sender email address.
-        pub from: Option<String>,
+        pub from: String,
         /// Recipient email address.
-        pub to: Option<Vec<String>>,
+        pub to: String,
         /// The subject line of the email.
-        pub subject: Option<String>,
+        pub subject: String,
 
         /// The date and time the email was created.
-        pub created_at: Option<String>,
-        // #[cfg(feature = "time")]
-        // #[serde(with = "time::serde::iso8601")]
-        // pub created_at: Option<time::OffsetDateTime>,
+        pub created_at: OffsetDateTime,
         /// The HTML body of the email.
-        pub html: Option<String>,
+        pub html: String,
         /// The plain text body of the email.
-        pub text: Option<String>,
+        pub text: String,
 
         /// The email addresses of the blind carbon copy recipients.
-        pub bcc: Option<Vec<String>>,
+        pub bcc: Vec<String>,
         /// The email addresses of the carbon copy recipients.
-        pub cc: Option<Vec<String>>,
+        pub cc: Vec<String>,
         /// The email addresses to which replies should be sent.
-        pub reply_to: Option<Vec<String>>,
+        pub reply_to: Vec<String>,
         /// The status of the email.
-        pub last_event: Option<String>,
+        pub last_event: String,
     }
 }
 

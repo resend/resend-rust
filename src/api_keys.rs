@@ -60,6 +60,7 @@ pub mod types {
 
     use ecow::EcoString;
     use serde::{Deserialize, Serialize};
+    use time::OffsetDateTime;
 
     /// Unique [`ApiKey`] identifier.
     #[derive(Debug, Clone, Deserialize)]
@@ -176,10 +177,8 @@ pub mod types {
         pub name: String,
 
         /// The date and time the API key was created.
-        pub created_at: String,
-        // #[cfg(feature = "time")]
-        // #[serde(with = "time::serde::iso8601")]
-        // pub created_at_time: time::OffsetDateTime,
+        #[serde(with = "time::serde::iso8601")]
+        pub created_at: OffsetDateTime,
     }
 }
 

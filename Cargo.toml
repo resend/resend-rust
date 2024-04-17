@@ -22,12 +22,11 @@ default = ["native-tls"]
 blocking = ["reqwest/blocking", "maybe-async/is_sync"]
 native-tls = ["reqwest/native-tls"]
 rustls-tls = ["reqwest/rustls-tls"]
-time = ["dep:time"]
 
 [dependencies]
 reqwest = { version = "0.12.3", default-features = false, features = ["json"] }
-serde = { version = "1.0.197", features = ["derive"] }
-time = { version = "0.3.36", optional = true, features = ["serde", "parsing"] }
+serde = { version = "1.0.198", features = ["derive"] }
+time = { version = "0.3.36", features = ["serde", "parsing"] }
 ecow = { version = "0.2.2", features = ["serde"] }
 
 thiserror = { version = "1.0.58" }
