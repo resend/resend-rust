@@ -70,7 +70,6 @@ pub mod types {
 
     use ecow::EcoString;
     use serde::{Deserialize, Serialize};
-    use time::OffsetDateTime;
 
     /// Unique [`Email`] identifier.
     #[derive(Debug, Clone, Deserialize)]
@@ -359,8 +358,8 @@ pub mod types {
         /// The subject line of the email.
         pub subject: String,
 
-        /// The date and time the email was created.
-        pub created_at: OffsetDateTime,
+        /// The date and time the email was created in ISO8601 format.
+        pub created_at: String,
         /// The HTML body of the email.
         pub html: String,
         /// The plain text body of the email.

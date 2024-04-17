@@ -105,7 +105,6 @@ pub mod types {
 
     use ecow::EcoString;
     use serde::{Deserialize, Serialize};
-    use time::OffsetDateTime;
 
     /// Unique [`Domain`] identifier.
     #[derive(Debug, Clone, Deserialize)]
@@ -217,9 +216,8 @@ pub mod types {
         /// The status of the domain.
         pub status: String,
 
-        /// The date and time the domain was created.
-        #[serde(with = "time::serde::iso8601")]
-        pub created_at: OffsetDateTime,
+        /// The date and time the domain was created in ISO8601 format.
+        pub created_at: String,
         /// The region where the domain is hosted.
         pub region: Region,
         /// The records of the domain.

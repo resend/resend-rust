@@ -3,8 +3,8 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
-use crate::types::{AudienceId, Contact, ContactChanges, ContactData, ContactId};
 use crate::{Config, Result};
+use crate::types::{AudienceId, Contact, ContactChanges, ContactData, ContactId};
 
 /// `Resend` APIs for `/audiences/:id/contacts` endpoints.
 #[derive(Clone)]
@@ -65,8 +65,8 @@ impl ContactsService {
     /// <https://resend.com/docs/api-reference/contacts/delete-contact>
     #[maybe_async::maybe_async]
     pub async fn delete<T>(&self, audience: &AudienceId, email_or_id: &T) -> Result<()>
-    where
-        T: AsRef<str> + Sync,
+        where
+            T: AsRef<str> + Sync,
     {
         let email_or_id = email_or_id.as_ref();
         let path = format!("/audiences/{audience}/contacts/{email_or_id}");
@@ -103,7 +103,6 @@ pub mod types {
 
     use ecow::EcoString;
     use serde::{Deserialize, Serialize};
-    use time::OffsetDateTime;
 
     /// Unique [`Contact`] identifier.
     #[derive(Debug, Clone, Deserialize)]
@@ -207,10 +206,8 @@ pub mod types {
         pub last_name: String,
         /// Indicates if the contact is unsubscribed.
         pub unsubscribed: bool,
-
-        /// Timestamp indicating when the contact was created.
-        #[serde(with = "time::serde::iso8601")]
-        pub created_at: OffsetDateTime,
+        /// Timestamp indicating when the contact was created in ISO8601 format.
+        pub created_at: String,
     }
 
     /// List of changes to apply to a [`Contact`].
@@ -276,8 +273,8 @@ pub mod types {
 
 #[cfg(test)]
 mod test {
-    use crate::types::{ContactChanges, ContactData};
     use crate::{Client, Result};
+    use crate::types::{ContactChanges, ContactData};
 
     #[tokio::test]
     #[cfg(not(feature = "blocking"))]

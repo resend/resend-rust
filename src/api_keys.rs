@@ -3,8 +3,8 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
-use crate::types::{ApiKey, ApiKeyData, ApiKeyId, ApiKeyToken};
 use crate::{Config, Result};
+use crate::types::{ApiKey, ApiKeyData, ApiKeyId, ApiKeyToken};
 
 /// `Resend` APIs for `/api-keys` endpoints.
 #[derive(Clone)]
@@ -60,7 +60,6 @@ pub mod types {
 
     use ecow::EcoString;
     use serde::{Deserialize, Serialize};
-    use time::OffsetDateTime;
 
     /// Unique [`ApiKey`] identifier.
     #[derive(Debug, Clone, Deserialize)]
@@ -175,17 +174,15 @@ pub mod types {
         pub id: ApiKeyId,
         /// The name of the API key.
         pub name: String,
-
-        /// The date and time the API key was created.
-        #[serde(with = "time::serde::iso8601")]
-        pub created_at: OffsetDateTime,
+        /// The date and time the API key was created in ISO8601 format.
+        pub created_at: String,
     }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::types::ApiKeyData;
     use crate::{Client, Result};
+    use crate::types::ApiKeyData;
 
     #[tokio::test]
     #[cfg(not(feature = "blocking"))]
