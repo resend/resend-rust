@@ -3,8 +3,8 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
-use crate::{Config, Result};
 use crate::types::{ApiKey, ApiKeyData, ApiKeyId, ApiKeyToken};
+use crate::{Config, Result};
 
 /// `Resend` APIs for `/api-keys` endpoints.
 #[derive(Clone)]
@@ -181,8 +181,8 @@ pub mod types {
 
 #[cfg(test)]
 mod test {
-    use crate::{Client, Result};
     use crate::types::ApiKeyData;
+    use crate::{Client, Result};
 
     #[tokio::test]
     #[cfg(not(feature = "blocking"))]

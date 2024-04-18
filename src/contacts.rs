@@ -3,8 +3,8 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
-use crate::{Config, Result};
 use crate::types::{AudienceId, Contact, ContactChanges, ContactData, ContactId};
+use crate::{Config, Result};
 
 /// `Resend` APIs for `/audiences/:id/contacts` endpoints.
 #[derive(Clone)]
@@ -65,8 +65,8 @@ impl ContactsService {
     /// <https://resend.com/docs/api-reference/contacts/delete-contact>
     #[maybe_async::maybe_async]
     pub async fn delete<T>(&self, audience: &AudienceId, email_or_id: &T) -> Result<()>
-        where
-            T: AsRef<str> + Sync,
+    where
+        T: AsRef<str> + Sync,
     {
         let email_or_id = email_or_id.as_ref();
         let path = format!("/audiences/{audience}/contacts/{email_or_id}");
@@ -273,8 +273,8 @@ pub mod types {
 
 #[cfg(test)]
 mod test {
-    use crate::{Client, Result};
     use crate::types::{ContactChanges, ContactData};
+    use crate::{Client, Result};
 
     #[tokio::test]
     #[cfg(not(feature = "blocking"))]

@@ -3,8 +3,8 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
-use crate::{Config, Result};
 use crate::types::{Audience, AudienceId};
+use crate::{Config, Result};
 
 /// `Resend` APIs for `/audiences` endpoints.
 #[derive(Clone)]
