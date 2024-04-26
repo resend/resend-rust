@@ -8,9 +8,9 @@ use crate::{Config, Result};
 
 /// `Resend` APIs for `/api-keys` endpoints.
 #[derive(Clone)]
-pub struct ApiKeysService(pub(crate) Arc<Config>);
+pub struct ApiKeysSvc(pub(crate) Arc<Config>);
 
-impl ApiKeysService {
+impl ApiKeysSvc {
     /// Add a new API key to authenticate communications with Resend.
     ///
     /// <https://resend.com/docs/api-reference/api-keys/create-api-key>
@@ -49,7 +49,7 @@ impl ApiKeysService {
     }
 }
 
-impl fmt::Debug for ApiKeysService {
+impl fmt::Debug for ApiKeysSvc {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(&self.0, f)
     }

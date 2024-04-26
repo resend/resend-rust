@@ -8,9 +8,9 @@ use crate::{Config, Result};
 
 /// `Resend` APIs for `/audiences` endpoints.
 #[derive(Clone)]
-pub struct AudiencesService(pub(crate) Arc<Config>);
+pub struct AudiencesSvc(pub(crate) Arc<Config>);
 
-impl AudiencesService {
+impl AudiencesSvc {
     /// Creates a new list of contacts.
     ///
     /// Returns an `id` of a created audience.
@@ -72,7 +72,7 @@ impl AudiencesService {
     }
 }
 
-impl fmt::Debug for AudiencesService {
+impl fmt::Debug for AudiencesSvc {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(&self.0, f)
     }

@@ -1,7 +1,8 @@
-use std::fmt;
+use std::time::Duration;
+use std::{env, fmt};
 
 #[cfg(feature = "blocking")]
-use reqwest::blocking::{Client, Request, RequestBuilder, Response};
+use reqwest::blocking::{Client, RequestBuilder, Response};
 use reqwest::header::USER_AGENT;
 #[cfg(not(feature = "blocking"))]
 use reqwest::{Client, RequestBuilder, Response};
@@ -14,10 +15,39 @@ pub struct Config {
     pub(crate) user_agent: String,
     pub(crate) api_key: String,
     pub(crate) base_url: Url,
+    #[cfg(not(feature = "blocking"))]
+    pub(crate) client: tower::limit::RateLimit<Client>,
+    #[cfg(feature = "blocking")]
     pub(crate) client: Client,
 }
 
 impl Config {
+    /// Creates a new [`Config`].
+    pub fn new(api_key: &str, client: Client) -> Self {
+        let env_base_url = env::var("RESEND_BASE_URL")
+            .map_or_else(
+                |_| Url::parse("https://api.resend.com"),
+                |env_var| Url::parse(env_var.as_str()),
+            )
+            .expect("env variable `RESEND_BASE_URL` should be a valid URL");
+
+        let env_user_agent = env::var("RESEND_USER_AGENT").unwrap_or_else(|_| {
+            format!("{}/{}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"))
+        });
+
+        #[cfg(not(feature = "blocking"))]
+        let client = tower::ServiceBuilder::new()
+            .rate_limit(10, Duration::from_secs(1))
+            .service(client);
+
+        Self {
+            user_agent: env_user_agent,
+            api_key: api_key.to_owned(),
+            base_url: env_base_url,
+            client,
+        }
+    }
+
     /// Constructs a new [`RequestBuilder`].
     pub fn build(&self, method: Method, path: &str) -> RequestBuilder {
         let path = self
@@ -25,13 +55,13 @@ impl Config {
             .join(path)
             .expect("should be a valid API endpoint");
 
-        self.client
+        self.client()
             .request(method, path)
             .bearer_auth(self.api_key.as_str())
             .header(USER_AGENT, self.user_agent.as_str())
     }
 
-    #[maybe_async::maybe_async]
+    #[cfg(not(feature = "blocking"))]
     pub async fn send(&self, request: RequestBuilder) -> Result<Response> {
         let response = request.send().await?;
 
@@ -41,6 +71,30 @@ impl Config {
                 Err(Error::Resend(error))
             }
             _ => Ok(response),
+        }
+    }
+
+    #[cfg(feature = "blocking")]
+    pub fn send(&self, request: RequestBuilder) -> Result<Response> {
+        let response = request.send()?;
+
+        match response.status() {
+            x if x.is_client_error() || x.is_server_error() => {
+                let error = response.json::<ErrorResponse>()?;
+                Err(Error::Resend(error))
+            }
+            _ => Ok(response),
+        }
+    }
+
+    pub fn client(&self) -> Client {
+        #[cfg(not(feature = "blocking"))]
+        {
+            self.client.get_ref().clone()
+        }
+        #[cfg(feature = "blocking")]
+        {
+            self.client.clone()
         }
     }
 }

@@ -5,12 +5,9 @@ use std::{env, fmt};
 use reqwest::blocking::Client as ReqwestClient;
 #[cfg(not(feature = "blocking"))]
 use reqwest::Client as ReqwestClient;
-use reqwest::Url;
 
 use crate::config::Config;
-use crate::services::{
-    ApiKeysService, AudiencesService, ContactsService, DomainsService, EmailsService,
-};
+use crate::services::{ApiKeysSvc, AudiencesSvc, ContactsSvc, DomainsSvc, EmailsSvc};
 
 /// A minimal [Resend](https://resend.com) client.
 ///
@@ -39,15 +36,15 @@ use crate::services::{
 #[derive(Clone)]
 pub struct Client {
     /// `Resend` APIs for `/emails` endpoints.
-    pub emails: EmailsService,
+    pub emails: EmailsSvc,
     /// `Resend` APIs for `/api-keys` endpoints.
-    pub api_keys: ApiKeysService,
+    pub api_keys: ApiKeysSvc,
     /// `Resend` APIs for `/audiences` endpoints.
-    pub audiences: AudiencesService,
+    pub audiences: AudiencesSvc,
     /// `Resend` APIs for `/audiences/:id/contacts` endpoints.
-    pub contacts: ContactsService,
+    pub contacts: ContactsSvc,
     /// `Resend` APIs for `/domains` endpoints.
-    pub domains: DomainsService,
+    pub domains: DomainsSvc,
 }
 
 impl Client {
@@ -71,30 +68,14 @@ impl Client {
     /// [`Resend`]: https://resend.com
     /// [`reqwest::Client`]: ReqwestClient
     pub fn with_client(api_key: &str, client: ReqwestClient) -> Self {
-        let env_base_url = env::var("RESEND_BASE_URL")
-            .map_or_else(
-                |_| Url::parse("https://api.resend.com"),
-                |env_var| Url::parse(env_var.as_str()),
-            )
-            .expect("env variable `RESEND_BASE_URL` should be a valid URL");
-
-        let env_user_agent = env::var("RESEND_USER_AGENT").unwrap_or_else(|_| {
-            format!("{}/{}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"))
-        });
-
-        let inner = Arc::new(Config {
-            user_agent: env_user_agent,
-            api_key: api_key.to_owned(),
-            base_url: env_base_url,
-            client,
-        });
+        let inner = Arc::new(Config::new(api_key, client));
 
         Self {
-            api_keys: ApiKeysService(inner.clone()),
-            audiences: AudiencesService(inner.clone()),
-            contacts: ContactsService(inner.clone()),
-            domains: DomainsService(inner.clone()),
-            emails: EmailsService(inner),
+            api_keys: ApiKeysSvc(inner.clone()),
+            audiences: AudiencesSvc(inner.clone()),
+            contacts: ContactsSvc(inner.clone()),
+            domains: DomainsSvc(inner.clone()),
+            emails: EmailsSvc(inner),
         }
     }
 
@@ -115,7 +96,7 @@ impl Client {
     /// [`reqwest::Client`]: ReqwestClient
     #[must_use]
     pub fn client(&self) -> ReqwestClient {
-        self.emails.0.client.clone()
+        self.emails.0.client()
     }
 }
 

@@ -8,9 +8,9 @@ use crate::{Config, Result};
 
 /// `Resend` APIs for `/emails` endpoints.
 #[derive(Clone)]
-pub struct EmailsService(pub(crate) Arc<Config>);
+pub struct EmailsSvc(pub(crate) Arc<Config>);
 
-impl EmailsService {
+impl EmailsSvc {
     /// Start sending emails through the `Resend` Email API.
     ///
     /// <https://resend.com/docs/api-reference/emails/send-email>
@@ -58,7 +58,7 @@ impl EmailsService {
     }
 }
 
-impl fmt::Debug for EmailsService {
+impl fmt::Debug for EmailsSvc {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(&self.0, f)
     }

@@ -8,9 +8,9 @@ use crate::{Config, Result};
 
 /// `Resend` APIs for `/domains` endpoints.
 #[derive(Clone)]
-pub struct DomainsService(pub(crate) Arc<Config>);
+pub struct DomainsSvc(pub(crate) Arc<Config>);
 
-impl DomainsService {
+impl DomainsSvc {
     /// Creates a domain through the Resend Email API.
     ///
     /// <https://resend.com/docs/api-reference/domains/create-domain>
@@ -94,7 +94,7 @@ impl DomainsService {
     }
 }
 
-impl fmt::Debug for DomainsService {
+impl fmt::Debug for DomainsSvc {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(&self.0, f)
     }

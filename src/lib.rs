@@ -44,11 +44,11 @@ mod emails;
 pub mod services {
     //! `Resend` API services.
 
-    pub use super::api_keys::ApiKeysService;
-    pub use super::audiences::AudiencesService;
-    pub use super::contacts::ContactsService;
-    pub use super::domains::DomainsService;
-    pub use super::emails::EmailsService;
+    pub use super::api_keys::ApiKeysSvc;
+    pub use super::audiences::AudiencesSvc;
+    pub use super::contacts::ContactsSvc;
+    pub use super::domains::DomainsSvc;
+    pub use super::emails::EmailsSvc;
 }
 
 pub mod types {
