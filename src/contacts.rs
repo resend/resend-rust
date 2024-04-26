@@ -110,6 +110,7 @@ pub mod types {
 
     impl ContactId {
         /// Creates a new [`ContactId`].
+        #[must_use]
         pub fn new(id: &str) -> Self {
             Self(EcoString::from(id))
         }

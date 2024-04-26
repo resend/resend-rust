@@ -77,6 +77,7 @@ pub mod types {
 
     impl EmailId {
         /// Creates a new [`EmailId`].
+        #[must_use]
         pub fn new(id: &str) -> Self {
             Self(EcoString::from(id))
         }

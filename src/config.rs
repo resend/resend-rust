@@ -128,6 +128,7 @@ pub mod types {
 
     impl ErrorResponse {
         /// Returns the [`ErrorKind`].
+        #[must_use]
         pub fn kind(&self) -> ErrorKind {
             ErrorKind::from(self.name.as_str())
         }
