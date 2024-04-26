@@ -61,26 +61,13 @@ impl Config {
             .header(USER_AGENT, self.user_agent.as_str())
     }
 
-    #[cfg(not(feature = "blocking"))]
+    #[maybe_async::maybe_async]
     pub async fn send(&self, request: RequestBuilder) -> Result<Response> {
         let response = request.send().await?;
 
         match response.status() {
             x if x.is_client_error() || x.is_server_error() => {
                 let error = response.json::<ErrorResponse>().await?;
-                Err(Error::Resend(error))
-            }
-            _ => Ok(response),
-        }
-    }
-
-    #[cfg(feature = "blocking")]
-    pub fn send(&self, request: RequestBuilder) -> Result<Response> {
-        let response = request.send()?;
-
-        match response.status() {
-            x if x.is_client_error() || x.is_server_error() => {
-                let error = response.json::<ErrorResponse>()?;
                 Err(Error::Resend(error))
             }
             _ => Ok(response),
