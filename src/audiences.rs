@@ -175,7 +175,6 @@ mod test {
         // List.
         let audiences = resend.audiences.list().await?;
         assert!(audiences.len() > 1);
-        println!("{:?}", &audiences);
 
         // Delete.
         let deleted = resend.audiences.delete(&id).await?;

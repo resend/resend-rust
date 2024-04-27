@@ -1,3 +1,4 @@
+#[cfg(not(feature = "blocking"))]
 use std::time::Duration;
 use std::{env, fmt};
 
@@ -69,7 +70,8 @@ impl Config {
 
     #[maybe_async::maybe_async]
     pub async fn send(&self, request: RequestBuilder) -> Result<Response> {
-        let response = request.send().await?;
+        let request = request.build()?;
+        let response = self.client().execute(request).await?;
 
         match response.status() {
             x if x.is_client_error() || x.is_server_error() => {
