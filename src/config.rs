@@ -1,15 +1,15 @@
-use std::time::Duration;
 use std::{env, fmt};
+use std::time::Duration;
 
-#[cfg(feature = "blocking")]
-use reqwest::blocking::{Client, RequestBuilder, Response};
-use reqwest::header::USER_AGENT;
 #[cfg(not(feature = "blocking"))]
 use reqwest::{Client, RequestBuilder, Response};
 use reqwest::{Method, Url};
+#[cfg(feature = "blocking")]
+use reqwest::blocking::{Client, RequestBuilder, Response};
+use reqwest::header::USER_AGENT;
 
-use crate::types::ErrorResponse;
 use crate::{Error, Result};
+use crate::types::ErrorResponse;
 
 pub struct Config {
     pub(crate) user_agent: String,
@@ -31,13 +31,17 @@ impl Config {
             )
             .expect("env variable `RESEND_BASE_URL` should be a valid URL");
 
+        let reqs_per_sec = env::var("RESEND_RATE_LIMIT")
+            .map_or(Ok(10), |reqs| reqs.parse::<u64>())
+            .expect("env variable `RESEND_RATE_LIMIT` should be a valid `u64`");
+
         let env_user_agent = env::var("RESEND_USER_AGENT").unwrap_or_else(|_| {
             format!("{}/{}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"))
         });
 
         #[cfg(not(feature = "blocking"))]
-        let client = tower::ServiceBuilder::new()
-            .rate_limit(10, Duration::from_secs(1))
+            let client = tower::ServiceBuilder::new()
+            .rate_limit(reqs_per_sec, Duration::from_secs(1))
             .service(client);
 
         Self {

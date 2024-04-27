@@ -39,8 +39,6 @@ mod contacts;
 mod domains;
 mod emails;
 
-// TODO: Urlencode path params?
-
 pub mod services {
     //! `Resend` API services.
 

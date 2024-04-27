@@ -36,3 +36,5 @@ If anyone else is looking into this, however, I would not mind expanding it.
   `https://api.resend.com` (Optional).
 - `RESEND_USER_AGENT` to override the default `User-Agent`: `resend-rs/0.1.0`
   (Optional).
+- `RESEND_RATE_LIMIT` to override the default rate limit of `10` requests per 1
+  seconds: (Optional).

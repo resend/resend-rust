@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use std::{env, fmt};
+use std::sync::Arc;
 
 #[cfg(feature = "blocking")]
 use reqwest::blocking::Client as ReqwestClient;
@@ -52,7 +52,8 @@ impl Client {
     ///
     /// ### Panics
     ///
-    /// Panics if the environment variable `RESEND_BASE_URL` is present but is not a valid URL.
+    /// - Panics if the environment variable `RESEND_BASE_URL` is present but is not a valid `URL`.
+    /// - Panics if the environment variable `RESEND_RATE_LIMIT` is present but is not a valid `u64`.
     ///
     /// [`Resend`]: https://resend.com
     pub fn new(api_key: &str) -> Self {
@@ -63,7 +64,8 @@ impl Client {
     ///
     /// ### Panics
     ///
-    /// Panics if the environment variable `RESEND_BASE_URL` is present but is not a valid URL.
+    /// - Panics if the environment variable `RESEND_BASE_URL` is present but is not a valid `URL`.
+    /// - Panics if the environment variable `RESEND_RATE_LIMIT` is present but is not a valid `u64`.
     ///
     /// [`Resend`]: https://resend.com
     /// [`reqwest::Client`]: ReqwestClient
@@ -105,7 +107,9 @@ impl Default for Client {
     ///
     /// ### Panics
     ///
-    /// Panics if the environment variable `RESEND_API_KEY` is not set.
+    /// - Panics if the environment variable `RESEND_API_KEY` is not set.
+    /// - Panics if the environment variable `RESEND_BASE_URL` is present but is not a valid `URL`.
+    /// - Panics if the environment variable `RESEND_RATE_LIMIT` is present but is not a valid `u64`.
     fn default() -> Self {
         let api_key = env::var("RESEND_API_KEY")
             .expect("env variable `RESEND_API_KEY` should be a valid API key");
