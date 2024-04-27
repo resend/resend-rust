@@ -52,8 +52,8 @@ impl Client {
     ///
     /// ### Panics
     ///
-    /// - Panics if the environment variable `RESEND_BASE_URL` is present but is not a valid `URL`.
-    /// - Panics if the environment variable `RESEND_RATE_LIMIT` is present but is not a valid `u64`.
+    /// - Panics if the environment variable `RESEND_BASE_URL` is set but is not a valid `URL`.
+    /// - Panics if the environment variable `RESEND_RATE_LIMIT` is set but is not a valid `u64`.
     ///
     /// [`Resend`]: https://resend.com
     pub fn new(api_key: &str) -> Self {
@@ -64,8 +64,8 @@ impl Client {
     ///
     /// ### Panics
     ///
-    /// - Panics if the environment variable `RESEND_BASE_URL` is present but is not a valid `URL`.
-    /// - Panics if the environment variable `RESEND_RATE_LIMIT` is present but is not a valid `u64`.
+    /// - Panics if the environment variable `RESEND_BASE_URL` is set but is not a valid `URL`.
+    /// - Panics if the environment variable `RESEND_RATE_LIMIT` is set but is not a valid `u64`.
     ///
     /// [`Resend`]: https://resend.com
     /// [`reqwest::Client`]: ReqwestClient
@@ -81,16 +81,39 @@ impl Client {
         }
     }
 
-    /// Returns the used `User-Agent` header value.
+    /// Returns the reference to the used `User-Agent` header value.
+    ///
+    /// ### Notes
+    ///
+    /// Use the `RESEND_USER_AGENT` environment variable to override.
     #[must_use]
-    pub fn user_agent(&self) -> String {
-        self.emails.0.user_agent.clone()
+    pub fn user_agent(&self) -> &str {
+        self.config().user_agent.as_str()
     }
 
-    /// Returns the provided API key.
+    /// Returns the reference to the provided API key.
     #[must_use]
-    pub fn api_key(&self) -> String {
-        self.emails.0.api_key.clone()
+    pub fn api_key(&self) -> &str {
+        self.config().api_key.as_ref()
+    }
+
+    /// Returns the reference to the used base `URL`.
+    ///
+    /// ### Notes
+    ///
+    /// Use the `RESEND_BASE_URL` environment variable to override.
+    #[must_use]
+    pub fn base_url(&self) -> &str {
+        self.config().base_url.as_str()
+    }
+
+    /// Returns the used rate limit (in requests per 1 second).
+    ///
+    /// ### Notes
+    ///
+    /// Use the `RESEND_RATE_LIMIT` environment variable to override.
+    pub fn rate_limit(&self) -> u64 {
+        self.config().reqs_per_sec
     }
 
     /// Returns the underlying [`reqwest::Client`].
@@ -98,7 +121,12 @@ impl Client {
     /// [`reqwest::Client`]: ReqwestClient
     #[must_use]
     pub fn client(&self) -> ReqwestClient {
-        self.emails.0.client()
+        self.config().client()
+    }
+
+    /// Returns the reference to the inner [`Config`].
+    fn config(&self) -> &Config {
+        &self.emails.0
     }
 }
 
@@ -108,8 +136,8 @@ impl Default for Client {
     /// ### Panics
     ///
     /// - Panics if the environment variable `RESEND_API_KEY` is not set.
-    /// - Panics if the environment variable `RESEND_BASE_URL` is present but is not a valid `URL`.
-    /// - Panics if the environment variable `RESEND_RATE_LIMIT` is present but is not a valid `u64`.
+    /// - Panics if the environment variable `RESEND_BASE_URL` is set but is not a valid `URL`.
+    /// - Panics if the environment variable `RESEND_RATE_LIMIT` is set but is not a valid `u64`.
     fn default() -> Self {
         let api_key = env::var("RESEND_API_KEY")
             .expect("env variable `RESEND_API_KEY` should be a valid API key");
