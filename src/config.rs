@@ -1,24 +1,25 @@
-use std::{env, fmt};
 use std::time::Duration;
+use std::{env, fmt};
 
-#[cfg(not(feature = "blocking"))]
-use reqwest::{Client, RequestBuilder, Response};
-use reqwest::{Method, Url};
 #[cfg(feature = "blocking")]
 use reqwest::blocking::{Client, RequestBuilder, Response};
 use reqwest::header::USER_AGENT;
+#[cfg(not(feature = "blocking"))]
+use reqwest::{Client, RequestBuilder, Response};
+use reqwest::{Method, Url};
 
-use crate::{Error, Result};
 use crate::types::ErrorResponse;
+use crate::{Error, Result};
 
 pub struct Config {
     pub(crate) user_agent: String,
     pub(crate) api_key: String,
     pub(crate) base_url: Url,
+    pub(crate) reqs_per_sec: u64,
     #[cfg(not(feature = "blocking"))]
-    pub(crate) client: tower::limit::RateLimit<Client>,
+    client: tower::limit::RateLimit<Client>,
     #[cfg(feature = "blocking")]
-    pub(crate) client: Client,
+    client: Client,
 }
 
 impl Config {
@@ -31,7 +32,7 @@ impl Config {
             )
             .expect("env variable `RESEND_BASE_URL` should be a valid URL");
 
-        let reqs_per_sec = env::var("RESEND_RATE_LIMIT")
+        let env_reqs_per_sec = env::var("RESEND_RATE_LIMIT")
             .map_or(Ok(10), |reqs| reqs.parse::<u64>())
             .expect("env variable `RESEND_RATE_LIMIT` should be a valid `u64`");
 
@@ -40,14 +41,15 @@ impl Config {
         });
 
         #[cfg(not(feature = "blocking"))]
-            let client = tower::ServiceBuilder::new()
-            .rate_limit(reqs_per_sec, Duration::from_secs(1))
+        let client = tower::ServiceBuilder::new()
+            .rate_limit(env_reqs_per_sec, Duration::from_secs(1))
             .service(client);
 
         Self {
             user_agent: env_user_agent,
             api_key: api_key.to_owned(),
             base_url: env_base_url,
+            reqs_per_sec: env_reqs_per_sec,
             client,
         }
     }
@@ -97,8 +99,7 @@ impl fmt::Debug for Config {
             .field("api_key", &"re_*********")
             .field("user_agent", &self.user_agent.as_str())
             .field("base_url", &self.base_url.as_str())
-            // .field("client", &self.client)
-            .finish()
+            .finish_non_exhaustive()
     }
 }
 

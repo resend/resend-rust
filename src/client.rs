@@ -1,5 +1,5 @@
-use std::{env, fmt};
 use std::sync::Arc;
+use std::{env, fmt};
 
 #[cfg(feature = "blocking")]
 use reqwest::blocking::Client as ReqwestClient;
