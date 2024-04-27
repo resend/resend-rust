@@ -86,12 +86,14 @@ impl Client {
     /// ### Notes
     ///
     /// Use the `RESEND_USER_AGENT` environment variable to override.
+    #[inline]
     #[must_use]
     pub fn user_agent(&self) -> &str {
         self.config().user_agent.as_str()
     }
 
     /// Returns the reference to the provided API key.
+    #[inline]
     #[must_use]
     pub fn api_key(&self) -> &str {
         self.config().api_key.as_ref()
@@ -102,6 +104,7 @@ impl Client {
     /// ### Notes
     ///
     /// Use the `RESEND_BASE_URL` environment variable to override.
+    #[inline]
     #[must_use]
     pub fn base_url(&self) -> &str {
         self.config().base_url.as_str()
@@ -112,6 +115,8 @@ impl Client {
     /// ### Notes
     ///
     /// Use the `RESEND_RATE_LIMIT` environment variable to override.
+    #[inline]
+    #[must_use]
     pub fn rate_limit(&self) -> u64 {
         self.config().reqs_per_sec
     }
@@ -119,12 +124,14 @@ impl Client {
     /// Returns the underlying [`reqwest::Client`].
     ///
     /// [`reqwest::Client`]: ReqwestClient
+    #[inline]
     #[must_use]
     pub fn client(&self) -> ReqwestClient {
         self.config().client()
     }
 
     /// Returns the reference to the inner [`Config`].
+    #[inline]
     fn config(&self) -> &Config {
         &self.emails.0
     }

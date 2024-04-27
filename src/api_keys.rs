@@ -67,6 +67,7 @@ pub mod types {
 
     impl ApiKeyId {
         /// Creates a new [`ApiKeyId`].
+        #[inline]
         #[must_use]
         pub fn new(id: &str) -> Self {
             Self(EcoString::from(id))

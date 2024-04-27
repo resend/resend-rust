@@ -90,6 +90,7 @@ pub mod types {
 
     impl AudienceId {
         /// Creates a new [`AudienceId`].
+        #[inline]
         #[must_use]
         pub fn new(id: &str) -> Self {
             Self(EcoString::from(id))

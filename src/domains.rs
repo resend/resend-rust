@@ -112,6 +112,8 @@ pub mod types {
 
     impl DomainId {
         /// Creates a new [`DomainId`].
+        #[inline]
+        #[must_use]
         pub fn new(id: &str) -> Self {
             Self(EcoString::from(id))
         }

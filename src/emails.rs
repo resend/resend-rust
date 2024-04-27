@@ -77,6 +77,7 @@ pub mod types {
 
     impl EmailId {
         /// Creates a new [`EmailId`].
+        #[inline]
         #[must_use]
         pub fn new(id: &str) -> Self {
             Self(EcoString::from(id))
@@ -334,12 +335,14 @@ pub mod types {
     }
 
     impl From<&[u8]> for Attachment {
+        #[inline]
         fn from(value: &[u8]) -> Self {
             Self::from_content(value.into())
         }
     }
 
     impl From<Vec<u8>> for Attachment {
+        #[inline]
         fn from(value: Vec<u8>) -> Self {
             Self::from_content(value)
         }
