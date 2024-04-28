@@ -1,5 +1,3 @@
-#[cfg(not(feature = "blocking"))]
-use std::time::Duration;
 use std::{env, fmt};
 
 #[cfg(feature = "blocking")]
@@ -16,9 +14,8 @@ pub struct Config {
     pub(crate) user_agent: String,
     pub(crate) api_key: String,
     pub(crate) base_url: Url,
-    pub(crate) reqs_per_sec: u64,
     #[cfg(not(feature = "blocking"))]
-    client: tower::limit::RateLimit<Client>,
+    client: Client,
     #[cfg(feature = "blocking")]
     client: Client,
 }
@@ -33,24 +30,14 @@ impl Config {
             )
             .expect("env variable `RESEND_BASE_URL` should be a valid URL");
 
-        let env_reqs_per_sec = env::var("RESEND_RATE_LIMIT")
-            .map_or(Ok(10), |reqs| reqs.parse::<u64>())
-            .expect("env variable `RESEND_RATE_LIMIT` should be a valid `u64`");
-
         let env_user_agent = env::var("RESEND_USER_AGENT").unwrap_or_else(|_| {
             format!("{}/{}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"))
         });
-
-        #[cfg(not(feature = "blocking"))]
-        let client = tower::ServiceBuilder::new()
-            .rate_limit(env_reqs_per_sec, Duration::from_secs(1))
-            .service(client);
 
         Self {
             user_agent: env_user_agent,
             api_key: api_key.to_owned(),
             base_url: env_base_url,
-            reqs_per_sec: env_reqs_per_sec,
             client,
         }
     }
@@ -83,14 +70,7 @@ impl Config {
     }
 
     pub fn client(&self) -> Client {
-        #[cfg(not(feature = "blocking"))]
-        {
-            self.client.get_ref().clone()
-        }
-        #[cfg(feature = "blocking")]
-        {
-            self.client.clone()
-        }
+        self.client.clone()
     }
 }
 

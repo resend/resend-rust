@@ -110,17 +110,6 @@ impl Client {
         self.config().base_url.as_str()
     }
 
-    /// Returns the used rate limit (in requests per 1 second).
-    ///
-    /// ### Notes
-    ///
-    /// Use the `RESEND_RATE_LIMIT` environment variable to override.
-    #[inline]
-    #[must_use]
-    pub fn rate_limit(&self) -> u64 {
-        self.config().reqs_per_sec
-    }
-
     /// Returns the underlying [`reqwest::Client`].
     ///
     /// [`reqwest::Client`]: ReqwestClient
@@ -156,22 +145,5 @@ impl Default for Client {
 impl fmt::Debug for Client {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(&self.emails, f)
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use crate::{Client, Result};
-
-    #[tokio::test]
-    #[cfg(not(feature = "blocking"))]
-    async fn rate_limit() -> Result<()> {
-        let client = Client::default();
-
-        for _ in 1..=20 {
-            let _ = client.api_keys.list().await?;
-        }
-
-        Ok(())
     }
 }
