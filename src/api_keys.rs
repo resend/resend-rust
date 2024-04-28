@@ -118,14 +118,14 @@ pub mod types {
 
         /// Allows an API key to create, delete, get, and update any resource.
         #[inline]
-        pub fn with_full_access(mut self) -> Self {
+        pub const fn with_full_access(mut self) -> Self {
             self.permission = Some(Permission::FullAccess);
             self
         }
 
         /// Restricts an API key to only sending emails
         #[inline]
-        pub fn with_sending_access(mut self) -> Self {
+        pub const fn with_sending_access(mut self) -> Self {
             self.permission = Some(Permission::SendingAccess);
             self
         }

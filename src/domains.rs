@@ -257,14 +257,14 @@ pub mod types {
 
         /// Toggles the click tracking to `enable`.
         #[inline]
-        pub fn click_tracking(mut self, enable: bool) -> Self {
+        pub const fn click_tracking(mut self, enable: bool) -> Self {
             self.click_tracking = Some(enable);
             self
         }
 
         /// Toggles the open tracing to `enable`.
         #[inline]
-        pub fn open_tracking(mut self, enable: bool) -> Self {
+        pub const fn open_tracking(mut self, enable: bool) -> Self {
             self.open_tracking = Some(enable);
             self
         }

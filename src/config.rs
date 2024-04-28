@@ -14,9 +14,6 @@ pub struct Config {
     pub(crate) user_agent: String,
     pub(crate) api_key: String,
     pub(crate) base_url: Url,
-    #[cfg(not(feature = "blocking"))]
-    client: Client,
-    #[cfg(feature = "blocking")]
     client: Client,
 }
 

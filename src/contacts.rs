@@ -175,7 +175,7 @@ pub mod types {
 
         /// Toggles the unsubscribe status to `unsubscribe`.
         #[inline]
-        pub fn with_unsubscribed(mut self, unsubscribed: bool) -> Self {
+        pub const fn with_unsubscribed(mut self, unsubscribed: bool) -> Self {
             self.unsubscribed = Some(unsubscribed);
             self
         }
@@ -260,7 +260,7 @@ pub mod types {
 
         /// Updates the unsubscribe status of the contact.
         #[inline]
-        pub fn with_unsubscribed(mut self, unsubscribed: bool) -> Self {
+        pub const fn with_unsubscribed(mut self, unsubscribed: bool) -> Self {
             self.unsubscribed = Some(unsubscribed);
             self
         }
