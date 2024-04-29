@@ -76,6 +76,7 @@ impl ContactsSvc {
     /// Removes an existing contact from an audience by their ID.
     ///
     /// <https://resend.com/docs/api-reference/contacts/delete-contact>
+    #[maybe_async::maybe_async]
     pub async fn delete_by_id(&self, audience: &AudienceId, contact_id: &ContactId) -> Result<()> {
         // Yeah, that's correct: `/audiences/{audience}/contacts/{id}`.
         self.delete_by_email(audience, contact_id.as_ref()).await

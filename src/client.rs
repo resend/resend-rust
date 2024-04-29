@@ -53,7 +53,6 @@ impl Client {
     /// ### Panics
     ///
     /// - Panics if the environment variable `RESEND_BASE_URL` is set but is not a valid `URL`.
-    /// - Panics if the environment variable `RESEND_RATE_LIMIT` is set but is not a valid `u64`.
     ///
     /// [`Resend`]: https://resend.com
     pub fn new(api_key: &str) -> Self {
@@ -65,7 +64,6 @@ impl Client {
     /// ### Panics
     ///
     /// - Panics if the environment variable `RESEND_BASE_URL` is set but is not a valid `URL`.
-    /// - Panics if the environment variable `RESEND_RATE_LIMIT` is set but is not a valid `u64`.
     ///
     /// [`Resend`]: https://resend.com
     /// [`reqwest::Client`]: ReqwestClient
@@ -133,7 +131,6 @@ impl Default for Client {
     ///
     /// - Panics if the environment variable `RESEND_API_KEY` is not set.
     /// - Panics if the environment variable `RESEND_BASE_URL` is set but is not a valid `URL`.
-    /// - Panics if the environment variable `RESEND_RATE_LIMIT` is set but is not a valid `u64`.
     fn default() -> Self {
         let api_key = env::var("RESEND_API_KEY")
             .expect("env variable `RESEND_API_KEY` should be a valid API key");
