@@ -61,6 +61,8 @@ pub mod types {
     use ecow::EcoString;
     use serde::{Deserialize, Serialize};
 
+    use crate::types::DomainId;
+
     /// Unique [`ApiKey`] identifier.
     #[derive(Debug, Clone, Deserialize)]
     pub struct ApiKeyId(EcoString);
@@ -102,7 +104,7 @@ pub mod types {
         /// Restrict an API key to send emails only from a specific domain.
         /// Only used when the permission is `sending_access`.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub domain_id: Option<String>,
+        pub domain_id: Option<DomainId>,
     }
 
     impl ApiKeyData {
@@ -132,9 +134,9 @@ pub mod types {
 
         /// Restricts an API key to send emails only from a specific domain.
         #[inline]
-        pub fn with_domain_access(mut self, domain_id: &str) -> Self {
+        pub fn with_domain_access(mut self, domain_id: &DomainId) -> Self {
             self.permission = Some(Permission::SendingAccess);
-            self.domain_id = Some(domain_id.to_owned());
+            self.domain_id = Some(domain_id.clone());
             self
         }
     }
@@ -165,6 +167,7 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Clone, Deserialize)]
     pub struct ListApiKeyResponse {
+        /// Array containing api key information.
         pub data: Vec<ApiKey>,
     }
 

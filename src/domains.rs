@@ -107,7 +107,7 @@ pub mod types {
     use serde::{Deserialize, Serialize};
 
     /// Unique [`Domain`] identifier.
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Deserialize, Serialize)]
     pub struct DomainId(EcoString);
 
     impl DomainId {
@@ -257,14 +257,14 @@ pub mod types {
 
         /// Toggles the click tracking to `enable`.
         #[inline]
-        pub const fn click_tracking(mut self, enable: bool) -> Self {
+        pub const fn with_click_tracking(mut self, enable: bool) -> Self {
             self.click_tracking = Some(enable);
             self
         }
 
         /// Toggles the open tracing to `enable`.
         #[inline]
-        pub const fn open_tracking(mut self, enable: bool) -> Self {
+        pub const fn with_open_tracking(mut self, enable: bool) -> Self {
             self.open_tracking = Some(enable);
             self
         }

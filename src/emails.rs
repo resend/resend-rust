@@ -102,7 +102,10 @@ pub mod types {
     #[derive(Debug, Clone, Serialize)]
     pub struct SendEmail {
         /// Sender email address.
-        /// To include a friendly name, use the format "Your Name <sender@domain.com>".
+        ///
+        /// To include a friendly name, use the format:
+        ///
+        /// `Your Name <sender@domain.com>`
         pub from: String,
         /// Recipient email address. Max 50.
         pub to: Vec<String>,
@@ -138,7 +141,6 @@ pub mod types {
 
     impl SendEmail {
         /// Creates a new [`SendEmail`].
-        /// TODO: Think of something better.
         pub fn new<T, A>(from: impl Into<String>, to: T, subject: impl Into<String>) -> Self
         where
             T: IntoIterator<Item = A>,
@@ -177,7 +179,6 @@ pub mod types {
         }
 
         /// Attaches `bcc` recipient email address.
-        #[inline]
         pub fn with_bcc(mut self, address: &str) -> Self {
             let bcc = self.bcc.get_or_insert_with(Vec::new);
             bcc.push(address.to_owned());
@@ -185,7 +186,6 @@ pub mod types {
         }
 
         /// Attaches `cc` recipient email address.
-        #[inline]
         pub fn with_cc(mut self, address: &str) -> Self {
             let cc = self.cc.get_or_insert_with(Vec::new);
             cc.push(address.to_owned());
@@ -193,7 +193,6 @@ pub mod types {
         }
 
         /// Adds another `reply_to` address to the email.
-        #[inline]
         pub fn with_reply(mut self, to: &str) -> Self {
             let reply_to = self.reply_to.get_or_insert_with(Vec::new);
             reply_to.push(to.to_owned());
@@ -201,7 +200,6 @@ pub mod types {
         }
 
         /// Adds or overwrites an email header.
-        #[inline]
         pub fn with_header(mut self, name: &str, value: &str) -> Self {
             let headers = self.headers.get_or_insert_with(HashMap::new);
             let _ = headers.insert(name.to_owned(), value.to_owned());
@@ -334,17 +332,17 @@ pub mod types {
         }
     }
 
-    impl From<&[u8]> for Attachment {
-        #[inline]
-        fn from(value: &[u8]) -> Self {
-            Self::from_content(value.into())
-        }
-    }
-
     impl From<Vec<u8>> for Attachment {
         #[inline]
         fn from(value: Vec<u8>) -> Self {
             Self::from_content(value)
+        }
+    }
+
+    impl From<&[u8]> for Attachment {
+        #[inline]
+        fn from(value: &[u8]) -> Self {
+            value.to_vec().into()
         }
     }
 

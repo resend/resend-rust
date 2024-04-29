@@ -60,21 +60,25 @@ impl ContactsSvc {
         Ok(())
     }
 
-    /// Removes an existing contact from an audience by their email or ID.
+    /// Removes an existing contact from an audience by their email.
     ///
     /// <https://resend.com/docs/api-reference/contacts/delete-contact>
     #[maybe_async::maybe_async]
-    pub async fn delete<T>(&self, audience: &AudienceId, email_or_id: &T) -> Result<()>
-    where
-        T: AsRef<str> + Sync,
-    {
-        let email_or_id = email_or_id.as_ref();
-        let path = format!("/audiences/{audience}/contacts/{email_or_id}");
+    pub async fn delete_by_email(&self, audience: &AudienceId, email: &str) -> Result<()> {
+        let path = format!("/audiences/{audience}/contacts/{email}");
 
         let request = self.0.build(Method::DELETE, &path);
         let _response = self.0.send(request).await?;
 
         Ok(())
+    }
+
+    /// Removes an existing contact from an audience by their ID.
+    ///
+    /// <https://resend.com/docs/api-reference/contacts/delete-contact>
+    pub async fn delete_by_id(&self, audience: &AudienceId, contact_id: &ContactId) -> Result<()> {
+        // Yeah, that's correct: `/audiences/{audience}/contacts/{id}`.
+        self.delete_by_email(audience, contact_id.as_ref()).await
     }
 
     /// Retrieves all contacts from an audience.
@@ -307,7 +311,7 @@ mod test {
         assert_eq!(contacts.len(), 1);
 
         // Delete.
-        resend.contacts.delete(&audience_id, &id).await?;
+        resend.contacts.delete_by_id(&audience_id, &id).await?;
 
         // Delete audience.
         let _ = resend.audiences.delete(&audience_id).await?;
