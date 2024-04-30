@@ -8,7 +8,7 @@ edition = "2021"
 license = "GPL-3.0"
 readme = "./README.md"
 
-authors = ["Antonios Barotsis <antonios.barotsis@pm.me>"]
+authors = ["Antonios Barotsis <antonios.barotsis@proton.me>"]
 repository = "https://github.com/AntoniosBarotsis/resend-rs"
 homepage = "https://github.com/AntoniosBarotsis/resend-rs"
 documentation = "https://docs.rs/resend-rs"
