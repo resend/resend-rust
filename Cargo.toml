@@ -1,16 +1,35 @@
+# https://doc.rust-lang.org/cargo/reference/manifest.html
+
 [package]
 name = "resend-rs"
-description = "A very minimal Resend client for sending emails."
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
-repository = "https://github.com/AntoniosBarotsis/resend-rs"
-license = "GPL-3.0"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+license = "GPL-3.0"
+readme = "./README.md"
+
+authors = ["Antonios Barotsis <antonios.barotsis@proton.me>"]
+repository = "https://github.com/AntoniosBarotsis/resend-rs"
+homepage = "https://github.com/AntoniosBarotsis/resend-rs"
+documentation = "https://docs.rs/resend-rs"
+
+categories = ["email", "web-programming"]
+keywords = ["email", "resend"]
+description = "A minimal Resend client."
 
 [features]
-async = []
+default = ["native-tls"]
+
+blocking = ["reqwest/blocking", "maybe-async/is_sync"]
+native-tls = ["reqwest/native-tls"]
+rustls-tls = ["reqwest/rustls-tls"]
 
 [dependencies]
-reqwest = { version = "0.11", default-features = false, features = ["rustls-tls", "blocking"] }
-thiserror = "1.0.43"
+reqwest = { version = "0.12.4", default-features = false, features = ["json"] }
+serde = { version = "1.0.199", features = ["derive"] }
+ecow = { version = "0.2.2", features = ["serde"] }
+thiserror = { version = "1.0.59" }
+maybe-async = { version = "0.2.10" }
+
+[dev-dependencies]
+tokio = { version = "1.37.0", features = ["macros", "test-util", "rt-multi-thread"] }

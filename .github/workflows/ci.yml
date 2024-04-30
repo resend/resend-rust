@@ -38,7 +38,7 @@ jobs:
         run: cargo build --verbose
 
       - name: Test
-        run: cargo test --verbose
+        run: RESEND_API_KEY=${{ secrets.RESEND_API_KEY }} cargo --verbose t
 
   lint:
     name: Lint
@@ -59,7 +59,7 @@ jobs:
           rustup component add rustfmt
 
       - name: Run clippy
-        run: cargo clippy -- -Dwarnings
+        run: cargo clippy --all-features -- -Dwarnings
 
       - name: Run fmt
         run: cargo fmt --check

@@ -1,0 +1,10 @@
+version: 2
+updates:
+
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      timezone: "Europe/Amsterdam"
+      day: "friday"
+      time: "18:00"
