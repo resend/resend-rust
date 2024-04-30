@@ -321,6 +321,8 @@ mod test {
         // Delete audience.
         let _ = resend.audiences.delete(&audience_id).await?;
 
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
         Ok(())
     }
 }

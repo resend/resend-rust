@@ -399,6 +399,9 @@ mod test {
             .with_tag("Welcome");
 
         let _ = resend.emails.send(email).await?;
+
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
         Ok(())
     }
 
@@ -415,6 +418,9 @@ mod test {
             .with_tag("Welcome");
 
         let _ = resend.emails.send(email)?;
+
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
         Ok(())
     }
 }

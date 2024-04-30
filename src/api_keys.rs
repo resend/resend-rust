@@ -209,6 +209,8 @@ mod test {
         // Delete.
         resend.api_keys.delete(&id).await?;
 
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
         Ok(())
     }
 }

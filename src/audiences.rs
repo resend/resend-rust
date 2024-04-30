@@ -180,6 +180,8 @@ mod test {
         let deleted = resend.audiences.delete(&id).await?;
         assert!(deleted);
 
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
         Ok(())
     }
 }
