@@ -8,6 +8,14 @@ and this project adheres to
 
 <!-- ## [Unreleased] -->
 
+## [0.4.0] - 2024-05-01
+
+`@martsokha` basically rewrote the entire repository 0_0
+([pr](https://github.com/AntoniosBarotsis/resend-rs/pull/1))
+
+The crate now supports the entire Resend API surface, check the
+[docs](https://docs.rs/resend-rs/latest/resend_rs/) for examples.
+
 ## [0.3.0] - 2024-02-06
 
 ### Changed
@@ -31,5 +39,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+[0.4.0]: https://crates.io/crates/resend-rs/0.4.0
+[0.3.0]: https://crates.io/crates/resend-rs/0.3.0
 [0.2.0]: https://crates.io/crates/resend-rs/0.2.0
 [0.1.0]: https://crates.io/crates/resend-rs/0.1.0
