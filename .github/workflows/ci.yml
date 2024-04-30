@@ -38,7 +38,9 @@ jobs:
         run: cargo build --verbose
 
       - name: Test
-        run: RESEND_API_KEY=${{ secrets.RESEND_API_KEY }} cargo --verbose t
+        run: cargo --verbose t
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
 
   lint:
     name: Lint
