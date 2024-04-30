@@ -15,6 +15,8 @@ impl ApiKeysSvc {
     ///
     /// <https://resend.com/docs/api-reference/api-keys/create-api-key>
     #[maybe_async::maybe_async]
+    // Reasoning for allow: https://github.com/AntoniosBarotsis/resend-rs/pull/1#issuecomment-2081646115
+    #[allow(clippy::needless_pass_by_value)]
     pub async fn create(&self, api_key: ApiKeyData) -> Result<ApiKeyToken> {
         let request = self.0.build(Method::POST, "/api-keys");
         let response = self.0.send(request.json(&api_key)).await?;
