@@ -7,7 +7,7 @@
 A minimal [Resend](https://resend.com) client.
 
 [action-badge]: https://img.shields.io/github/actions/workflow/status/AntoniosBarotsis/resend-rs/ci.yml
-[action-url]: https://github.com/spire-rs/AntoniosBarotsis/resend-rs/workflows/build.yaml
+[action-url]: https://github.com/AntoniosBarotsis/resend-rs/actions/workflows/ci.yml
 [crates-badge]: https://img.shields.io/crates/v/resend-rs
 [crates-url]: https://crates.io/crates/resend-rs
 [docs-badge]: https://img.shields.io/docsrs/resend-rs
@@ -21,13 +21,11 @@ internally.
 [reqwest]: https://github.com/seanmonstar/reqwest
 [serde]: https://github.com/serde-rs/serde
 
-If anyone else is looking into this, however, I would not mind expanding it.
-
 #### Features
 
 - `blocking` to enable the blocking client.
 - `native-tls` to use system-native TLS. **Enabled by default**.
-- `rustls-tls` to use TLS backed by rustls .
+- `rustls-tls` to use TLS backed by `rustls`.
 
 #### Variables
 

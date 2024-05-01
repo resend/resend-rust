@@ -90,14 +90,14 @@ impl Client {
         self.config().user_agent.as_str()
     }
 
-    /// Returns the reference to the provided API key.
+    /// Returns the reference to the provided `API key`.
     #[inline]
     #[must_use]
     pub fn api_key(&self) -> &str {
         self.config().api_key.as_ref()
     }
 
-    /// Returns the reference to the used base `URL`.
+    /// Returns the reference to the used `base URL`.
     ///
     /// ### Notes
     ///
@@ -114,7 +114,7 @@ impl Client {
     #[inline]
     #[must_use]
     pub fn client(&self) -> ReqwestClient {
-        self.config().client()
+        self.config().client.clone()
     }
 
     /// Returns the reference to the inner [`Config`].
