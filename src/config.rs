@@ -14,7 +14,7 @@ pub struct Config {
     pub(crate) user_agent: String,
     pub(crate) api_key: String,
     pub(crate) base_url: Url,
-    client: Client,
+    pub(crate) client: Client,
 }
 
 impl Config {
@@ -64,10 +64,6 @@ impl Config {
             }
             _ => Ok(response),
         }
-    }
-
-    pub fn client(&self) -> Client {
-        self.client.clone()
     }
 }
 
