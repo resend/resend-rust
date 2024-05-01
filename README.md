@@ -25,7 +25,7 @@ internally.
 
 - `blocking` to enable the blocking client.
 - `native-tls` to use system-native TLS. **Enabled by default**.
-- `rustls-tls` to use TLS backed by rustls .
+- `rustls-tls` to use TLS backed by `rustls`.
 
 #### Variables
 
