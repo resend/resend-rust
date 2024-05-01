@@ -46,7 +46,7 @@ impl Config {
             .join(path)
             .expect("should be a valid API endpoint");
 
-        self.client()
+        self.client
             .request(method, path)
             .bearer_auth(self.api_key.as_str())
             .header(USER_AGENT, self.user_agent.as_str())
@@ -55,7 +55,7 @@ impl Config {
     #[maybe_async::maybe_async]
     pub async fn send(&self, request: RequestBuilder) -> Result<Response> {
         let request = request.build()?;
-        let response = self.client().execute(request).await?;
+        let response = self.client.execute(request).await?;
 
         match response.status() {
             x if x.is_client_error() || x.is_server_error() => {
