@@ -27,9 +27,7 @@ impl Config {
             )
             .expect("env variable `RESEND_BASE_URL` should be a valid URL");
 
-        let env_user_agent = env::var("RESEND_USER_AGENT").unwrap_or_else(|_| {
-            format!("{}/{}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"))
-        });
+        let env_user_agent = format!("{}/{}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
 
         Self {
             user_agent: env_user_agent,

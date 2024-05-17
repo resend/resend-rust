@@ -6,6 +6,8 @@ use reqwest::Method;
 use crate::types::{AudienceId, Contact, ContactChanges, ContactData, ContactId};
 use crate::{Config, Result};
 
+use self::types::UpdateContactResponse;
+
 /// `Resend` APIs for `/audiences/:id/contacts` endpoints.
 #[derive(Clone)]
 pub struct ContactsSvc(pub(crate) Arc<Config>);
@@ -19,8 +21,12 @@ impl ContactsSvc {
     #[maybe_async::maybe_async]
     // Reasoning for allow: https://github.com/AntoniosBarotsis/resend-rs/pull/1#issuecomment-2081646115
     #[allow(clippy::needless_pass_by_value)]
-    pub async fn create(&self, audience: &AudienceId, contact: ContactData) -> Result<ContactId> {
-        let path = format!("/audiences/{audience}/contacts");
+    pub async fn create(
+        &self,
+        audience_id: &AudienceId,
+        contact: ContactData,
+    ) -> Result<ContactId> {
+        let path = format!("/audiences/{audience_id}/contacts");
 
         let request = self.0.build(Method::POST, &path);
         let response = self.0.send(request.json(&contact)).await?;
@@ -33,8 +39,8 @@ impl ContactsSvc {
     ///
     /// <https://resend.com/docs/api-reference/contacts/get-contact>
     #[maybe_async::maybe_async]
-    pub async fn get(&self, contact: &ContactId, audience: &AudienceId) -> Result<Contact> {
-        let path = format!("/audiences/{audience}/contacts/{contact}");
+    pub async fn get(&self, contact_id: &ContactId, audience_id: &AudienceId) -> Result<Contact> {
+        let path = format!("/audiences/{audience_id}/contacts/{contact_id}");
 
         let request = self.0.build(Method::GET, &path);
         let response = self.0.send(request).await?;
@@ -51,25 +57,25 @@ impl ContactsSvc {
     #[allow(clippy::needless_pass_by_value)]
     pub async fn update(
         &self,
-        contact: &ContactId,
-        audience: &AudienceId,
+        contact_id: &ContactId,
+        audience_id: &AudienceId,
         update: ContactChanges,
-    ) -> Result<()> {
-        let path = format!("/audiences/{audience}/contacts/{contact}");
+    ) -> Result<UpdateContactResponse> {
+        let path = format!("/audiences/{audience_id}/contacts/{contact_id}");
 
         let request = self.0.build(Method::PATCH, &path);
         let response = self.0.send(request.json(&update)).await?;
-        let _content = response.json::<types::UpdateContactResponse>().await?;
+        let content = response.json::<UpdateContactResponse>().await?;
 
-        Ok(())
+        Ok(content)
     }
 
     /// Removes an existing contact from an audience by their email.
     ///
     /// <https://resend.com/docs/api-reference/contacts/delete-contact>
     #[maybe_async::maybe_async]
-    pub async fn delete_by_email(&self, audience: &AudienceId, email: &str) -> Result<()> {
-        let path = format!("/audiences/{audience}/contacts/{email}");
+    pub async fn delete_by_email(&self, audience_id: &AudienceId, email: &str) -> Result<()> {
+        let path = format!("/audiences/{audience_id}/contacts/{email}");
 
         let request = self.0.build(Method::DELETE, &path);
         let _response = self.0.send(request).await?;
@@ -113,6 +119,7 @@ pub mod types {
     use ecow::EcoString;
     use serde::{Deserialize, Serialize};
 
+    // TODO: Again, is this needed? Should it just be a normal String?
     /// Unique [`Contact`] identifier.
     #[derive(Debug, Clone, Deserialize)]
     pub struct ContactId(EcoString);
@@ -294,7 +301,8 @@ mod test {
         let audience = "test_contacts";
 
         // Create audience.
-        let audience_id = resend.audiences.create(audience).await?;
+        let audience = resend.audiences.create(audience).await?;
+        let audience_id = audience.id;
 
         // Create.
         let contact = ContactData::new("antonios.barotsis@pm.me")

@@ -6,6 +6,8 @@ use reqwest::Method;
 use crate::types::{Audience, AudienceId};
 use crate::{Config, Result};
 
+use self::types::CreateAudienceResponse;
+
 /// `Resend` APIs for `/audiences` endpoints.
 #[derive(Clone)]
 pub struct AudiencesSvc(pub(crate) Arc<Config>);
@@ -17,16 +19,16 @@ impl AudiencesSvc {
     ///
     /// <https://resend.com/docs/api-reference/audiences/create-audience>
     #[maybe_async::maybe_async]
-    pub async fn create(&self, name: &str) -> Result<AudienceId> {
+    pub async fn create(&self, name: &str) -> Result<CreateAudienceResponse> {
         let audience = types::CreateAudienceRequest {
             name: name.to_owned(),
         };
 
         let request = self.0.build(Method::POST, "/audiences");
         let response = self.0.send(request.json(&audience)).await?;
-        let content = response.json::<types::CreateAudienceResponse>().await?;
+        let content = response.json::<CreateAudienceResponse>().await?;
 
-        Ok(content.id)
+        Ok(content)
     }
 
     /// Retrieves a single audience.
@@ -166,7 +168,8 @@ mod test {
         let audience = "test_audiences";
 
         // Create.
-        let id = resend.audiences.create(audience).await?;
+        let created = resend.audiences.create(audience).await?;
+        let id = created.id;
 
         // Get.
         let data = resend.audiences.get(&id).await?;

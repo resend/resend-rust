@@ -1,13 +1,12 @@
-use std::fmt;
 use std::sync::Arc;
 
 use reqwest::Method;
 
-use crate::types::{Email, EmailId, SendEmail};
+use crate::types::{CreateEmailBaseOptions, CreateEmailResponse, Email, EmailId};
 use crate::{Config, Result};
 
 /// `Resend` APIs for `/emails` endpoints.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct EmailsSvc(pub(crate) Arc<Config>);
 
 impl EmailsSvc {
@@ -17,39 +16,19 @@ impl EmailsSvc {
     #[maybe_async::maybe_async]
     // Reasoning for allow: https://github.com/AntoniosBarotsis/resend-rs/pull/1#issuecomment-2081646115
     #[allow(clippy::needless_pass_by_value)]
-    pub async fn send(&self, email: SendEmail) -> Result<EmailId> {
+    pub async fn send(&self, email: CreateEmailBaseOptions) -> Result<CreateEmailResponse> {
         let request = self.0.build(Method::POST, "/emails");
         let response = self.0.send(request.json(&email)).await?;
-        let content = response.json::<types::SendEmailResponse>().await?;
+        let content = response.json::<CreateEmailResponse>().await?;
 
-        Ok(content.id)
-    }
-
-    /// Trigger up to 100 batch emails at once.
-    ///
-    /// Instead of sending one email per HTTP request, we provide a batching endpoint
-    /// that permits you to send up to 100 emails in a single API call.
-    ///
-    /// <https://resend.com/docs/api-reference/emails/send-batch-emails>
-    #[maybe_async::maybe_async]
-    pub async fn send_batch<T>(&self, emails: T) -> Result<Vec<EmailId>>
-    where
-        T: IntoIterator<Item = SendEmail> + Send,
-    {
-        let emails: Vec<_> = emails.into_iter().collect();
-
-        let request = self.0.build(Method::POST, "/emails/batch");
-        let response = self.0.send(request.json(&emails)).await?;
-        let content = response.json::<types::SendEmailBatchResponse>().await?;
-
-        Ok(content.data.into_iter().map(|x| x.id).collect())
+        Ok(content)
     }
 
     /// Retrieve a single email.
     ///
     /// <https://resend.com/docs/api-reference/emails/retrieve-email>
     #[maybe_async::maybe_async]
-    pub async fn retrieve(&self, id: &EmailId) -> Result<Email> {
+    pub async fn get(&self, id: &EmailId) -> Result<Email> {
         let path = format!("/emails/{id}");
 
         let request = self.0.build(Method::GET, &path);
@@ -60,12 +39,6 @@ impl EmailsSvc {
     }
 }
 
-impl fmt::Debug for EmailsSvc {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Debug::fmt(&self.0, f)
-    }
-}
-
 pub mod types {
     use std::collections::HashMap;
     use std::fmt;
@@ -73,6 +46,7 @@ pub mod types {
     use ecow::EcoString;
     use serde::{Deserialize, Serialize};
 
+    // TODO: Is this any less convenient than String
     /// Unique [`Email`] identifier.
     #[derive(Debug, Clone, Deserialize)]
     pub struct EmailId(EcoString);
@@ -100,9 +74,13 @@ pub mod types {
     }
 
     /// All requisite components and associated data to send an email.
+    ///
+    /// See [`docs`].
+    ///
+    /// [`docs`]: https://resend.com/docs/api-reference/emails/send-email#body-parameters
     #[must_use]
     #[derive(Debug, Clone, Serialize)]
-    pub struct SendEmail {
+    pub struct CreateEmailBaseOptions {
         /// Sender email address.
         ///
         /// To include a friendly name, use the format:
@@ -141,7 +119,7 @@ pub mod types {
         pub tags: Option<Vec<Tag>>,
     }
 
-    impl SendEmail {
+    impl CreateEmailBaseOptions {
         /// Creates a new [`SendEmail`].
         pub fn new<T, A>(from: impl Into<String>, to: T, subject: impl Into<String>) -> Self
         where
@@ -227,7 +205,7 @@ pub mod types {
     }
 
     #[derive(Debug, Clone, Deserialize)]
-    pub struct SendEmailResponse {
+    pub struct CreateEmailResponse {
         /// The ID of the sent email.
         pub id: EmailId,
     }
@@ -235,7 +213,7 @@ pub mod types {
     #[derive(Debug, Clone, Deserialize)]
     pub struct SendEmailBatchResponse {
         /// The IDs of the sent emails.
-        pub data: Vec<SendEmailResponse>,
+        pub data: Vec<CreateEmailResponse>,
     }
 
     /// Name and value of the attached [`Email`] tag.
@@ -247,6 +225,7 @@ pub mod types {
         pub name: String,
         /// The value of the email tag. It can only contain ASCII letters (a–z, A–Z), numbers (0–9),
         /// underscores (_), or dashes (-). It can contain no more than 256 characters.
+        // TODO: Why is this an option?
         #[serde(skip_serializing_if = "Option::is_none")]
         pub value: Option<String>,
     }
@@ -382,7 +361,7 @@ pub mod types {
 
 #[cfg(test)]
 mod test {
-    use crate::types::SendEmail;
+    use crate::types::CreateEmailBaseOptions;
     use crate::{Client, Result};
 
     #[tokio::test]
@@ -393,7 +372,7 @@ mod test {
         let subject = "Hello World!";
 
         let resend = Client::default();
-        let email = SendEmail::new(from, to, subject)
+        let email = CreateEmailBaseOptions::new(from, to, subject)
             .with_text("Hello World!")
             .with_attachment("Hello World as file.".as_bytes())
             .with_tag("Welcome");
@@ -413,7 +392,7 @@ mod test {
         let subject = "Hello World!";
 
         let resend = Client::default();
-        let email = SendEmail::new(from, to, subject)
+        let email = CreateEmailBaseOptions::new(from, to, subject)
             .with_text("Hello World!")
             .with_tag("Welcome");
 

@@ -3,8 +3,10 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
-use crate::types::{Domain, DomainChanges, DomainData, DomainId};
+use crate::types::{CreateDomainOptions, Domain, DomainChanges, DomainId};
 use crate::{Config, Result};
+
+use self::types::UpdateDomainResponse;
 
 /// `Resend` APIs for `/domains` endpoints.
 #[derive(Clone)]
@@ -17,7 +19,7 @@ impl DomainsSvc {
     #[maybe_async::maybe_async]
     // Reasoning for allow: https://github.com/AntoniosBarotsis/resend-rs/pull/1#issuecomment-2081646115
     #[allow(clippy::needless_pass_by_value)]
-    pub async fn add(&self, domain: DomainData) -> Result<Domain> {
+    pub async fn add(&self, domain: CreateDomainOptions) -> Result<Domain> {
         let request = self.0.build(Method::POST, "/domains");
         let response = self.0.send(request.json(&domain)).await?;
         let content = response.json::<Domain>().await?;
@@ -57,14 +59,18 @@ impl DomainsSvc {
     ///
     /// <https://resend.com/docs/api-reference/domains/update-domain>
     #[maybe_async::maybe_async]
-    pub async fn update(&self, domain_id: &DomainId, update: DomainChanges) -> Result<()> {
+    pub async fn update(
+        &self,
+        domain_id: &DomainId,
+        update: DomainChanges,
+    ) -> Result<UpdateDomainResponse> {
         let path = format!("/domains/{domain_id}");
 
         let request = self.0.build(Method::PATCH, &path);
         let response = self.0.send(request.json(&update)).await?;
-        let _content = response.json::<types::UpdateDomainResponse>().await?;
+        let content = response.json::<UpdateDomainResponse>().await?;
 
-        Ok(())
+        Ok(content)
     }
 
     /// Retrieves a list of domains for the authenticated user.
@@ -108,6 +114,7 @@ pub mod types {
     use ecow::EcoString;
     use serde::{Deserialize, Serialize};
 
+    // TODO: Again, is this needed? Should it just be a normal String?
     /// Unique [`Domain`] identifier.
     #[derive(Debug, Clone, Deserialize, Serialize)]
     pub struct DomainId(EcoString);
@@ -137,7 +144,7 @@ pub mod types {
     /// Details of a new [`Domain`].
     #[must_use]
     #[derive(Debug, Clone, Serialize)]
-    pub struct DomainData {
+    pub struct CreateDomainOptions {
         /// The name of the domain you want to create.
         #[serde(rename = "name")]
         pub name: String,
@@ -150,7 +157,7 @@ pub mod types {
         pub region: Option<Region>,
     }
 
-    impl DomainData {
+    impl CreateDomainOptions {
         /// Creates a new [`DomainData`].
         pub fn new(name: &str) -> Self {
             Self {
@@ -217,6 +224,7 @@ pub mod types {
         pub id: DomainId,
         /// The name of the domain.
         pub name: String,
+        // TODO: Technically both this and the domainrecord could be an enum https://resend.com/docs/api-reference/domains/get-domain#path-parameters
         /// The status of the domain.
         pub status: String,
 

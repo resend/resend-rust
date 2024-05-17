@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
-use crate::types::{ApiKey, ApiKeyData, ApiKeyId, ApiKeyToken};
+use crate::types::{ApiKey, ApiKeyId, ApiKeyToken, CreateApiKeyOptions};
 use crate::{Config, Result};
 
 /// `Resend` APIs for `/api-keys` endpoints.
@@ -17,7 +17,7 @@ impl ApiKeysSvc {
     #[maybe_async::maybe_async]
     // Reasoning for allow: https://github.com/AntoniosBarotsis/resend-rs/pull/1#issuecomment-2081646115
     #[allow(clippy::needless_pass_by_value)]
-    pub async fn create(&self, api_key: ApiKeyData) -> Result<ApiKeyToken> {
+    pub async fn create(&self, api_key: CreateApiKeyOptions) -> Result<ApiKeyToken> {
         let request = self.0.build(Method::POST, "/api-keys");
         let response = self.0.send(request.json(&api_key)).await?;
         let content = response.json::<ApiKeyToken>().await?;
@@ -65,6 +65,7 @@ pub mod types {
 
     use crate::types::DomainId;
 
+    // TODO: Should this be a string?
     /// Unique [`ApiKey`] identifier.
     #[derive(Debug, Clone, Deserialize)]
     pub struct ApiKeyId(EcoString);
@@ -94,7 +95,7 @@ pub mod types {
     /// Name and permissions of the new [`ApiKey`].
     #[must_use]
     #[derive(Debug, Clone, Serialize)]
-    pub struct ApiKeyData {
+    pub struct CreateApiKeyOptions {
         /// The API key name.
         pub name: String,
 
@@ -109,7 +110,7 @@ pub mod types {
         pub domain_id: Option<DomainId>,
     }
 
-    impl ApiKeyData {
+    impl CreateApiKeyOptions {
         /// Creates a new [`ApiKeyData`].
         #[inline]
         pub fn new(name: &str) -> Self {
@@ -188,7 +189,7 @@ pub mod types {
 
 #[cfg(test)]
 mod test {
-    use crate::types::ApiKeyData;
+    use crate::types::CreateApiKeyOptions;
     use crate::{Client, Result};
 
     #[tokio::test]
@@ -198,7 +199,7 @@ mod test {
         let api_key = "test_";
 
         // Create.
-        let request = ApiKeyData::new(api_key).with_full_access();
+        let request = CreateApiKeyOptions::new(api_key).with_full_access();
         let response = resend.api_keys.create(request).await?;
         let id = response.id;
 

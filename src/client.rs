@@ -9,29 +9,7 @@ use reqwest::Client as ReqwestClient;
 use crate::config::Config;
 use crate::services::{ApiKeysSvc, AudiencesSvc, ContactsSvc, DomainsSvc, EmailsSvc};
 
-/// A minimal [Resend](https://resend.com) client.
-///
-/// #### Example
-///
-/// ```rust,no_run
-/// use resend_rs::{Client, Result};
-/// use resend_rs::types::SendEmail;
-///
-/// # #[tokio::main]
-/// # async fn main() -> Result<()> {
-/// let from = "Acme <onboarding@resend.dev>";
-/// let to = ["delivered@resend.dev"];
-/// let sub = "Hello World!";
-///
-/// let email = SendEmail::new(from, to, sub)
-///     .with_text("Hello World!");
-///
-/// let resend = Client::default();
-/// let id = resend.emails.send(email).await?;
-/// println!("id: {id}");
-/// # Ok(())
-/// # }
-/// ```
+/// The [Resend](https://resend.com) client.
 #[must_use]
 #[derive(Clone)]
 pub struct Client {

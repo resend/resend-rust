@@ -41,12 +41,15 @@ mod config;
 mod contacts;
 mod domains;
 mod emails;
+// TODO: Re-export
+mod batch;
 
 pub mod services {
     //! `Resend` API services.
 
     pub use super::api_keys::ApiKeysSvc;
     pub use super::audiences::AudiencesSvc;
+    pub use super::batch::BatchSvc;
     pub use super::contacts::ContactsSvc;
     pub use super::domains::DomainsSvc;
     pub use super::emails::EmailsSvc;
@@ -55,14 +58,18 @@ pub mod services {
 pub mod types {
     //! Request and response types.
 
-    pub use super::api_keys::types::{ApiKey, ApiKeyData, ApiKeyId, ApiKeyToken, Permission};
+    pub use super::api_keys::types::{
+        ApiKey, ApiKeyId, ApiKeyToken, CreateApiKeyOptions, Permission,
+    };
     pub use super::audiences::types::{Audience, AudienceId};
     pub use super::config::types::{ErrorKind, ErrorResponse};
     pub use super::contacts::types::{Contact, ContactChanges, ContactData, ContactId};
     pub use super::domains::types::{
-        Domain, DomainChanges, DomainData, DomainId, DomainRecord, Region,
+        CreateDomainOptions, Domain, DomainChanges, DomainId, DomainRecord, Region,
     };
-    pub use super::emails::types::{Attachment, ContentOrPath, Email, EmailId, SendEmail, Tag};
+    pub use super::emails::types::{
+        Attachment, ContentOrPath, CreateEmailBaseOptions, CreateEmailResponse, Email, EmailId, Tag,
+    };
 }
 
 /// Error type for operations of a [`Client`].
