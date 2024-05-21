@@ -6,8 +6,8 @@
 
 A minimal [Resend](https://resend.com) client.
 
-[action-badge]: https://img.shields.io/github/actions/workflow/status/AntoniosBarotsis/resend-rs/ci.yml
-[action-url]: https://github.com/AntoniosBarotsis/resend-rs/actions/workflows/ci.yml
+[action-badge]: https://img.shields.io/github/actions/workflow/status/resend/resend-rs/ci.yml
+[action-url]: https://github.com/resend/resend-rs/actions/workflows/ci.yml
 [crates-badge]: https://img.shields.io/crates/v/resend-rs
 [crates-url]: https://crates.io/crates/resend-rs
 [docs-badge]: https://img.shields.io/docsrs/resend-rs

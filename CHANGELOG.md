@@ -35,7 +35,7 @@ and this project adheres to
 ## [0.4.0] - 2024-05-01
 
 `@martsokha` basically rewrote the entire repository 0_0
-([pr](https://github.com/AntoniosBarotsis/resend-rs/pull/1))
+([pr](https://github.com/resend/resend-rs/pull/1))
 
 The crate now supports the entire Resend API surface, check the
 [docs](https://docs.rs/resend-rs/latest/resend_rs/) for examples.

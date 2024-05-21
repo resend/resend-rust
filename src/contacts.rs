@@ -19,7 +19,7 @@ impl ContactsSvc {
     ///
     /// <https://resend.com/docs/api-reference/contacts/create-contact>
     #[maybe_async::maybe_async]
-    // Reasoning for allow: https://github.com/AntoniosBarotsis/resend-rs/pull/1#issuecomment-2081646115
+    // Reasoning for allow: https://github.com/resend/resend-rs/pull/1#issuecomment-2081646115
     #[allow(clippy::needless_pass_by_value)]
     pub async fn create(&self, audience_id: &str, contact: ContactData) -> Result<ContactId> {
         let path = format!("/audiences/{audience_id}/contacts");
@@ -49,7 +49,7 @@ impl ContactsSvc {
     ///
     /// <https://resend.com/docs/api-reference/contacts/update-contact>
     #[maybe_async::maybe_async]
-    // Reasoning for allow: https://github.com/AntoniosBarotsis/resend-rs/pull/1#issuecomment-2081646115
+    // Reasoning for allow: https://github.com/resend/resend-rs/pull/1#issuecomment-2081646115
     #[allow(clippy::needless_pass_by_value)]
     pub async fn update(
         &self,

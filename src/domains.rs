@@ -17,7 +17,7 @@ impl DomainsSvc {
     ///
     /// <https://resend.com/docs/api-reference/domains/create-domain>
     #[maybe_async::maybe_async]
-    // Reasoning for allow: https://github.com/AntoniosBarotsis/resend-rs/pull/1#issuecomment-2081646115
+    // Reasoning for allow: https://github.com/resend/resend-rs/pull/1#issuecomment-2081646115
     #[allow(clippy::needless_pass_by_value)]
     pub async fn add(&self, domain: CreateDomainOptions) -> Result<Domain> {
         let request = self.0.build(Method::POST, "/domains");

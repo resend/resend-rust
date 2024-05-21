@@ -14,7 +14,7 @@ impl EmailsSvc {
     ///
     /// <https://resend.com/docs/api-reference/emails/send-email>
     #[maybe_async::maybe_async]
-    // Reasoning for allow: https://github.com/AntoniosBarotsis/resend-rs/pull/1#issuecomment-2081646115
+    // Reasoning for allow: https://github.com/resend/resend-rs/pull/1#issuecomment-2081646115
     #[allow(clippy::needless_pass_by_value)]
     pub async fn send(&self, email: CreateEmailBaseOptions) -> Result<CreateEmailResponse> {
         let request = self.0.build(Method::POST, "/emails");

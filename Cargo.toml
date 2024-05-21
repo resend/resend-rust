@@ -9,8 +9,9 @@ license = "MIT"
 readme = "./README.md"
 
 authors = ["Antonios Barotsis <antonios.barotsis@proton.me>"]
-repository = "https://github.com/AntoniosBarotsis/resend-rs"
-homepage = "https://github.com/AntoniosBarotsis/resend-rs"
+repository = "https://github.com/resend/resend-rs"
+# TODO: Maybe change this to the official docs once thats done?
+homepage = "https://github.com/resend/resend-rs"
 documentation = "https://docs.rs/resend-rs"
 
 categories = ["email", "web-programming"]
