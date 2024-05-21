@@ -6,6 +6,13 @@
 
 A minimal [Resend](https://resend.com) client.
 
+Add with:
+
+```sh
+cargo add resend-rs
+cargo add tokio -F macros,rt-multi-thread
+```
+
 [action-badge]: https://img.shields.io/github/actions/workflow/status/resend/resend-rs/ci.yml
 [action-url]: https://github.com/resend/resend-rs/actions/workflows/ci.yml
 [crates-badge]: https://img.shields.io/crates/v/resend-rs
