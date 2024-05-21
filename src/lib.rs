@@ -36,13 +36,13 @@ pub(crate) use config::Config;
 
 mod api_keys;
 mod audiences;
+mod batch;
 mod client;
 mod config;
 mod contacts;
 mod domains;
 mod emails;
-// TODO: Re-export
-mod batch;
+mod error;
 
 pub mod services {
     //! `Resend` API services.
@@ -62,7 +62,6 @@ pub mod types {
         ApiKey, ApiKeyId, ApiKeyToken, CreateApiKeyOptions, Permission,
     };
     pub use super::audiences::types::{Audience, AudienceId};
-    pub use super::config::types::{ErrorKind, ErrorResponse};
     pub use super::contacts::types::{Contact, ContactChanges, ContactData, ContactId};
     pub use super::domains::types::{
         CreateDomainOptions, Domain, DomainChanges, DomainId, DomainRecord, Region,
@@ -70,6 +69,7 @@ pub mod types {
     pub use super::emails::types::{
         Attachment, ContentOrPath, CreateEmailBaseOptions, CreateEmailResponse, Email, EmailId, Tag,
     };
+    pub use super::error::types::{ErrorKind, ErrorResponse};
 }
 
 /// Error type for operations of a [`Client`].
