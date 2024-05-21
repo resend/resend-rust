@@ -5,24 +5,24 @@
 //! ```rust,no_run
 //! use resend_rs::types::CreateEmailBaseOptions;
 //! use resend_rs::{Client, Result};
-//! 
+//!
 //! #[tokio::main]
 //! async fn main() -> Result<()> {
 //!     let resend = Client::default();
-//! 
+//!
 //!     let from = "Acme <onboarding@a.dev>";
 //!     let to = ["delivered@resend.dev"];
 //!     let subject = "Hello World!";
-//! 
+//!
 //!     let email = CreateEmailBaseOptions::new(from, to, subject)
 //!         .with_text("Hello World!")
 //!         .with_tag("Welcome");
-//! 
+//!
 //!     let id = resend.emails.send(email).await?.id;
 //!     println!("id: {id}");
 //!     Ok(())
 //! }
-//! 
+//!
 //! ```
 
 // FIXME: Tests can fail due to rate limit constraints (max 10 req/s). Running the tests on one

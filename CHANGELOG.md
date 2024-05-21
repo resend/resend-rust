@@ -25,6 +25,8 @@ and this project adheres to
 - moved batch related stuff to a new module
 - `email.send_batch` is now `batch.send`
 - moved error stuff from `config` to their own `error` module
+- removed `[...]Id` types from function arguments
+- implemented `Deref<str>` for all `[...]Id` types
 
 ### Deleted
 

@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
-use crate::types::{ApiKey, ApiKeyId, ApiKeyToken, CreateApiKeyOptions};
+use crate::types::{ApiKey, ApiKeyToken, CreateApiKeyOptions};
 use crate::{Config, Result};
 
 /// `Resend` APIs for `/api-keys` endpoints.
@@ -41,7 +41,7 @@ impl ApiKeysSvc {
     ///
     /// <https://resend.com/docs/api-reference/api-keys/delete-api-key>
     #[maybe_async::maybe_async]
-    pub async fn delete(&self, api_key_id: &ApiKeyId) -> Result<()> {
+    pub async fn delete(&self, api_key_id: &str) -> Result<()> {
         let path = format!("/api-keys/{api_key_id}");
 
         let request = self.0.build(Method::DELETE, &path);
@@ -58,14 +58,13 @@ impl fmt::Debug for ApiKeysSvc {
 }
 
 pub mod types {
-    use std::fmt;
+    use std::{fmt, ops::Deref};
 
     use ecow::EcoString;
     use serde::{Deserialize, Serialize};
 
     use crate::types::DomainId;
 
-    // TODO: Should this be a string?
     /// Unique [`ApiKey`] identifier.
     #[derive(Debug, Clone, Deserialize)]
     pub struct ApiKeyId(EcoString);
@@ -79,6 +78,14 @@ pub mod types {
         }
     }
 
+    impl Deref for ApiKeyId {
+        type Target = str;
+
+        fn deref(&self) -> &Self::Target {
+            self.as_ref()
+        }
+    }
+
     impl AsRef<str> for ApiKeyId {
         #[inline]
         fn as_ref(&self) -> &str {
@@ -88,7 +95,7 @@ pub mod types {
 
     impl fmt::Display for ApiKeyId {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            fmt::Display::fmt(self.as_ref(), f)
+            fmt::Display::fmt(&self, f)
         }
     }
 

@@ -21,11 +21,7 @@ impl ContactsSvc {
     #[maybe_async::maybe_async]
     // Reasoning for allow: https://github.com/AntoniosBarotsis/resend-rs/pull/1#issuecomment-2081646115
     #[allow(clippy::needless_pass_by_value)]
-    pub async fn create(
-        &self,
-        audience_id: &AudienceId,
-        contact: ContactData,
-    ) -> Result<ContactId> {
+    pub async fn create(&self, audience_id: &str, contact: ContactData) -> Result<ContactId> {
         let path = format!("/audiences/{audience_id}/contacts");
 
         let request = self.0.build(Method::POST, &path);
@@ -39,7 +35,7 @@ impl ContactsSvc {
     ///
     /// <https://resend.com/docs/api-reference/contacts/get-contact>
     #[maybe_async::maybe_async]
-    pub async fn get(&self, contact_id: &ContactId, audience_id: &AudienceId) -> Result<Contact> {
+    pub async fn get(&self, contact_id: &str, audience_id: &AudienceId) -> Result<Contact> {
         let path = format!("/audiences/{audience_id}/contacts/{contact_id}");
 
         let request = self.0.build(Method::GET, &path);
@@ -57,8 +53,8 @@ impl ContactsSvc {
     #[allow(clippy::needless_pass_by_value)]
     pub async fn update(
         &self,
-        contact_id: &ContactId,
-        audience_id: &AudienceId,
+        contact_id: &str,
+        audience_id: &str,
         update: ContactChanges,
     ) -> Result<UpdateContactResponse> {
         let path = format!("/audiences/{audience_id}/contacts/{contact_id}");
@@ -87,7 +83,11 @@ impl ContactsSvc {
     ///
     /// <https://resend.com/docs/api-reference/contacts/delete-contact>
     #[maybe_async::maybe_async]
-    pub async fn delete_by_id(&self, audience: &AudienceId, contact_id: &ContactId) -> Result<()> {
+    pub async fn delete_by_contact_id(
+        &self,
+        audience: &AudienceId,
+        contact_id: &ContactId,
+    ) -> Result<()> {
         // Yeah, that's correct: `/audiences/{audience}/contacts/{id}`.
         self.delete_by_email(audience, contact_id.as_ref()).await
     }
@@ -114,12 +114,11 @@ impl fmt::Debug for ContactsSvc {
 }
 
 pub mod types {
-    use std::fmt;
+    use std::{fmt, ops::Deref};
 
     use ecow::EcoString;
     use serde::{Deserialize, Serialize};
 
-    // TODO: Again, is this needed? Should it just be a normal String?
     /// Unique [`Contact`] identifier.
     #[derive(Debug, Clone, Deserialize)]
     pub struct ContactId(EcoString);
@@ -130,6 +129,14 @@ pub mod types {
         #[must_use]
         pub fn new(id: &str) -> Self {
             Self(EcoString::from(id))
+        }
+    }
+
+    impl Deref for ContactId {
+        type Target = str;
+
+        fn deref(&self) -> &Self::Target {
+            self.as_ref()
         }
     }
 
@@ -313,7 +320,7 @@ mod test {
 
         // Update.
         let changes = ContactChanges::new().with_unsubscribed(true);
-        resend.contacts.update(&id, &audience_id, changes).await?;
+        let _res = resend.contacts.update(&id, &audience_id, changes).await?;
 
         // Retrieve.
         let contact = resend.contacts.get(&id, &audience_id).await?;
@@ -324,7 +331,10 @@ mod test {
         assert_eq!(contacts.len(), 1);
 
         // Delete.
-        resend.contacts.delete_by_id(&audience_id, &id).await?;
+        resend
+            .contacts
+            .delete_by_contact_id(&audience_id, &id)
+            .await?;
 
         // Delete audience.
         let _ = resend.audiences.delete(&audience_id).await?;

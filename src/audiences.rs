@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
-use crate::types::{Audience, AudienceId};
+use crate::types::Audience;
 use crate::{Config, Result};
 
 use self::types::CreateAudienceResponse;
@@ -35,7 +35,7 @@ impl AudiencesSvc {
     ///
     /// <https://resend.com/docs/api-reference/audiences/get-audience>
     #[maybe_async::maybe_async]
-    pub async fn get(&self, id: &AudienceId) -> Result<Audience> {
+    pub async fn get(&self, id: &str) -> Result<Audience> {
         let path = format!("/audiences/{id}");
 
         let request = self.0.build(Method::GET, &path);
@@ -47,11 +47,9 @@ impl AudiencesSvc {
 
     /// Removes an existing audience.
     ///
-    /// Returns `true` if the audience is deleted.
-    ///
     /// <https://resend.com/docs/api-reference/audiences/delete-audience>
     #[maybe_async::maybe_async]
-    pub async fn delete(&self, id: &AudienceId) -> Result<bool> {
+    pub async fn delete(&self, id: &str) -> Result<bool> {
         let path = format!("/audiences/{id}");
 
         let request = self.0.build(Method::DELETE, &path);
@@ -81,7 +79,7 @@ impl fmt::Debug for AudiencesSvc {
 }
 
 pub mod types {
-    use std::fmt;
+    use std::{fmt, ops::Deref};
 
     use ecow::EcoString;
     use serde::{Deserialize, Serialize};
@@ -96,6 +94,14 @@ pub mod types {
         #[must_use]
         pub fn new(id: &str) -> Self {
             Self(EcoString::from(id))
+        }
+    }
+
+    impl Deref for AudienceId {
+        type Target = str;
+
+        fn deref(&self) -> &Self::Target {
+            self.as_ref()
         }
     }
 

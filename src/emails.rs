@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
-use crate::types::{CreateEmailBaseOptions, CreateEmailResponse, Email, EmailId};
+use crate::types::{CreateEmailBaseOptions, CreateEmailResponse, Email};
 use crate::{Config, Result};
 
 /// `Resend` APIs for `/emails` endpoints.
@@ -28,7 +28,7 @@ impl EmailsSvc {
     ///
     /// <https://resend.com/docs/api-reference/emails/retrieve-email>
     #[maybe_async::maybe_async]
-    pub async fn get(&self, id: &EmailId) -> Result<Email> {
+    pub async fn get(&self, id: &str) -> Result<Email> {
         let path = format!("/emails/{id}");
 
         let request = self.0.build(Method::GET, &path);
@@ -40,13 +40,12 @@ impl EmailsSvc {
 }
 
 pub mod types {
-    use std::collections::HashMap;
     use std::fmt;
+    use std::{collections::HashMap, ops::Deref};
 
     use ecow::EcoString;
     use serde::{Deserialize, Serialize};
 
-    // TODO: Is this any less convenient than String
     /// Unique [`Email`] identifier.
     #[derive(Debug, Clone, Deserialize)]
     pub struct EmailId(EcoString);
@@ -57,6 +56,14 @@ pub mod types {
         #[must_use]
         pub fn new(id: &str) -> Self {
             Self(EcoString::from(id))
+        }
+    }
+
+    impl Deref for EmailId {
+        type Target = str;
+
+        fn deref(&self) -> &Self::Target {
+            self.as_ref()
         }
     }
 

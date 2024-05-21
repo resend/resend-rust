@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
-use crate::types::{CreateDomainOptions, Domain, DomainChanges, DomainId};
+use crate::types::{CreateDomainOptions, Domain, DomainChanges};
 use crate::{Config, Result};
 
 use self::types::UpdateDomainResponse;
@@ -31,7 +31,7 @@ impl DomainsSvc {
     ///
     /// <https://resend.com/docs/api-reference/domains/get-domain>
     #[maybe_async::maybe_async]
-    pub async fn get(&self, domain_id: &DomainId) -> Result<Domain> {
+    pub async fn get(&self, domain_id: &str) -> Result<Domain> {
         let path = format!("/domains/{domain_id}");
 
         let request = self.0.build(Method::GET, &path);
@@ -45,7 +45,7 @@ impl DomainsSvc {
     ///
     /// <https://resend.com/docs/api-reference/domains/verify-domain>
     #[maybe_async::maybe_async]
-    pub async fn verify(&self, domain_id: &DomainId) -> Result<()> {
+    pub async fn verify(&self, domain_id: &str) -> Result<()> {
         let path = format!("/domains/{domain_id}/verify");
 
         let request = self.0.build(Method::POST, &path);
@@ -61,7 +61,7 @@ impl DomainsSvc {
     #[maybe_async::maybe_async]
     pub async fn update(
         &self,
-        domain_id: &DomainId,
+        domain_id: &str,
         update: DomainChanges,
     ) -> Result<UpdateDomainResponse> {
         let path = format!("/domains/{domain_id}");
@@ -91,7 +91,7 @@ impl DomainsSvc {
     ///
     /// <https://resend.com/docs/api-reference/domains/delete-domain>
     #[maybe_async::maybe_async]
-    pub async fn delete(&self, domain_id: &DomainId) -> Result<bool> {
+    pub async fn delete(&self, domain_id: &str) -> Result<bool> {
         let path = format!("/domains/{domain_id}");
 
         let request = self.0.build(Method::DELETE, &path);
@@ -109,12 +109,11 @@ impl fmt::Debug for DomainsSvc {
 }
 
 pub mod types {
-    use std::fmt;
+    use std::{fmt, ops::Deref};
 
     use ecow::EcoString;
     use serde::{Deserialize, Serialize};
 
-    // TODO: Again, is this needed? Should it just be a normal String?
     /// Unique [`Domain`] identifier.
     #[derive(Debug, Clone, Deserialize, Serialize)]
     pub struct DomainId(EcoString);
@@ -125,6 +124,14 @@ pub mod types {
         #[must_use]
         pub fn new(id: &str) -> Self {
             Self(EcoString::from(id))
+        }
+    }
+
+    impl Deref for DomainId {
+        type Target = str;
+
+        fn deref(&self) -> &Self::Target {
+            self.as_ref()
         }
     }
 
