@@ -15,15 +15,16 @@ and this project adheres to
 - renamed `SendEmail` to `CreateEmailBaseOptions`
 - renamed `email.retrieve` to `email.get`
 - renamed `SendEmailResponse` to `CreateEmailResponse`
-- moved batch related stuff to a new module
+- renamed `ApiKeyData` to `CreateApiKeyOptions`
+- renamed `domains.DomainData` to `CreateDomainOptions`
 - `email.send` now returns a `CreateEmailResponse` instead of an `EmailId`
 - `batch.send` now returns a `Vec<CreateEmailResponse>` instead of a `Vec<EmailId>`
-- `email.send_batch` is now `batch.send`
-- renamed `ApiKeyData` to `CreateApiKeyOptions`
 - `audiences.create` now returns `CreateAudienceResponse` instead of `AudienceId`
 - `contacts.update` now returns `UpdateContactResponse`
-- renamed `domains.DomainData` to `CreateDomainOptions`
 - `domains.update` now returns `UpdateDomainResponse`
+- moved batch related stuff to a new module
+- `email.send_batch` is now `batch.send`
+- moved error stuff from `config` to their own `error` module
 
 ### Deleted
 
