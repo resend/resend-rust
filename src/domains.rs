@@ -148,17 +148,15 @@ pub mod types {
         /// The name of the domain you want to create.
         #[serde(rename = "name")]
         pub name: String,
-        /// The region where [`SendEmail`]s will be sent from.
+        /// The region where the email will be sent from.
         ///
         /// Possible values are 'us-east-1' | 'eu-west-1' | 'sa-east-1'.
-        ///
-        /// [`SendEmail`]: crate::types::SendEmail
         #[serde(rename = "region", skip_serializing_if = "Option::is_none")]
         pub region: Option<Region>,
     }
 
     impl CreateDomainOptions {
-        /// Creates a new [`DomainData`].
+        /// Creates a new [`CreateDomainOptions`].
         pub fn new(name: &str) -> Self {
             Self {
                 name: name.to_owned(),
@@ -173,11 +171,11 @@ pub mod types {
         }
     }
 
-    /// Region where [`SendEmail`]s will be sent from.
+    /// Region where [`CreateEmailBaseOptions`]s will be sent from.
     ///
     /// Possible values are 'us-east-1' | 'eu-west-1' | 'sa-east-1' | 'ap-northeast-1'.
     ///
-    /// [`SendEmail`]: crate::types::SendEmail
+    /// [`CreateEmailBaseOptions`]: crate::types::CreateEmailBaseOptions
     #[non_exhaustive]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub enum Region {

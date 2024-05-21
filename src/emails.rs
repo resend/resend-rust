@@ -120,7 +120,7 @@ pub mod types {
     }
 
     impl CreateEmailBaseOptions {
-        /// Creates a new [`SendEmail`].
+        /// Creates a new [`CreateEmailBaseOptions`].
         pub fn new<T, A>(from: impl Into<String>, to: T, subject: impl Into<String>) -> Self
         where
             T: IntoIterator<Item = A>,
@@ -260,7 +260,7 @@ pub mod types {
         }
     }
 
-    /// Filename and content of the [`SendEmail`] attachment.
+    /// Filename and content of the [`CreateEmailBaseOptions`] attachment.
     ///
     /// Limited to max 40mb per email.
     #[must_use]

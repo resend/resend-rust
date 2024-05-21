@@ -111,7 +111,7 @@ pub mod types {
     }
 
     impl CreateApiKeyOptions {
-        /// Creates a new [`ApiKeyData`].
+        /// Creates a new [`CreateApiKeyOptions`].
         #[inline]
         pub fn new(name: &str) -> Self {
             Self {
