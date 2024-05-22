@@ -28,8 +28,8 @@ impl EmailsSvc {
     ///
     /// <https://resend.com/docs/api-reference/emails/retrieve-email>
     #[maybe_async::maybe_async]
-    pub async fn get(&self, id: &str) -> Result<Email> {
-        let path = format!("/emails/{id}");
+    pub async fn get(&self, email_id: &str) -> Result<Email> {
+        let path = format!("/emails/{email_id}");
 
         let request = self.0.build(Method::GET, &path);
         let response = self.0.send(request).await?;
@@ -344,7 +344,7 @@ pub mod types {
         /// Sender email address.
         pub from: String,
         /// Recipient email address.
-        pub to: String,
+        pub to: Vec<String>,
         /// The subject line of the email.
         pub subject: String,
 

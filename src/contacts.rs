@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
-use crate::types::{AudienceId, Contact, ContactChanges, ContactData, ContactId};
+use crate::types::{Contact, ContactChanges, ContactData, ContactId};
 use crate::{Config, Result};
 
 use self::types::UpdateContactResponse;
@@ -35,7 +35,7 @@ impl ContactsSvc {
     ///
     /// <https://resend.com/docs/api-reference/contacts/get-contact>
     #[maybe_async::maybe_async]
-    pub async fn get(&self, contact_id: &str, audience_id: &AudienceId) -> Result<Contact> {
+    pub async fn get(&self, contact_id: &str, audience_id: &str) -> Result<Contact> {
         let path = format!("/audiences/{audience_id}/contacts/{contact_id}");
 
         let request = self.0.build(Method::GET, &path);
@@ -70,7 +70,7 @@ impl ContactsSvc {
     ///
     /// <https://resend.com/docs/api-reference/contacts/delete-contact>
     #[maybe_async::maybe_async]
-    pub async fn delete_by_email(&self, audience_id: &AudienceId, email: &str) -> Result<()> {
+    pub async fn delete_by_email(&self, audience_id: &str, email: &str) -> Result<()> {
         let path = format!("/audiences/{audience_id}/contacts/{email}");
 
         let request = self.0.build(Method::DELETE, &path);
@@ -83,11 +83,7 @@ impl ContactsSvc {
     ///
     /// <https://resend.com/docs/api-reference/contacts/delete-contact>
     #[maybe_async::maybe_async]
-    pub async fn delete_by_contact_id(
-        &self,
-        audience: &AudienceId,
-        contact_id: &ContactId,
-    ) -> Result<()> {
+    pub async fn delete_by_contact_id(&self, audience: &str, contact_id: &str) -> Result<()> {
         // Yeah, that's correct: `/audiences/{audience}/contacts/{id}`.
         self.delete_by_email(audience, contact_id.as_ref()).await
     }
@@ -96,7 +92,7 @@ impl ContactsSvc {
     ///
     /// <https://resend.com/docs/api-reference/contacts/list-contacts>
     #[maybe_async::maybe_async]
-    pub async fn list(&self, audience: &AudienceId) -> Result<Vec<Contact>> {
+    pub async fn list(&self, audience: &str) -> Result<Vec<Contact>> {
         let path = format!("/audiences/{audience}/contacts");
 
         let request = self.0.build(Method::GET, &path);

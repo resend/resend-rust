@@ -62,10 +62,12 @@ pub mod types {
     pub use super::api_keys::types::{
         ApiKey, ApiKeyId, ApiKeyToken, CreateApiKeyOptions, Permission,
     };
-    pub use super::audiences::types::{Audience, AudienceId};
+    pub use super::audiences::types::{Audience, AudienceId, CreateAudienceResponse};
     pub use super::contacts::types::{Contact, ContactChanges, ContactData, ContactId};
     pub use super::domains::types::{
-        CreateDomainOptions, Domain, DomainChanges, DomainId, DomainRecord, Region,
+        CreateDomainOptions, DkimRecordType, Domain, DomainChanges, DomainDkimRecord, DomainId,
+        DomainRecord, DomainSpfRecord, DomainStatus, ProxyStatus, Region, SpfRecordType,
+        UpdateDomainResponse,
     };
     pub use super::emails::types::{
         Attachment, ContentOrPath, CreateEmailBaseOptions, CreateEmailResponse, Email, EmailId, Tag,

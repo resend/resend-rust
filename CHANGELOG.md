@@ -27,6 +27,9 @@ and this project adheres to
 - moved error stuff from `config` to their own `error` module
 - removed `[...]Id` types from function arguments
 - implemented `Deref<str>` for all `[...]Id` types
+- `DomainRecord` has been converted to an enum for better/more detailed type handling
+- `Domain.records` is now optional
+- `Email.to` is now a vec
 
 ### Deleted
 

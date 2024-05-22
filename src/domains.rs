@@ -200,25 +200,84 @@ pub mod types {
         ApNorthEast1,
     }
 
-    /// Individual [`Domain`] record.
     #[derive(Debug, Clone, Deserialize)]
-    pub struct DomainRecord {
-        /// The type of record.
-        pub record: String,
+    pub struct DomainSpfRecord {
         /// The name of the record.
         pub name: String,
-
+        /// The value of the record.
+        pub value: String,
         /// The type of record.
         #[serde(rename = "type")]
-        pub d_type: Option<String>,
+        pub d_type: SpfRecordType,
         /// The time to live for the record.
-        pub ttl: Option<String>,
+        pub ttl: String,
         /// The status of the record.
-        pub status: Option<String>,
-        /// The value of the record.
-        pub value: Option<String>,
-        /// The priority of the record.
+        pub status: DomainStatus,
+
+        pub routing_policy: Option<String>,
         pub priority: Option<i32>,
+        pub proxy_status: Option<ProxyStatus>,
+    }
+
+    #[derive(Debug, Clone, Deserialize)]
+    pub struct DomainDkimRecord {
+        /// The name of the record.
+        pub name: String,
+        /// The value of the record.
+        pub value: String,
+        /// The type of record.
+        #[serde(rename = "type")]
+        pub d_type: DkimRecordType,
+        /// The time to live for the record.
+        pub ttl: String,
+        /// The status of the record.
+        pub status: DomainStatus,
+
+        pub routing_policy: Option<String>,
+        pub priority: Option<i32>,
+        pub proxy_status: Option<ProxyStatus>,
+    }
+
+    #[derive(Debug, Copy, Clone, Deserialize)]
+    pub enum ProxyStatus {
+        Enable,
+        Disable,
+    }
+
+    #[derive(Debug, Copy, Clone, Deserialize)]
+    pub enum DomainStatus {
+        Pending,
+        Verified,
+        Failed,
+        #[serde(rename = "temporary_failure")]
+        TemporaryFailure,
+        #[serde(rename = "not_started")]
+        NotStarted,
+    }
+
+    #[derive(Debug, Copy, Clone, Deserialize)]
+    pub enum SpfRecordType {
+        MX,
+        #[allow(clippy::upper_case_acronyms)]
+        TXT,
+    }
+
+    #[derive(Debug, Copy, Clone, Deserialize)]
+    pub enum DkimRecordType {
+        #[allow(clippy::upper_case_acronyms)]
+        CNAME,
+        #[allow(clippy::upper_case_acronyms)]
+        TXT,
+    }
+
+    /// Individual [`Domain`] record.
+    #[derive(Debug, Clone, Deserialize)]
+    #[serde(tag = "record")]
+    pub enum DomainRecord {
+        #[serde(rename = "SPF")]
+        DomainSpfRecord(DomainSpfRecord),
+        #[serde(rename = "DKIM")]
+        DomainDkimRecord(DomainDkimRecord),
     }
 
     /// Details of an existing domain.
@@ -238,7 +297,7 @@ pub mod types {
         /// The region where the domain is hosted.
         pub region: Region,
         /// The records of the domain.
-        pub records: Vec<DomainRecord>,
+        pub records: Option<Vec<DomainRecord>>,
 
         /// The service that runs DNS server.
         #[serde(rename = "dnsProvider")]
