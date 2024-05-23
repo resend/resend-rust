@@ -63,6 +63,7 @@ pub mod types {
         ApiKey, ApiKeyId, ApiKeyToken, CreateApiKeyOptions, Permission,
     };
     pub use super::audiences::types::{Audience, AudienceId, CreateAudienceResponse};
+    pub use super::batch::BatchSvc;
     pub use super::contacts::types::{Contact, ContactChanges, ContactData, ContactId};
     pub use super::domains::types::{
         CreateDomainOptions, DkimRecordType, Domain, DomainChanges, DomainDkimRecord, DomainId,
