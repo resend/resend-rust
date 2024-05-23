@@ -68,24 +68,29 @@ impl ContactsSvc {
 
     /// Removes an existing contact from an audience by their email.
     ///
+    /// Returns whether the contact was deleted successfully.
+    ///
     /// <https://resend.com/docs/api-reference/contacts/delete-contact>
     #[maybe_async::maybe_async]
-    pub async fn delete_by_email(&self, audience_id: &str, email: &str) -> Result<()> {
+    pub async fn delete_by_email(&self, audience_id: &str, email: &str) -> Result<bool> {
         let path = format!("/audiences/{audience_id}/contacts/{email}");
 
         let request = self.0.build(Method::DELETE, &path);
-        let _response = self.0.send(request).await?;
+        let response = self.0.send(request).await?;
+        let content = response.json::<types::DeleteContactResponse>().await?;
 
-        Ok(())
+        Ok(content.deleted)
     }
 
     /// Removes an existing contact from an audience by their ID.
     ///
+    /// Returns whether the contact was deleted successfully.
+    ///
     /// <https://resend.com/docs/api-reference/contacts/delete-contact>
     #[maybe_async::maybe_async]
-    pub async fn delete_by_contact_id(&self, audience: &str, contact_id: &str) -> Result<()> {
+    pub async fn delete_by_contact_id(&self, audience_id: &str, contact_id: &str) -> Result<bool> {
         // Yeah, that's correct: `/audiences/{audience}/contacts/{id}`.
-        self.delete_by_email(audience, contact_id.as_ref()).await
+        self.delete_by_email(audience_id, contact_id.as_ref()).await
     }
 
     /// Retrieves all contacts from an audience.
@@ -289,6 +294,14 @@ pub mod types {
     pub struct UpdateContactResponse {
         /// Unique identifier for the updated contact.
         pub id: ContactId,
+    }
+
+    #[derive(Debug, Clone, Deserialize)]
+    pub struct DeleteContactResponse {
+        /// The ID of the domain.
+        pub id: ContactId,
+        /// Indicates whether the domain was deleted successfully.
+        pub deleted: bool,
     }
 }
 

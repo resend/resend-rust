@@ -30,6 +30,7 @@ and this project adheres to
 - `DomainRecord` has been converted to an enum for better/more detailed type handling
 - `Domain.records` is now optional
 - `Email.to` is now a vec
+- `contacts.delete_by_email` and `contacts.delete_by_contact_id` now return the `deleted` boolean
 
 ### Deleted
 
