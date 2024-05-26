@@ -308,12 +308,12 @@ pub mod types {
 #[cfg(test)]
 mod test {
     use crate::types::{ContactChanges, ContactData};
-    use crate::{Client, Result};
+    use crate::{Resend, Result};
 
     #[tokio::test]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> Result<()> {
-        let resend = Client::default();
+        let resend = Resend::default();
         let audience = "test_contacts";
 
         // Create audience.
@@ -340,7 +340,7 @@ mod test {
         assert_eq!(contacts.len(), 1);
 
         // Delete.
-        resend
+        let _ = resend
             .contacts
             .delete_by_contact_id(&audience_id, &id)
             .await?;

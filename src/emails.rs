@@ -369,7 +369,7 @@ pub mod types {
 #[cfg(test)]
 mod test {
     use crate::types::CreateEmailBaseOptions;
-    use crate::{Client, Result};
+    use crate::{Resend, Result};
 
     #[tokio::test]
     #[cfg(not(feature = "blocking"))]
@@ -378,7 +378,7 @@ mod test {
         let to = ["delivered@resend.dev"];
         let subject = "Hello World!";
 
-        let resend = Client::default();
+        let resend = Resend::default();
         let email = CreateEmailBaseOptions::new(from, to, subject)
             .with_text("Hello World!")
             .with_attachment("Hello World as file.".as_bytes())
@@ -398,7 +398,7 @@ mod test {
         let to = ["delivered@resend.dev"];
         let subject = "Hello World!";
 
-        let resend = Client::default();
+        let resend = Resend::default();
         let email = CreateEmailBaseOptions::new(from, to, subject)
             .with_text("Hello World!")
             .with_tag("Welcome");

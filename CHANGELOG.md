@@ -31,6 +31,7 @@ and this project adheres to
 - `Domain.records` is now optional
 - `Email.to` is now a vec
 - `contacts.delete_by_email` and `contacts.delete_by_contact_id` now return the `deleted` boolean
+- Renamed `Client` to `Resend`
 
 ### Deleted
 

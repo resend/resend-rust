@@ -21,11 +21,11 @@ pub mod types {
         }
     }
 
-    /// Error type for operations of a [`Client`].
+    /// Error type for operations of a [`Resend`] client.
     ///
     /// <https://resend.com/docs/api-reference/errors>
     ///
-    /// [`Client`]: crate::Client
+    /// [`Resend`]: crate::Resend
     #[non_exhaustive]
     #[derive(Debug, Copy, Clone)]
     pub enum ErrorKind {

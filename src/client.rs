@@ -12,7 +12,7 @@ use crate::{batch::BatchSvc, config::Config};
 /// The [Resend](https://resend.com) client.
 #[must_use]
 #[derive(Clone)]
-pub struct Client {
+pub struct Resend {
     /// `Resend` APIs for `/emails` endpoints.
     pub emails: EmailsSvc,
     /// `Resend` APIs for the batch `/emails` endpoints.
@@ -27,7 +27,7 @@ pub struct Client {
     pub domains: DomainsSvc,
 }
 
-impl Client {
+impl Resend {
     /// Creates a new [`Resend`] client.
     ///
     /// ### Panics
@@ -105,8 +105,8 @@ impl Client {
     }
 }
 
-impl Default for Client {
-    /// Creates a new [`Client`] from the `RESEND_API_KEY` environment variable .
+impl Default for Resend {
+    /// Creates a new [`Resend`] client from the `RESEND_API_KEY` environment variable .
     ///
     /// ### Panics
     ///
@@ -120,7 +120,7 @@ impl Default for Client {
     }
 }
 
-impl fmt::Debug for Client {
+impl fmt::Debug for Resend {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(&self.emails, f)
     }

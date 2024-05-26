@@ -197,12 +197,12 @@ pub mod types {
 #[cfg(test)]
 mod test {
     use crate::types::CreateApiKeyOptions;
-    use crate::{Client, Result};
+    use crate::{Resend, Result};
 
     #[tokio::test]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> Result<()> {
-        let resend = Client::default();
+        let resend = Resend::default();
         let api_key = "test_";
 
         // Create.

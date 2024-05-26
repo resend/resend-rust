@@ -20,7 +20,7 @@ cargo add tokio -F macros,rt-multi-thread
 [docs-badge]: https://img.shields.io/docsrs/resend-rs
 [docs-url]: https://docs.rs/resend-rs
 
-Emails are sent via the `Client` which provides both a synchronous and
+Emails are sent via the `Resend` client which provides both a synchronous and
 asynchronous send method. The two are mutually exclusive and accessible via the
 `blocking` feature. The crate uses [reqwest][reqwest] and [serde][serde]
 internally.
@@ -36,6 +36,6 @@ internally.
 
 #### Variables
 
-- `RESEND_API_KEY` to enable `impl Default` for a `Client` (Required).
+- `RESEND_API_KEY` to enable `impl Default` for a `Resend` client (Required).
 - `RESEND_BASE_URL` to override the default base address:
   `https://api.resend.com` (Optional).

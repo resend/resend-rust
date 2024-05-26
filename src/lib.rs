@@ -4,11 +4,11 @@
 //!
 //! ```rust,no_run
 //! use resend_rs::types::CreateEmailBaseOptions;
-//! use resend_rs::{Client, Result};
+//! use resend_rs::{Resend, Result};
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<()> {
-//!     let resend = Client::default();
+//!     let resend = Resend::default();
 //!
 //!     let from = "Acme <onboarding@a.dev>";
 //!     let to = ["delivered@resend.dev"];
@@ -32,7 +32,7 @@
 //        faster so additional thread sleeps were added, these need to be removed when (if?) this is
 //        solved.
 
-pub use client::Client;
+pub use client::Resend;
 pub(crate) use config::Config;
 
 mod api_keys;
@@ -76,7 +76,7 @@ pub mod types {
     pub use super::error::types::{ErrorKind, ErrorResponse};
 }
 
-/// Error type for operations of a [`Client`].
+/// Error type for operations of a [`Resend`] client.
 ///
 /// <https://resend.com/docs/api-reference/errors>
 #[derive(Debug, thiserror::Error)]
