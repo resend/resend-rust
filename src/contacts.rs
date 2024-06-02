@@ -348,6 +348,11 @@ mod test {
 
         // Delete audience.
         let _ = resend.audiences.delete(&audience_id).await?;
+        std::thread::sleep(std::time::Duration::from_millis(500));
+
+        // List.
+        let contacts = resend.contacts.list(&audience_id).await?;
+        assert!(contacts.is_empty());
 
         std::thread::sleep(std::time::Duration::from_secs(1));
 

@@ -379,12 +379,17 @@ mod test {
         let subject = "Hello World!";
 
         let resend = Resend::default();
+
+        // Create
         let email = CreateEmailBaseOptions::new(from, to, subject)
             .with_text("Hello World!")
             .with_attachment("Hello World as file.".as_bytes())
             .with_tag("Welcome");
 
-        let _ = resend.emails.send(email).await?;
+        let email = resend.emails.send(email).await?;
+
+        // Get
+        let _email = resend.emails.get(&email.id).await?;
 
         std::thread::sleep(std::time::Duration::from_secs(1));
 

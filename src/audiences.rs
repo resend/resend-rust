@@ -176,6 +176,7 @@ mod test {
         // Create.
         let created = resend.audiences.create(audience).await?;
         let id = created.id;
+        std::thread::sleep(std::time::Duration::from_millis(500));
 
         // Get.
         let data = resend.audiences.get(&id).await?;
@@ -183,11 +184,17 @@ mod test {
 
         // List.
         let audiences = resend.audiences.list().await?;
-        assert!(audiences.len() > 1);
+        let audiences_before = audiences.len();
+        assert!(audiences_before > 1);
 
         // Delete.
         let deleted = resend.audiences.delete(&id).await?;
         assert!(deleted);
+        std::thread::sleep(std::time::Duration::from_millis(500));
+
+        // List.
+        let audiences = resend.audiences.list().await?;
+        assert!(audiences_before == audiences.len() + 1);
 
         std::thread::sleep(std::time::Duration::from_secs(1));
 

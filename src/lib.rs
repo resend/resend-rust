@@ -31,6 +31,7 @@
 //  Edit: Somewhat unsurprisingly, this sometimes fails in CI because the Linux image just runs
 //        faster so additional thread sleeps were added, these need to be removed when (if?) this is
 //        solved.
+// TODO: Remember to fix email/batch GETs whenever the server is updated
 
 pub use client::Resend;
 pub(crate) use config::Config;

@@ -372,12 +372,43 @@ mod test {
     #[tokio::test]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> Result<()> {
+        use crate::domains::types::{CreateDomainOptions, DomainChanges};
+
         let resend = Resend::default();
 
-        // TODO: Domain test.
+        // Create
+        let domain = resend
+            .domains
+            .add(CreateDomainOptions::new("example.com"))
+            .await?;
+
+        std::thread::sleep(std::time::Duration::from_millis(500));
 
         // List.
-        let _ = resend.domains.list().await?;
+        let list = resend.domains.list().await?;
+        assert!(list.len() == 1);
+
+        // Get
+        let domain = resend.domains.get(&domain.id).await?;
+
+        // Update
+        let updates = DomainChanges::new()
+            .with_open_tracking(false)
+            .with_click_tracking(true);
+
+        let domain = resend.domains.update(&domain.id, updates).await?;
+
+        // Delete
+        std::thread::sleep(std::time::Duration::from_millis(500));
+        let deleted = resend.domains.delete(&domain.id).await?;
+        assert!(deleted);
+        std::thread::sleep(std::time::Duration::from_millis(500));
+
+        // List.
+        let list = resend.domains.list().await?;
+        assert!(list.is_empty());
+
+        std::thread::sleep(std::time::Duration::from_secs(1));
 
         Ok(())
     }
