@@ -3,7 +3,7 @@
 //! #### Examples
 //!
 //! ```rust,no_run
-//! use resend_rs::types::CreateEmailBaseOptions;
+//! use resend_rs::types::{CreateEmailBaseOptions, Tag};
 //! use resend_rs::{Resend, Result};
 //!
 //! #[tokio::main]
@@ -16,7 +16,7 @@
 //!
 //!     let email = CreateEmailBaseOptions::new(from, to, subject)
 //!         .with_text("Hello World!")
-//!         .with_tag("Welcome");
+//!         .with_tag(Tag::new("hello", "world"));
 //!
 //!     let id = resend.emails.send(email).await?.id;
 //!     println!("id: {id}");
