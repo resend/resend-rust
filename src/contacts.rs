@@ -240,9 +240,6 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Default, Clone, Serialize)]
     pub struct ContactChanges {
-        /// Email address of the contact.
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub email: Option<String>,
         /// First name of the contact.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub first_name: Option<String>,
@@ -259,13 +256,6 @@ pub mod types {
         #[inline]
         pub fn new() -> Self {
             Self::default()
-        }
-
-        /// Updates the emails of the contact.
-        #[inline]
-        pub fn with_email(mut self, email: &str) -> Self {
-            self.email = Some(email.to_owned());
-            self
         }
 
         /// Updates the first name of the contact.
@@ -299,8 +289,7 @@ pub mod types {
     #[derive(Debug, Clone, Deserialize)]
     pub struct DeleteContactResponse {
         /// The ID of the domain.
-        #[serde(rename = "contact")]
-        pub id: ContactId,
+        pub contact: ContactId,
         /// Indicates whether the domain was deleted successfully.
         pub deleted: bool,
     }

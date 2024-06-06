@@ -33,6 +33,8 @@ impl EmailsSvc {
 
         let request = self.0.build(Method::GET, &path);
         let response = self.0.send(request).await?;
+        // dbg!(response.text().await);
+        // todo!();
         let content = response.json::<Email>().await?;
 
         Ok(content)
@@ -232,9 +234,7 @@ pub mod types {
         pub name: String,
         /// The value of the email tag. It can only contain ASCII letters (a–z, A–Z), numbers (0–9),
         /// underscores (_), or dashes (-). It can contain no more than 256 characters.
-        // TODO: Why is this an option?
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub value: Option<String>,
+        pub value: String,
     }
 
     impl Tag {
@@ -243,27 +243,11 @@ pub mod types {
         /// It can only contain ASCII letters (a–z, A–Z), numbers (0–9), underscores (_),
         /// or dashes (-). It can contain no more than 256 characters.
         #[inline]
-        pub fn new(name: &str) -> Self {
+        pub fn new(name: &str, value: &str) -> Self {
             Self {
                 name: name.to_owned(),
-                value: None,
+                value: value.to_owned(),
             }
-        }
-
-        /// Adds a value to the email tag.
-        ///
-        /// It can only contain ASCII letters (a–z, A–Z), numbers (0–9), underscores (_),
-        /// or dashes (-). It can contain no more than 256 characters.
-        #[inline]
-        pub fn with_value(mut self, value: &str) -> Self {
-            self.value = Some(value.to_owned());
-            self
-        }
-    }
-
-    impl<T: AsRef<str>> From<T> for Tag {
-        fn from(value: T) -> Self {
-            Self::new(value.as_ref())
         }
     }
 
@@ -351,7 +335,7 @@ pub mod types {
         /// The date and time the email was created in ISO8601 format.
         pub created_at: String,
         /// The HTML body of the email.
-        pub html: String,
+        pub html: Option<String>,
         /// The plain text body of the email.
         pub text: String,
 
@@ -360,7 +344,7 @@ pub mod types {
         /// The email addresses of the carbon copy recipients.
         pub cc: Vec<String>,
         /// The email addresses to which replies should be sent.
-        pub reply_to: Vec<String>,
+        pub reply_to: Option<Vec<String>>,
         /// The status of the email.
         pub last_event: String,
     }
@@ -374,6 +358,8 @@ mod test {
     #[tokio::test]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> Result<()> {
+        use crate::types::Tag;
+
         let from = "Acme <onboarding@resend.dev>";
         let to = ["delivered@resend.dev"];
         let subject = "Hello World!";
@@ -384,7 +370,7 @@ mod test {
         let email = CreateEmailBaseOptions::new(from, to, subject)
             .with_text("Hello World!")
             .with_attachment("Hello World as file.".as_bytes())
-            .with_tag("Welcome");
+            .with_tag(Tag::new("category", "confirm_email"));
 
         let email = resend.emails.send(email).await?;
 
@@ -406,7 +392,7 @@ mod test {
         let resend = Resend::default();
         let email = CreateEmailBaseOptions::new(from, to, subject)
             .with_text("Hello World!")
-            .with_tag("Welcome");
+            .with_tag(Tag::new("category", "confirm_email"));
 
         let _ = resend.emails.send(email)?;
 

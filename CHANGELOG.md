@@ -10,6 +10,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- `DomainChanges.tls`
+
 ### Changed
 
 - renamed `SendEmail` to `CreateEmailBaseOptions`
@@ -32,10 +36,17 @@ and this project adheres to
 - `Email.to` is now a vec
 - `contacts.delete_by_email` and `contacts.delete_by_contact_id` now return the `deleted` boolean
 - Renamed `Client` to `Resend`
+- `Domain` no longer has the `dns_provider` field.
+- `Domain.delete` now returns a `DeleteDomainResponse` 
+- `Email.Tag.value` is no longer an optional
+- `Email.html` and `Email.reply_to` are now both optional
 
 ### Deleted
 
 - removed ability to configure user agent via `RESEND_USER_AGENT` (this is no longer configuable)
+- `email.with_value`, use the `new` constructor instead
+- `impl<T: AsRef<str>> From<T> for Tag` is removed since Tag now also needs a value
+- `ContactChanges.email` and `ContactChanges.with_email`
 
 ## [0.4.0] - 2024-05-01
 

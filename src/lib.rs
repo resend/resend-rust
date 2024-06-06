@@ -69,7 +69,7 @@ pub mod types {
     pub use super::domains::types::{
         CreateDomainOptions, DkimRecordType, Domain, DomainChanges, DomainDkimRecord, DomainId,
         DomainRecord, DomainSpfRecord, DomainStatus, ProxyStatus, Region, SpfRecordType,
-        UpdateDomainResponse,
+        UpdateDomainResponse, Tls
     };
     pub use super::emails::types::{
         Attachment, ContentOrPath, CreateEmailBaseOptions, CreateEmailResponse, Email, EmailId, Tag,

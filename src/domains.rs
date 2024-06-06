@@ -2,6 +2,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use reqwest::Method;
+use types::DeleteDomainResponse;
 
 use crate::types::{CreateDomainOptions, Domain, DomainChanges};
 use crate::{Config, Result};
@@ -91,14 +92,14 @@ impl DomainsSvc {
     ///
     /// <https://resend.com/docs/api-reference/domains/delete-domain>
     #[maybe_async::maybe_async]
-    pub async fn delete(&self, domain_id: &str) -> Result<bool> {
+    pub async fn delete(&self, domain_id: &str) -> Result<DeleteDomainResponse> {
         let path = format!("/domains/{domain_id}");
 
         let request = self.0.build(Method::DELETE, &path);
         let response = self.0.send(request).await?;
-        let content = response.json::<types::DeleteDomainResponse>().await?;
+        let content = response.json::<DeleteDomainResponse>().await?;
 
-        Ok(content.deleted)
+        Ok(content)
     }
 }
 
@@ -113,6 +114,12 @@ pub mod types {
 
     use ecow::EcoString;
     use serde::{Deserialize, Serialize};
+
+    #[derive(Debug, Copy, Clone, Serialize)]
+    pub enum Tls {
+        Enforced,
+        Opportunistic,
+    }
 
     /// Unique [`Domain`] identifier.
     #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -298,10 +305,6 @@ pub mod types {
         pub region: Region,
         /// The records of the domain.
         pub records: Option<Vec<DomainRecord>>,
-
-        /// The service that runs DNS server.
-        #[serde(rename = "dnsProvider")]
-        pub dns_provider: Option<String>,
     }
 
     #[derive(Debug, Clone, Deserialize)]
@@ -320,6 +323,8 @@ pub mod types {
         /// Enable or disable open tracking for the domain.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub open_tracking: Option<bool>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub tls: Option<Tls>,
     }
 
     impl DomainChanges {
@@ -382,7 +387,7 @@ mod test {
             .add(CreateDomainOptions::new("example.com"))
             .await?;
 
-        std::thread::sleep(std::time::Duration::from_millis(500));
+        std::thread::sleep(std::time::Duration::from_secs(1));
 
         // List.
         let list = resend.domains.list().await?;
@@ -400,8 +405,8 @@ mod test {
 
         // Delete
         std::thread::sleep(std::time::Duration::from_millis(500));
-        let deleted = resend.domains.delete(&domain.id).await?;
-        assert!(deleted);
+        let resp = resend.domains.delete(&domain.id).await?;
+        assert!(resp.deleted);
         std::thread::sleep(std::time::Duration::from_millis(500));
 
         // List.
