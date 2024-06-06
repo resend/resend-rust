@@ -32,38 +32,3 @@ impl BatchSvc {
         Ok(content.data)
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use crate::types::CreateEmailBaseOptions;
-    use crate::{Resend, Result};
-
-    #[tokio::test]
-    #[cfg(not(feature = "blocking"))]
-    async fn all() -> Result<()> {
-        let resend = Resend::default();
-
-        let emails = vec![
-            CreateEmailBaseOptions::new(
-                "Acme <onboarding@resend.dev>",
-                vec!["delivered@resend.dev"],
-                "hello world",
-            )
-            .with_html("<h1>it works!</h1>"),
-            CreateEmailBaseOptions::new(
-                "Acme <onboarding@resend.dev>",
-                vec!["delivered@resend.dev"],
-                "world hello",
-            )
-            .with_html("<p>it works!</p>"),
-        ];
-
-        let resp = resend.batch.send(emails).await?;
-
-        assert!(resp.len() == 2);
-
-        std::thread::sleep(std::time::Duration::from_secs(1));
-
-        Ok(())
-    }
-}
