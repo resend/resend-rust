@@ -68,8 +68,8 @@ pub mod types {
     pub use super::contacts::types::{Contact, ContactChanges, ContactData, ContactId};
     pub use super::domains::types::{
         CreateDomainOptions, DkimRecordType, Domain, DomainChanges, DomainDkimRecord, DomainId,
-        DomainRecord, DomainSpfRecord, DomainStatus, ProxyStatus, Region, SpfRecordType,
-        UpdateDomainResponse, Tls
+        DomainRecord, DomainSpfRecord, DomainStatus, ProxyStatus, Region, SpfRecordType, Tls,
+        UpdateDomainResponse,
     };
     pub use super::emails::types::{
         Attachment, ContentOrPath, CreateEmailBaseOptions, CreateEmailResponse, Email, EmailId, Tag,
