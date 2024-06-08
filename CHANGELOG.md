@@ -13,7 +13,7 @@ and this project adheres to
 ### Added
 
 - `DomainChanges.tls`
-- Rate limiting (default 10/s), configurable with `RATE_LIMIT` env variable (async only)
+- Rate limiting (default 9/s), configurable with `RATE_LIMIT` env variable (async only)
 
 ### Changed
 
