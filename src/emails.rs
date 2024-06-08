@@ -352,14 +352,12 @@ pub mod types {
 
 #[cfg(test)]
 mod test {
-    use crate::types::CreateEmailBaseOptions;
+    use crate::types::{CreateEmailBaseOptions, Tag};
     use crate::{Resend, Result};
 
     #[tokio::test]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> Result<()> {
-        use crate::types::Tag;
-
         let from = "Acme <onboarding@resend.dev>";
         let to = ["delivered@resend.dev"];
         let subject = "Hello World!";
