@@ -39,3 +39,5 @@ internally.
 - `RESEND_API_KEY` to enable `impl Default` for a `Resend` client (Required).
 - `RESEND_BASE_URL` to override the default base address:
   `https://api.resend.com` (Optional).
+<div class="warning markdown-alert markdown-alert-warning">WARNING</div>
+<!-- TODO: Mention rate limit does not work in blocking -->
