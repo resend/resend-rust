@@ -41,7 +41,7 @@ impl Config {
         // ==== Rate limiting is a non-blocking thing only ====
         #[cfg(not(feature = "blocking"))]
         let rate_limit_per_sec = env::var("RATE_LIMIT")
-            .unwrap_or_else(|_| "9".to_owned())
+            .unwrap_or_else(|_| "10".to_owned())
             .parse::<u32>()
             .expect("env variable `RATE_LIMIT` should be a valid u32");
 
