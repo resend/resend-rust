@@ -6,6 +6,8 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  # 10/s over 4 jobs
+  RATE_LIMIT: 2
 
 jobs:
   build_test_run:
