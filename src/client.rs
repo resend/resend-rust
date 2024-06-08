@@ -6,37 +6,17 @@ use reqwest::blocking::Client as ReqwestClient;
 #[cfg(not(feature = "blocking"))]
 use reqwest::Client as ReqwestClient;
 
-use crate::config::Config;
 use crate::services::{ApiKeysSvc, AudiencesSvc, ContactsSvc, DomainsSvc, EmailsSvc};
+use crate::{batch::BatchSvc, config::Config};
 
-/// A minimal [Resend](https://resend.com) client.
-///
-/// #### Example
-///
-/// ```rust,no_run
-/// use resend_rs::{Client, Result};
-/// use resend_rs::types::SendEmail;
-///
-/// # #[tokio::main]
-/// # async fn main() -> Result<()> {
-/// let from = "Acme <onboarding@resend.dev>";
-/// let to = ["delivered@resend.dev"];
-/// let sub = "Hello World!";
-///
-/// let email = SendEmail::new(from, to, sub)
-///     .with_text("Hello World!");
-///
-/// let resend = Client::default();
-/// let id = resend.emails.send(email).await?;
-/// println!("id: {id}");
-/// # Ok(())
-/// # }
-/// ```
+/// The [Resend](https://resend.com) client.
 #[must_use]
 #[derive(Clone)]
-pub struct Client {
+pub struct Resend {
     /// `Resend` APIs for `/emails` endpoints.
     pub emails: EmailsSvc,
+    /// `Resend` APIs for the batch `/emails` endpoints.
+    pub batch: BatchSvc,
     /// `Resend` APIs for `/api-keys` endpoints.
     pub api_keys: ApiKeysSvc,
     /// `Resend` APIs for `/audiences` endpoints.
@@ -47,7 +27,7 @@ pub struct Client {
     pub domains: DomainsSvc,
 }
 
-impl Client {
+impl Resend {
     /// Creates a new [`Resend`] client.
     ///
     /// ### Panics
@@ -75,7 +55,8 @@ impl Client {
             audiences: AudiencesSvc(inner.clone()),
             contacts: ContactsSvc(inner.clone()),
             domains: DomainsSvc(inner.clone()),
-            emails: EmailsSvc(inner),
+            emails: EmailsSvc(inner.clone()),
+            batch: BatchSvc(inner),
         }
     }
 
@@ -124,8 +105,8 @@ impl Client {
     }
 }
 
-impl Default for Client {
-    /// Creates a new [`Client`] from the `RESEND_API_KEY` environment variable .
+impl Default for Resend {
+    /// Creates a new [`Resend`] client from the `RESEND_API_KEY` environment variable .
     ///
     /// ### Panics
     ///
@@ -139,7 +120,7 @@ impl Default for Client {
     }
 }
 
-impl fmt::Debug for Client {
+impl fmt::Debug for Resend {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(&self.emails, f)
     }

@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
-use crate::types::{ApiKey, ApiKeyData, ApiKeyId, ApiKeyToken};
+use crate::types::{ApiKey, ApiKeyToken, CreateApiKeyOptions};
 use crate::{Config, Result};
 
 /// `Resend` APIs for `/api-keys` endpoints.
@@ -15,9 +15,9 @@ impl ApiKeysSvc {
     ///
     /// <https://resend.com/docs/api-reference/api-keys/create-api-key>
     #[maybe_async::maybe_async]
-    // Reasoning for allow: https://github.com/AntoniosBarotsis/resend-rs/pull/1#issuecomment-2081646115
+    // Reasoning for allow: https://github.com/resend/resend-rs/pull/1#issuecomment-2081646115
     #[allow(clippy::needless_pass_by_value)]
-    pub async fn create(&self, api_key: ApiKeyData) -> Result<ApiKeyToken> {
+    pub async fn create(&self, api_key: CreateApiKeyOptions) -> Result<ApiKeyToken> {
         let request = self.0.build(Method::POST, "/api-keys");
         let response = self.0.send(request.json(&api_key)).await?;
         let content = response.json::<ApiKeyToken>().await?;
@@ -41,7 +41,7 @@ impl ApiKeysSvc {
     ///
     /// <https://resend.com/docs/api-reference/api-keys/delete-api-key>
     #[maybe_async::maybe_async]
-    pub async fn delete(&self, api_key_id: &ApiKeyId) -> Result<()> {
+    pub async fn delete(&self, api_key_id: &str) -> Result<()> {
         let path = format!("/api-keys/{api_key_id}");
 
         let request = self.0.build(Method::DELETE, &path);
@@ -58,7 +58,7 @@ impl fmt::Debug for ApiKeysSvc {
 }
 
 pub mod types {
-    use std::fmt;
+    use std::{fmt, ops::Deref};
 
     use ecow::EcoString;
     use serde::{Deserialize, Serialize};
@@ -78,6 +78,14 @@ pub mod types {
         }
     }
 
+    impl Deref for ApiKeyId {
+        type Target = str;
+
+        fn deref(&self) -> &Self::Target {
+            self.as_ref()
+        }
+    }
+
     impl AsRef<str> for ApiKeyId {
         #[inline]
         fn as_ref(&self) -> &str {
@@ -87,14 +95,14 @@ pub mod types {
 
     impl fmt::Display for ApiKeyId {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            fmt::Display::fmt(self.as_ref(), f)
+            fmt::Display::fmt(&self, f)
         }
     }
 
     /// Name and permissions of the new [`ApiKey`].
     #[must_use]
     #[derive(Debug, Clone, Serialize)]
-    pub struct ApiKeyData {
+    pub struct CreateApiKeyOptions {
         /// The API key name.
         pub name: String,
 
@@ -109,8 +117,8 @@ pub mod types {
         pub domain_id: Option<DomainId>,
     }
 
-    impl ApiKeyData {
-        /// Creates a new [`ApiKeyData`].
+    impl CreateApiKeyOptions {
+        /// Creates a new [`CreateApiKeyOptions`].
         #[inline]
         pub fn new(name: &str) -> Self {
             Self {
@@ -188,28 +196,32 @@ pub mod types {
 
 #[cfg(test)]
 mod test {
-    use crate::types::ApiKeyData;
-    use crate::{Client, Result};
+    use crate::tests::CLIENT;
+    use crate::types::CreateApiKeyOptions;
+    use crate::{Resend, Result};
 
     #[tokio::test]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> Result<()> {
-        let resend = Client::default();
+        let resend = CLIENT.get_or_init(Resend::default);
+
         let api_key = "test_";
 
         // Create.
-        let request = ApiKeyData::new(api_key).with_full_access();
+        let request = CreateApiKeyOptions::new(api_key).with_full_access();
         let response = resend.api_keys.create(request).await?;
         let id = response.id;
 
         // List.
         let api_keys = resend.api_keys.list().await?;
-        assert!(api_keys.len() > 2);
+        let api_keys_amt = api_keys.len();
 
         // Delete.
         resend.api_keys.delete(&id).await?;
 
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        // List.
+        let api_keys = resend.api_keys.list().await?;
+        assert!(api_keys_amt == api_keys.len() + 1);
 
         Ok(())
     }

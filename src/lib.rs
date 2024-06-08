@@ -3,50 +3,47 @@
 //! #### Examples
 //!
 //! ```rust,no_run
-//! use resend_rs::{Client, Result};
-//! use resend_rs::types::SendEmail;
+//! use resend_rs::types::{CreateEmailBaseOptions, Tag};
+//! use resend_rs::{Resend, Result};
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<()> {
-//!     let resend = Client::default();
+//!     let resend = Resend::default();
 //!
-//!     let from = "Acme <onboarding@resend.dev>";
+//!     let from = "Acme <onboarding@a.dev>";
 //!     let to = ["delivered@resend.dev"];
 //!     let subject = "Hello World!";
 //!
-//!     let email = SendEmail::new(from, to, subject)
+//!     let email = CreateEmailBaseOptions::new(from, to, subject)
 //!         .with_text("Hello World!")
-//!         .with_tag("Welcome");
+//!         .with_tag(Tag::new("hello", "world"));
 //!
-//!     let id = resend.emails.send(email).await?;
+//!     let id = resend.emails.send(email).await?.id;
 //!     println!("id: {id}");
 //!     Ok(())
 //! }
+//!
 //! ```
 
-// FIXME: Tests can fail due to rate limit constraints (max 10 req/s). Running the tests on one
-//        thread seems to work for now but this is just a workaround. For now, an alias is provided
-//        for `cargo t` which automatically passes `-- --test-threads=1` to the tests.
-//  Edit: Somewhat unsurprisingly, this sometimes fails in CI because the Linux image just runs
-//        faster so additional thread sleeps were added, these need to be removed when (if?) this is
-//        solved.
-
-pub use client::Client;
+pub use client::Resend;
 pub(crate) use config::Config;
 
 mod api_keys;
 mod audiences;
+mod batch;
 mod client;
 mod config;
 mod contacts;
 mod domains;
 mod emails;
+mod error;
 
 pub mod services {
     //! `Resend` API services.
 
     pub use super::api_keys::ApiKeysSvc;
     pub use super::audiences::AudiencesSvc;
+    pub use super::batch::BatchSvc;
     pub use super::contacts::ContactsSvc;
     pub use super::domains::DomainsSvc;
     pub use super::emails::EmailsSvc;
@@ -55,17 +52,24 @@ pub mod services {
 pub mod types {
     //! Request and response types.
 
-    pub use super::api_keys::types::{ApiKey, ApiKeyData, ApiKeyId, ApiKeyToken, Permission};
-    pub use super::audiences::types::{Audience, AudienceId};
-    pub use super::config::types::{ErrorKind, ErrorResponse};
+    pub use super::api_keys::types::{
+        ApiKey, ApiKeyId, ApiKeyToken, CreateApiKeyOptions, Permission,
+    };
+    pub use super::audiences::types::{Audience, AudienceId, CreateAudienceResponse};
+    pub use super::batch::BatchSvc;
     pub use super::contacts::types::{Contact, ContactChanges, ContactData, ContactId};
     pub use super::domains::types::{
-        Domain, DomainChanges, DomainData, DomainId, DomainRecord, Region,
+        CreateDomainOptions, DkimRecordType, Domain, DomainChanges, DomainDkimRecord, DomainId,
+        DomainRecord, DomainSpfRecord, DomainStatus, ProxyStatus, Region, SpfRecordType, Tls,
+        UpdateDomainResponse,
     };
-    pub use super::emails::types::{Attachment, ContentOrPath, Email, EmailId, SendEmail, Tag};
+    pub use super::emails::types::{
+        Attachment, ContentOrPath, CreateEmailBaseOptions, CreateEmailResponse, Email, EmailId, Tag,
+    };
+    pub use super::error::types::{ErrorKind, ErrorResponse};
 }
 
-/// Error type for operations of a [`Client`].
+/// Error type for operations of a [`Resend`] client.
 ///
 /// <https://resend.com/docs/api-reference/errors>
 #[derive(Debug, thiserror::Error)]
@@ -83,3 +87,18 @@ pub enum Error {
 ///
 /// [`Result`]: std::result::Result
 pub type Result<T, E = Error> = std::result::Result<T, E>;
+
+#[cfg(test)]
+pub(crate) mod tests {
+    use std::sync::OnceLock;
+
+    use crate::Resend;
+
+    /// Use this client in all tests to ensure rate limits are respected.
+    ///
+    /// Instantiate with:
+    /// ```
+    /// let resend = CLIENT.get_or_init(Resend::default);
+    /// ```
+    pub static CLIENT: OnceLock<Resend> = OnceLock::new();
+}

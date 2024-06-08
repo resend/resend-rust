@@ -3,8 +3,10 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
-use crate::types::{Audience, AudienceId};
+use crate::types::Audience;
 use crate::{Config, Result};
+
+use self::types::CreateAudienceResponse;
 
 /// `Resend` APIs for `/audiences` endpoints.
 #[derive(Clone)]
@@ -17,23 +19,23 @@ impl AudiencesSvc {
     ///
     /// <https://resend.com/docs/api-reference/audiences/create-audience>
     #[maybe_async::maybe_async]
-    pub async fn create(&self, name: &str) -> Result<AudienceId> {
+    pub async fn create(&self, name: &str) -> Result<CreateAudienceResponse> {
         let audience = types::CreateAudienceRequest {
             name: name.to_owned(),
         };
 
         let request = self.0.build(Method::POST, "/audiences");
         let response = self.0.send(request.json(&audience)).await?;
-        let content = response.json::<types::CreateAudienceResponse>().await?;
+        let content = response.json::<CreateAudienceResponse>().await?;
 
-        Ok(content.id)
+        Ok(content)
     }
 
     /// Retrieves a single audience.
     ///
     /// <https://resend.com/docs/api-reference/audiences/get-audience>
     #[maybe_async::maybe_async]
-    pub async fn get(&self, id: &AudienceId) -> Result<Audience> {
+    pub async fn get(&self, id: &str) -> Result<Audience> {
         let path = format!("/audiences/{id}");
 
         let request = self.0.build(Method::GET, &path);
@@ -45,11 +47,9 @@ impl AudiencesSvc {
 
     /// Removes an existing audience.
     ///
-    /// Returns `true` if the audience is deleted.
-    ///
     /// <https://resend.com/docs/api-reference/audiences/delete-audience>
     #[maybe_async::maybe_async]
-    pub async fn delete(&self, id: &AudienceId) -> Result<bool> {
+    pub async fn delete(&self, id: &str) -> Result<bool> {
         let path = format!("/audiences/{id}");
 
         let request = self.0.build(Method::DELETE, &path);
@@ -79,7 +79,7 @@ impl fmt::Debug for AudiencesSvc {
 }
 
 pub mod types {
-    use std::fmt;
+    use std::{fmt, ops::Deref};
 
     use ecow::EcoString;
     use serde::{Deserialize, Serialize};
@@ -94,6 +94,14 @@ pub mod types {
         #[must_use]
         pub fn new(id: &str) -> Self {
             Self(EcoString::from(id))
+        }
+    }
+
+    impl Deref for AudienceId {
+        type Target = str;
+
+        fn deref(&self) -> &Self::Target {
+            self.as_ref()
         }
     }
 
@@ -157,16 +165,19 @@ pub mod types {
 
 #[cfg(test)]
 mod test {
-    use crate::{Client, Result};
+    use crate::tests::CLIENT;
+    use crate::{Resend, Result};
 
     #[tokio::test]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> Result<()> {
-        let resend = Client::default();
+        let resend = CLIENT.get_or_init(Resend::default);
         let audience = "test_audiences";
 
         // Create.
-        let id = resend.audiences.create(audience).await?;
+        let created = resend.audiences.create(audience).await?;
+        let id = created.id;
+        std::thread::sleep(std::time::Duration::from_secs(1));
 
         // Get.
         let data = resend.audiences.get(&id).await?;
@@ -174,13 +185,16 @@ mod test {
 
         // List.
         let audiences = resend.audiences.list().await?;
-        assert!(audiences.len() > 1);
+        let audiences_before = audiences.len();
+        assert!(audiences_before > 1);
 
         // Delete.
         let deleted = resend.audiences.delete(&id).await?;
         assert!(deleted);
 
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        // List.
+        let audiences = resend.audiences.list().await?;
+        assert!(audiences_before == audiences.len() + 1);
 
         Ok(())
     }

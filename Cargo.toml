@@ -2,15 +2,16 @@
 
 [package]
 name = "resend-rs"
-version = "0.4.0"
+version = "0.5.0"
 edition = "2021"
 
-license = "GPL-3.0"
+license = "MIT"
 readme = "./README.md"
 
 authors = ["Antonios Barotsis <antonios.barotsis@proton.me>"]
-repository = "https://github.com/AntoniosBarotsis/resend-rs"
-homepage = "https://github.com/AntoniosBarotsis/resend-rs"
+repository = "https://github.com/resend/resend-rs"
+# TODO: Maybe change this to the official docs once thats done?
+homepage = "https://github.com/resend/resend-rs"
 documentation = "https://docs.rs/resend-rs"
 
 categories = ["email", "web-programming"]
@@ -30,6 +31,7 @@ serde = { version = "1.0.199", features = ["derive"] }
 ecow = { version = "0.2.2", features = ["serde"] }
 thiserror = { version = "1.0.59" }
 maybe-async = { version = "0.2.10" }
+governor = "0.6.3"
 
 [dev-dependencies]
 tokio = { version = "1.37.0", features = ["macros", "test-util", "rt-multi-thread"] }

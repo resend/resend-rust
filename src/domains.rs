@@ -2,9 +2,12 @@ use std::fmt;
 use std::sync::Arc;
 
 use reqwest::Method;
+use types::DeleteDomainResponse;
 
-use crate::types::{Domain, DomainChanges, DomainData, DomainId};
+use crate::types::{CreateDomainOptions, Domain, DomainChanges};
 use crate::{Config, Result};
+
+use self::types::UpdateDomainResponse;
 
 /// `Resend` APIs for `/domains` endpoints.
 #[derive(Clone)]
@@ -15,9 +18,9 @@ impl DomainsSvc {
     ///
     /// <https://resend.com/docs/api-reference/domains/create-domain>
     #[maybe_async::maybe_async]
-    // Reasoning for allow: https://github.com/AntoniosBarotsis/resend-rs/pull/1#issuecomment-2081646115
+    // Reasoning for allow: https://github.com/resend/resend-rs/pull/1#issuecomment-2081646115
     #[allow(clippy::needless_pass_by_value)]
-    pub async fn add(&self, domain: DomainData) -> Result<Domain> {
+    pub async fn add(&self, domain: CreateDomainOptions) -> Result<Domain> {
         let request = self.0.build(Method::POST, "/domains");
         let response = self.0.send(request.json(&domain)).await?;
         let content = response.json::<Domain>().await?;
@@ -29,7 +32,7 @@ impl DomainsSvc {
     ///
     /// <https://resend.com/docs/api-reference/domains/get-domain>
     #[maybe_async::maybe_async]
-    pub async fn get(&self, domain_id: &DomainId) -> Result<Domain> {
+    pub async fn get(&self, domain_id: &str) -> Result<Domain> {
         let path = format!("/domains/{domain_id}");
 
         let request = self.0.build(Method::GET, &path);
@@ -43,7 +46,7 @@ impl DomainsSvc {
     ///
     /// <https://resend.com/docs/api-reference/domains/verify-domain>
     #[maybe_async::maybe_async]
-    pub async fn verify(&self, domain_id: &DomainId) -> Result<()> {
+    pub async fn verify(&self, domain_id: &str) -> Result<()> {
         let path = format!("/domains/{domain_id}/verify");
 
         let request = self.0.build(Method::POST, &path);
@@ -57,14 +60,18 @@ impl DomainsSvc {
     ///
     /// <https://resend.com/docs/api-reference/domains/update-domain>
     #[maybe_async::maybe_async]
-    pub async fn update(&self, domain_id: &DomainId, update: DomainChanges) -> Result<()> {
+    pub async fn update(
+        &self,
+        domain_id: &str,
+        update: DomainChanges,
+    ) -> Result<UpdateDomainResponse> {
         let path = format!("/domains/{domain_id}");
 
         let request = self.0.build(Method::PATCH, &path);
         let response = self.0.send(request.json(&update)).await?;
-        let _content = response.json::<types::UpdateDomainResponse>().await?;
+        let content = response.json::<UpdateDomainResponse>().await?;
 
-        Ok(())
+        Ok(content)
     }
 
     /// Retrieves a list of domains for the authenticated user.
@@ -85,14 +92,14 @@ impl DomainsSvc {
     ///
     /// <https://resend.com/docs/api-reference/domains/delete-domain>
     #[maybe_async::maybe_async]
-    pub async fn delete(&self, domain_id: &DomainId) -> Result<bool> {
+    pub async fn delete(&self, domain_id: &str) -> Result<DeleteDomainResponse> {
         let path = format!("/domains/{domain_id}");
 
         let request = self.0.build(Method::DELETE, &path);
         let response = self.0.send(request).await?;
-        let content = response.json::<types::DeleteDomainResponse>().await?;
+        let content = response.json::<DeleteDomainResponse>().await?;
 
-        Ok(content.deleted)
+        Ok(content)
     }
 }
 
@@ -103,10 +110,16 @@ impl fmt::Debug for DomainsSvc {
 }
 
 pub mod types {
-    use std::fmt;
+    use std::{fmt, ops::Deref};
 
     use ecow::EcoString;
     use serde::{Deserialize, Serialize};
+
+    #[derive(Debug, Copy, Clone, Serialize)]
+    pub enum Tls {
+        Enforced,
+        Opportunistic,
+    }
 
     /// Unique [`Domain`] identifier.
     #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -118,6 +131,14 @@ pub mod types {
         #[must_use]
         pub fn new(id: &str) -> Self {
             Self(EcoString::from(id))
+        }
+    }
+
+    impl Deref for DomainId {
+        type Target = str;
+
+        fn deref(&self) -> &Self::Target {
+            self.as_ref()
         }
     }
 
@@ -137,21 +158,19 @@ pub mod types {
     /// Details of a new [`Domain`].
     #[must_use]
     #[derive(Debug, Clone, Serialize)]
-    pub struct DomainData {
+    pub struct CreateDomainOptions {
         /// The name of the domain you want to create.
         #[serde(rename = "name")]
         pub name: String,
-        /// The region where [`SendEmail`]s will be sent from.
+        /// The region where the email will be sent from.
         ///
         /// Possible values are 'us-east-1' | 'eu-west-1' | 'sa-east-1'.
-        ///
-        /// [`SendEmail`]: crate::types::SendEmail
         #[serde(rename = "region", skip_serializing_if = "Option::is_none")]
         pub region: Option<Region>,
     }
 
-    impl DomainData {
-        /// Creates a new [`DomainData`].
+    impl CreateDomainOptions {
+        /// Creates a new [`CreateDomainOptions`].
         pub fn new(name: &str) -> Self {
             Self {
                 name: name.to_owned(),
@@ -166,11 +185,11 @@ pub mod types {
         }
     }
 
-    /// Region where [`SendEmail`]s will be sent from.
+    /// Region where [`CreateEmailBaseOptions`]s will be sent from.
     ///
     /// Possible values are 'us-east-1' | 'eu-west-1' | 'sa-east-1' | 'ap-northeast-1'.
     ///
-    /// [`SendEmail`]: crate::types::SendEmail
+    /// [`CreateEmailBaseOptions`]: crate::types::CreateEmailBaseOptions
     #[non_exhaustive]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub enum Region {
@@ -188,25 +207,84 @@ pub mod types {
         ApNorthEast1,
     }
 
-    /// Individual [`Domain`] record.
     #[derive(Debug, Clone, Deserialize)]
-    pub struct DomainRecord {
-        /// The type of record.
-        pub record: String,
+    pub struct DomainSpfRecord {
         /// The name of the record.
         pub name: String,
-
+        /// The value of the record.
+        pub value: String,
         /// The type of record.
         #[serde(rename = "type")]
-        pub d_type: Option<String>,
+        pub d_type: SpfRecordType,
         /// The time to live for the record.
-        pub ttl: Option<String>,
+        pub ttl: String,
         /// The status of the record.
-        pub status: Option<String>,
-        /// The value of the record.
-        pub value: Option<String>,
-        /// The priority of the record.
+        pub status: DomainStatus,
+
+        pub routing_policy: Option<String>,
         pub priority: Option<i32>,
+        pub proxy_status: Option<ProxyStatus>,
+    }
+
+    #[derive(Debug, Clone, Deserialize)]
+    pub struct DomainDkimRecord {
+        /// The name of the record.
+        pub name: String,
+        /// The value of the record.
+        pub value: String,
+        /// The type of record.
+        #[serde(rename = "type")]
+        pub d_type: DkimRecordType,
+        /// The time to live for the record.
+        pub ttl: String,
+        /// The status of the record.
+        pub status: DomainStatus,
+
+        pub routing_policy: Option<String>,
+        pub priority: Option<i32>,
+        pub proxy_status: Option<ProxyStatus>,
+    }
+
+    #[derive(Debug, Copy, Clone, Deserialize)]
+    pub enum ProxyStatus {
+        Enable,
+        Disable,
+    }
+
+    #[derive(Debug, Copy, Clone, Deserialize)]
+    pub enum DomainStatus {
+        Pending,
+        Verified,
+        Failed,
+        #[serde(rename = "temporary_failure")]
+        TemporaryFailure,
+        #[serde(rename = "not_started")]
+        NotStarted,
+    }
+
+    #[derive(Debug, Copy, Clone, Deserialize)]
+    pub enum SpfRecordType {
+        MX,
+        #[allow(clippy::upper_case_acronyms)]
+        TXT,
+    }
+
+    #[derive(Debug, Copy, Clone, Deserialize)]
+    pub enum DkimRecordType {
+        #[allow(clippy::upper_case_acronyms)]
+        CNAME,
+        #[allow(clippy::upper_case_acronyms)]
+        TXT,
+    }
+
+    /// Individual [`Domain`] record.
+    #[derive(Debug, Clone, Deserialize)]
+    #[serde(tag = "record")]
+    pub enum DomainRecord {
+        #[serde(rename = "SPF")]
+        DomainSpfRecord(DomainSpfRecord),
+        #[serde(rename = "DKIM")]
+        DomainDkimRecord(DomainDkimRecord),
     }
 
     /// Details of an existing domain.
@@ -217,6 +295,7 @@ pub mod types {
         pub id: DomainId,
         /// The name of the domain.
         pub name: String,
+        // TODO: Technically both this and the domainrecord could be an enum https://resend.com/docs/api-reference/domains/get-domain#path-parameters
         /// The status of the domain.
         pub status: String,
 
@@ -225,11 +304,7 @@ pub mod types {
         /// The region where the domain is hosted.
         pub region: Region,
         /// The records of the domain.
-        pub records: Vec<DomainRecord>,
-
-        /// The service that runs DNS server.
-        #[serde(rename = "dnsProvider")]
-        pub dns_provider: Option<String>,
+        pub records: Option<Vec<DomainRecord>>,
     }
 
     #[derive(Debug, Clone, Deserialize)]
@@ -248,6 +323,8 @@ pub mod types {
         /// Enable or disable open tracking for the domain.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub open_tracking: Option<bool>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub tls: Option<Tls>,
     }
 
     impl DomainChanges {
@@ -295,17 +372,46 @@ pub mod types {
 
 #[cfg(test)]
 mod test {
-    use crate::{Client, Result};
+    use crate::{
+        domains::types::{CreateDomainOptions, DomainChanges},
+        tests::CLIENT,
+        Resend, Result,
+    };
 
     #[tokio::test]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> Result<()> {
-        let resend = Client::default();
+        let resend = CLIENT.get_or_init(Resend::default);
 
-        // TODO: Domain test.
+        // Create
+        let domain = resend
+            .domains
+            .add(CreateDomainOptions::new("example.com"))
+            .await?;
+
+        std::thread::sleep(std::time::Duration::from_secs(1));
 
         // List.
-        let _ = resend.domains.list().await?;
+        let list = resend.domains.list().await?;
+        assert!(list.len() == 1);
+
+        // Get
+        let domain = resend.domains.get(&domain.id).await?;
+
+        // Update
+        let updates = DomainChanges::new()
+            .with_open_tracking(false)
+            .with_click_tracking(true);
+
+        let domain = resend.domains.update(&domain.id, updates).await?;
+
+        // Delete
+        let resp = resend.domains.delete(&domain.id).await?;
+        assert!(resp.deleted);
+
+        // List.
+        let list = resend.domains.list().await?;
+        assert!(list.is_empty());
 
         Ok(())
     }
