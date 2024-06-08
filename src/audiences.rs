@@ -177,7 +177,7 @@ mod test {
         // Create.
         let created = resend.audiences.create(audience).await?;
         let id = created.id;
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        std::thread::sleep(std::time::Duration::from_secs(2));
 
         // Get.
         let data = resend.audiences.get(&id).await?;
@@ -191,7 +191,7 @@ mod test {
         // Delete.
         let deleted = resend.audiences.delete(&id).await?;
         assert!(deleted);
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        std::thread::sleep(std::time::Duration::from_secs(2));
 
         // List.
         let audiences = resend.audiences.list().await?;
