@@ -372,14 +372,16 @@ pub mod types {
 
 #[cfg(test)]
 mod test {
-    use crate::{Resend, Result};
+    use crate::{
+        domains::types::{CreateDomainOptions, DomainChanges},
+        tests::CLIENT,
+        Resend, Result,
+    };
 
     #[tokio::test]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> Result<()> {
-        use crate::domains::types::{CreateDomainOptions, DomainChanges};
-
-        let resend = Resend::default();
+        let resend = CLIENT.get_or_init(Resend::default);
 
         // Create
         let domain = resend
@@ -404,16 +406,12 @@ mod test {
         let domain = resend.domains.update(&domain.id, updates).await?;
 
         // Delete
-        std::thread::sleep(std::time::Duration::from_millis(500));
         let resp = resend.domains.delete(&domain.id).await?;
         assert!(resp.deleted);
-        std::thread::sleep(std::time::Duration::from_millis(500));
 
         // List.
         let list = resend.domains.list().await?;
         assert!(list.is_empty());
-
-        std::thread::sleep(std::time::Duration::from_secs(1));
 
         Ok(())
     }

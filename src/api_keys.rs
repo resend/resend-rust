@@ -196,13 +196,15 @@ pub mod types {
 
 #[cfg(test)]
 mod test {
+    use crate::tests::CLIENT;
     use crate::types::CreateApiKeyOptions;
     use crate::{Resend, Result};
 
     #[tokio::test]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> Result<()> {
-        let resend = Resend::default();
+        let resend = CLIENT.get_or_init(Resend::default);
+
         let api_key = "test_";
 
         // Create.
@@ -216,13 +218,10 @@ mod test {
 
         // Delete.
         resend.api_keys.delete(&id).await?;
-        std::thread::sleep(std::time::Duration::from_millis(500));
 
         // List.
         let api_keys = resend.api_keys.list().await?;
         assert!(api_keys_amt == api_keys.len() + 1);
-
-        std::thread::sleep(std::time::Duration::from_secs(1));
 
         Ok(())
     }

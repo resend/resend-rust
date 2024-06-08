@@ -297,13 +297,14 @@ pub mod types {
 
 #[cfg(test)]
 mod test {
+    use crate::tests::CLIENT;
     use crate::types::{ContactChanges, ContactData};
     use crate::{Resend, Result};
 
     #[tokio::test]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> Result<()> {
-        let resend = Resend::default();
+        let resend = CLIENT.get_or_init(Resend::default);
         let audience = "test_contacts";
 
         // Create audience.
@@ -337,13 +338,10 @@ mod test {
 
         // Delete audience.
         let _ = resend.audiences.delete(&audience_id).await?;
-        std::thread::sleep(std::time::Duration::from_millis(500));
 
         // List.
         let contacts = resend.contacts.list(&audience_id).await?;
         assert!(contacts.is_empty());
-
-        std::thread::sleep(std::time::Duration::from_secs(1));
 
         Ok(())
     }

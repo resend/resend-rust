@@ -165,18 +165,19 @@ pub mod types {
 
 #[cfg(test)]
 mod test {
+    use crate::tests::CLIENT;
     use crate::{Resend, Result};
 
     #[tokio::test]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> Result<()> {
-        let resend = Resend::default();
+        let resend = CLIENT.get_or_init(Resend::default);
         let audience = "test_audiences";
 
         // Create.
         let created = resend.audiences.create(audience).await?;
         let id = created.id;
-        std::thread::sleep(std::time::Duration::from_millis(500));
+        std::thread::sleep(std::time::Duration::from_secs(1));
 
         // Get.
         let data = resend.audiences.get(&id).await?;
@@ -190,13 +191,10 @@ mod test {
         // Delete.
         let deleted = resend.audiences.delete(&id).await?;
         assert!(deleted);
-        std::thread::sleep(std::time::Duration::from_millis(500));
 
         // List.
         let audiences = resend.audiences.list().await?;
         assert!(audiences_before == audiences.len() + 1);
-
-        std::thread::sleep(std::time::Duration::from_secs(1));
 
         Ok(())
     }

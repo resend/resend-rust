@@ -353,7 +353,7 @@ pub mod types {
 #[cfg(test)]
 mod test {
     use crate::types::{CreateEmailBaseOptions, Tag};
-    use crate::{Resend, Result};
+    use crate::{tests::CLIENT, Resend, Result};
 
     #[tokio::test]
     #[cfg(not(feature = "blocking"))]
@@ -362,7 +362,7 @@ mod test {
         let to = ["delivered@resend.dev"];
         let subject = "Hello World!";
 
-        let resend = Resend::default();
+        let resend = CLIENT.get_or_init(Resend::default);
 
         // Create
         let email = CreateEmailBaseOptions::new(from, to, subject)
@@ -375,8 +375,6 @@ mod test {
         // Get
         let _email = resend.emails.get(&email.id).await?;
 
-        std::thread::sleep(std::time::Duration::from_secs(1));
-
         Ok(())
     }
 
@@ -387,14 +385,14 @@ mod test {
         let to = ["delivered@resend.dev"];
         let subject = "Hello World!";
 
-        let resend = Resend::default();
+        let resend = CLIENT.get_or_init(Resend::default);
         let email = CreateEmailBaseOptions::new(from, to, subject)
             .with_text("Hello World!")
             .with_tag(Tag::new("category", "confirm_email"));
 
         let _ = resend.emails.send(email)?;
 
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        std::thread::sleep(std::time::Duration::from_millis(1100));
 
         Ok(())
     }

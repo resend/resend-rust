@@ -39,5 +39,8 @@ internally.
 - `RESEND_API_KEY` to enable `impl Default` for a `Resend` client (Required).
 - `RESEND_BASE_URL` to override the default base address:
   `https://api.resend.com` (Optional).
-<div class="warning markdown-alert markdown-alert-warning">WARNING</div>
-<!-- TODO: Mention rate limit does not work in blocking -->
+- `RATE_LIMIT` to set the maximum amount of requests you can send per second. By default, this is
+  10 as that is what Resend defaults to. In reality, the time window is set to 1.1s to avoid
+  failures. This is thread-safe (as long as you use the same `Resend` client across threads!)
+
+> <div class="warning">WARNING: Rate limiting only works when using the async version (default) of the crate</div>

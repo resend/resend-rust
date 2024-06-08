@@ -25,14 +25,6 @@
 //!
 //! ```
 
-// FIXME: Tests can fail due to rate limit constraints (max 10 req/s). Running the tests on one
-//        thread seems to work for now but this is just a workaround. For now, an alias is provided
-//        for `cargo t` which automatically passes `-- --test-threads=1` to the tests.
-//  Edit: Somewhat unsurprisingly, this sometimes fails in CI because the Linux image just runs
-//        faster so additional thread sleeps were added, these need to be removed when (if?) this is
-//        solved.
-// TODO: Remember to fix email/batch GETs whenever the server is updated
-
 pub use client::Resend;
 pub(crate) use config::Config;
 
@@ -95,3 +87,18 @@ pub enum Error {
 ///
 /// [`Result`]: std::result::Result
 pub type Result<T, E = Error> = std::result::Result<T, E>;
+
+#[cfg(test)]
+pub(crate) mod tests {
+    use std::sync::OnceLock;
+
+    use crate::Resend;
+
+    /// Use this client in all tests to ensure rate limits are respected.
+    ///
+    /// Instantiate with:
+    /// ```
+    /// let resend = CLIENT.get_or_init(Resend::default);
+    /// ```
+    pub static CLIENT: OnceLock<Resend> = OnceLock::new();
+}
