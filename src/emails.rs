@@ -372,6 +372,8 @@ mod test {
 
         let email = resend.emails.send(email).await?;
 
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
         // Get
         let _email = resend.emails.get(&email.id).await?;
 
