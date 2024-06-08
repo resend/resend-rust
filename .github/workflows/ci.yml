@@ -6,22 +6,10 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  # 10/s over 4 jobs
-  RATE_LIMIT: 2
 
 jobs:
-  build_test_run:
-    name: Build and test on ${{ matrix.job.os }} (${{ matrix.job.target }})
-    runs-on: ${{ matrix.job.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        job:
-          - { target: aarch64-unknown-linux-gnu , os: ubuntu-22.04 }
-          - { target: x86_64-unknown-linux-gnu  , os: ubuntu-22.04 }
-          - { target: x86_64-apple-darwin       , os: macos-12     }
-          - { target: x86_64-pc-windows-msvc    , os: windows-2022 }
-
+  aarch64-unknown-linux-gnu:
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -29,12 +17,87 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.job.target }}
+          targets: aarch64-unknown-linux-gnu
 
       - name: Use cached dependencies
         uses: Swatinem/rust-cache@v2
         with:
-          key: "${{ matrix.job.os }}-${{ matrix.job.target }}"
+          key: "ubuntu-22.04-aarch64-unknown-linux-gnu"
+
+      - name: Build
+        run: cargo build --verbose
+
+      - name: Test
+        run: cargo --verbose t
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+
+  x86_64-unknown-linux-gnu:
+    needs: [aarch64-unknown-linux-gnu]
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-gnu
+
+      - name: Use cached dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: "ubuntu-22.04-x86_64-unknown-linux-gnu"
+
+      - name: Build
+        run: cargo build --verbose
+
+      - name: Test
+        run: cargo --verbose t
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+
+  x86_64-apple-darwin:
+    needs: [aarch64-unknown-linux-gnu, x86_64-unknown-linux-gnu]
+    runs-on: macos-12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-apple-darwin
+
+      - name: Use cached dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: "macos-12-x86_64-apple-darwin"
+
+      - name: Build
+        run: cargo build --verbose
+
+      - name: Test
+        run: cargo --verbose t
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+
+  x86_64-pc-windows-msvc:
+    needs: [aarch64-unknown-linux-gnu, x86_64-unknown-linux-gnu, x86_64-apple-darwin]
+    runs-on: macos-12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Use cached dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: "windows-2022-x86_64-pc-windows-msvc"
 
       - name: Build
         run: cargo build --verbose
