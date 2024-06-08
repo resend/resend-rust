@@ -41,8 +41,8 @@ Crate documentation is available in [docsrs][docs-url]. Example usage is availab
 
 > <div class="warning">WARNING: Rate limiting only works when using the async version (default) of the crate</div>
 
-[action-badge]: https://img.shields.io/github/actions/workflow/status/resend/resend-rs/ci.yml
-[action-url]: https://github.com/resend/resend-rs/actions/workflows/ci.yml
+[action-badge]: https://img.shields.io/github/actions/workflow/status/resend/resend-rust/ci.yml
+[action-url]: https://github.com/resend/resend-rust/actions/workflows/ci.yml
 [crates-badge]: https://img.shields.io/crates/v/resend-rs
 [crates-url]: https://crates.io/crates/resend-rs
 [docs-badge]: https://img.shields.io/docsrs/resend-rs
