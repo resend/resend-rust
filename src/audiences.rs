@@ -191,7 +191,7 @@ mod test {
         // Delete.
         let deleted = resend.audiences.delete(&id).await?;
         assert!(deleted);
-        std::thread::sleep(std::time::Duration::from_secs(2));
+        std::thread::sleep(std::time::Duration::from_secs(4));
 
         // List.
         let audiences = resend.audiences.list().await?;
