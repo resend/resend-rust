@@ -8,7 +8,13 @@ and this project adheres to
 
 <!-- ## [Unreleased] -->
 
-## [Unreleased]
+## [0.5.1] - 2024-06-08
+
+### Changed
+
+- Moved Github URLs from `resend-rs` to `resend-rust` (no code changes)
+
+## [0.5.0] - 2024-06-08
 
 ### Added
 
@@ -80,6 +86,8 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+[0.5.1]: https://crates.io/crates/resend-rs/0.5.1
+[0.5.0]: https://crates.io/crates/resend-rs/0.5.0
 [0.4.0]: https://crates.io/crates/resend-rs/0.4.0
 [0.3.0]: https://crates.io/crates/resend-rs/0.3.0
 [0.2.0]: https://crates.io/crates/resend-rs/0.2.0
