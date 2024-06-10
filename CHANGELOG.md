@@ -8,6 +8,13 @@ and this project adheres to
 
 <!-- ## [Unreleased] -->
 
+## [0.5.2] - 2024-06-10
+
+### Added
+
+- `DomainChanges::with_tls` method
+- docs for `Domain.Tls` enum options
+
 ## [0.5.1] - 2024-06-08
 
 ### Changed
@@ -86,6 +93,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+[0.5.2]: https://crates.io/crates/resend-rs/0.5.2
 [0.5.1]: https://crates.io/crates/resend-rs/0.5.1
 [0.5.0]: https://crates.io/crates/resend-rs/0.5.0
 [0.4.0]: https://crates.io/crates/resend-rs/0.4.0

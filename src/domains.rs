@@ -116,8 +116,14 @@ pub mod types {
     use serde::{Deserialize, Serialize};
 
     #[derive(Debug, Copy, Clone, Serialize)]
+    #[serde(rename_all = "lowercase")]
     pub enum Tls {
+        /// Enforced TLS on the other hand, requires that the email communication must use TLS no
+        /// matter what. If the receiving server does not support TLS, the email will not be sent.
         Enforced,
+        /// Opportunistic TLS means that it always attempts to make a secure connection to the
+        /// receiving mail server. If it can’t establish a secure connection, it sends the message
+        /// unencrypted.
         Opportunistic,
     }
 
@@ -347,6 +353,13 @@ pub mod types {
             self.open_tracking = Some(enable);
             self
         }
+
+        /// Changes the TLS configuration.
+        #[inline]
+        pub const fn with_tls(mut self, tls: Tls) -> Self {
+            self.tls = Some(tls);
+            self
+        }
     }
 
     #[derive(Debug, Clone, Deserialize)]
@@ -373,7 +386,7 @@ pub mod types {
 #[cfg(test)]
 mod test {
     use crate::{
-        domains::types::{CreateDomainOptions, DomainChanges},
+        domains::types::{CreateDomainOptions, DomainChanges, Tls},
         tests::CLIENT,
         Resend, Result,
     };
@@ -401,7 +414,8 @@ mod test {
         // Update
         let updates = DomainChanges::new()
             .with_open_tracking(false)
-            .with_click_tracking(true);
+            .with_click_tracking(true)
+            .with_tls(Tls::Enforced);
 
         let domain = resend.domains.update(&domain.id, updates).await?;
 
