@@ -40,10 +40,10 @@ impl Config {
 
         // ==== Rate limiting is a non-blocking thing only ====
         #[cfg(not(feature = "blocking"))]
-        let rate_limit_per_sec = env::var("RATE_LIMIT")
+        let rate_limit_per_sec = env::var("RESEND_RATE_LIMIT")
             .unwrap_or_else(|_| "9".to_owned())
             .parse::<u32>()
-            .expect("env variable `RATE_LIMIT` should be a valid u32");
+            .expect("env variable `RESEND_RATE_LIMIT` should be a valid u32");
 
         #[cfg(not(feature = "blocking"))]
         let quota = Quota::with_period(Duration::from_millis(1100))
