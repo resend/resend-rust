@@ -8,6 +8,16 @@ and this project adheres to
 
 <!-- ## [Unreleased] -->
 
+## [0.6.0] - 2024-06-16
+
+### Changed
+
+- `RATE_LIMIT` to `RESEND_RATE_LIMIT` to avoid potential collisions with other libs
+
+### Removed
+
+- Outdated doc comment from `Client::user_agent`
+
 ## [0.5.2] - 2024-06-10
 
 ### Added
@@ -93,6 +103,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+[0.6.0]: https://crates.io/crates/resend-rs/0.6.0
 [0.5.2]: https://crates.io/crates/resend-rs/0.5.2
 [0.5.1]: https://crates.io/crates/resend-rs/0.5.1
 [0.5.0]: https://crates.io/crates/resend-rs/0.5.0
