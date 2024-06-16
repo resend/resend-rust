@@ -61,10 +61,6 @@ impl Resend {
     }
 
     /// Returns the reference to the used `User-Agent` header value.
-    ///
-    /// ### Notes
-    ///
-    /// Use the `RESEND_USER_AGENT` environment variable to override.
     #[inline]
     #[must_use]
     pub fn user_agent(&self) -> &str {
