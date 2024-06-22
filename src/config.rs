@@ -94,6 +94,17 @@ impl Config {
 
         match response.status() {
             x if x.is_client_error() || x.is_server_error() => {
+                // TODO: Make this more testable
+                let content_type_is_html = response
+                    .headers()
+                    .get("content-type")
+                    .and_then(|el| el.to_str().ok())
+                    .is_some_and(|content_type| content_type.contains("html"));
+
+                if content_type_is_html {
+                    return Err(Error::Parse(response.text().await?));
+                }
+
                 let error = response.json::<ErrorResponse>().await?;
                 Err(Error::Resend(error))
             }
