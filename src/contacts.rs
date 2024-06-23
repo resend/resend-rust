@@ -289,6 +289,7 @@ pub mod types {
     #[derive(Debug, Clone, Deserialize)]
     pub struct DeleteContactResponse {
         /// The ID of the domain.
+        #[allow(dead_code)]
         pub contact: ContactId,
         /// Indicates whether the domain was deleted successfully.
         pub deleted: bool,

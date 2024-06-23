@@ -316,6 +316,7 @@ pub mod types {
     #[derive(Debug, Clone, Deserialize)]
     pub struct VerifyDomainResponse {
         /// The ID of the domain.
+        #[allow(dead_code)]
         pub id: DomainId,
     }
 
