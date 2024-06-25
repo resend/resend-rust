@@ -12,6 +12,7 @@ and this project adheres to
 
 ### Added
 
+- `Attachment::with_content_type` method and `content_type` field
 - `Error::Parse` variant
 
 ### Changed

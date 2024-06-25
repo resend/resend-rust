@@ -263,6 +263,10 @@ pub mod types {
         /// Name of attached file.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub filename: Option<String>,
+        /// Optional content type for the attachment, if not set will be derived from the filename
+        /// property.
+        #[serde(rename = "contentType", skip_serializing_if = "Option::is_none")]
+        pub content_type: Option<String>,
     }
 
     /// Content or path of the [`Attachment`].
@@ -284,6 +288,7 @@ pub mod types {
             Self {
                 content_or_path: ContentOrPath::Content(content),
                 filename: None,
+                content_type: None,
             }
         }
 
@@ -293,6 +298,7 @@ pub mod types {
             Self {
                 content_or_path: ContentOrPath::Path(path.to_owned()),
                 filename: None,
+                content_type: None,
             }
         }
 
@@ -300,6 +306,13 @@ pub mod types {
         #[inline]
         pub fn with_filename(mut self, filename: &str) -> Self {
             self.filename = Some(filename.to_owned());
+            self
+        }
+
+        /// Adds a contenent type to the attached file.
+        #[inline]
+        pub fn with_content_type(mut self, content_type: &str) -> Self {
+            self.content_type = Some(content_type.to_owned());
             self
         }
     }
