@@ -150,6 +150,7 @@ pub mod types {
     #[derive(Debug, Clone, Deserialize)]
     pub struct RemoveAudienceResponse {
         /// The ID of the audience.
+        #[allow(dead_code)]
         pub id: AudienceId,
         /// The deleted attribute indicates that the corresponding audience has been deleted.
         pub deleted: bool,

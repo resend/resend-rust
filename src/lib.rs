@@ -81,6 +81,10 @@ pub enum Error {
     /// Errors that may occur during the processing of the API request.
     #[error("resend error: {0}")]
     Resend(#[from] types::ErrorResponse),
+
+    /// Errors that may occur during the parsing of an API response.
+    #[error("Failed to parse Resend API response. Received: \n{0}")]
+    Parse(String),
 }
 
 /// Specialized [`Result`] type for an [`Error`].

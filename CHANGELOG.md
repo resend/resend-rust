@@ -6,7 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-<!-- ## [Unreleased] -->
+## [Unreleased]
+
+<!-- ## [0.7.0] - 2024-06-23 -->
+
+### Added
+
+- `Error::Parse` variant
+
+### Changed
+
+- HTML server responses instead of proper JSON errors (which should mostly happen in outages)
+  now have better error messages
+
 
 ## [0.6.0] - 2024-06-16
 
@@ -103,6 +115,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+<!-- [0.7.0]: https://crates.io/crates/resend-rs/0.7.0 -->
 [0.6.0]: https://crates.io/crates/resend-rs/0.6.0
 [0.5.2]: https://crates.io/crates/resend-rs/0.5.2
 [0.5.1]: https://crates.io/crates/resend-rs/0.5.1
