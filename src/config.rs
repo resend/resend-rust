@@ -7,7 +7,7 @@ use governor::{
 };
 #[cfg(feature = "blocking")]
 use reqwest::blocking::{Client, RequestBuilder, Response};
-use reqwest::header::USER_AGENT;
+use reqwest::{header::USER_AGENT, StatusCode};
 #[cfg(not(feature = "blocking"))]
 use reqwest::{Client, RequestBuilder, Response};
 use reqwest::{Method, Url};
@@ -93,6 +93,28 @@ impl Config {
         let response = self.client.execute(request).await?;
 
         match response.status() {
+            StatusCode::TOO_MANY_REQUESTS => {
+                let headers = response.headers();
+
+                let ratelimit_limit = headers
+                    .get("ratelimit-limit")
+                    .and_then(|v| v.to_str().ok())
+                    .and_then(|v| v.parse::<u64>().ok());
+                let ratelimit_remaining = headers
+                    .get("ratelimit-remaining")
+                    .and_then(|v| v.to_str().ok())
+                    .and_then(|v| v.parse::<u64>().ok());
+                let ratelimit_reset = headers
+                    .get("ratelimit-reset")
+                    .and_then(|v| v.to_str().ok())
+                    .and_then(|v| v.parse::<u64>().ok());
+
+                Err(Error::RateLimit {
+                    ratelimit_limit,
+                    ratelimit_remaining,
+                    ratelimit_reset,
+                })
+            }
             x if x.is_client_error() || x.is_server_error() => {
                 // TODO: Make this more testable
                 let content_type_is_html = response

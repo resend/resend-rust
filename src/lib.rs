@@ -37,6 +37,7 @@ mod contacts;
 mod domains;
 mod emails;
 mod error;
+pub mod retry;
 
 pub mod services {
     //! `Resend` API services.
@@ -85,6 +86,14 @@ pub enum Error {
     /// Errors that may occur during the parsing of an API response.
     #[error("Failed to parse Resend API response. Received: \n{0}")]
     Parse(String),
+
+    /// Detailed rate limit error.
+    #[error("Too many requests. Limit is {ratelimit_limit:?} per {ratelimit_reset:?} seconds.")]
+    RateLimit {
+        ratelimit_limit: Option<u64>,
+        ratelimit_remaining: Option<u64>,
+        ratelimit_reset: Option<u64>,
+    },
 }
 
 /// Specialized [`Result`] type for an [`Error`].
