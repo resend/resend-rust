@@ -37,7 +37,7 @@ mod contacts;
 mod domains;
 mod emails;
 mod error;
-pub mod retry;
+pub mod rate_limit;
 
 pub mod services {
     //! `Resend` API services.
