@@ -6,7 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+<!-- ## [Unreleased] -->
+
+## [0.8.0] - 2024-07-05
 
 ### Added
 
@@ -121,6 +123,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+[0.8.0]: https://crates.io/crates/resend-rs/0.8.0
 [0.7.0]: https://crates.io/crates/resend-rs/0.7.0
 [0.6.0]: https://crates.io/crates/resend-rs/0.6.0
 [0.5.2]: https://crates.io/crates/resend-rs/0.5.2
