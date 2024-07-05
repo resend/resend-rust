@@ -36,8 +36,8 @@ Crate documentation is available in [docsrs][docs-url]. Example usage is availab
 - `RESEND_BASE_URL` to override the default base address:
   `https://api.resend.com` (Optional).
 - `RESEND_RATE_LIMIT` to set the maximum amount of requests you can send per second. By default, this is
-  9 (Resend defaults to 10). In reality, the time window is set to 1.1s to avoid
-  failures. This is thread-safe (as long as you use the same `Resend` client across threads!)
+  9 (Resend defaults to 10). See [the docs](https://docs.rs/resend-rs/latest/resend_rs/#rate-limits)
+  for more information.
 
 > <div class="warning">WARNING: Rate limiting only works when using the async version (default) of the crate</div>
 

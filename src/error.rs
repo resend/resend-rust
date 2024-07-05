@@ -125,6 +125,11 @@ pub mod types {
         /// concurrent requests per second.
         ///
         /// If you have specific requirements, contact support to request a rate increase.
+        ///
+        /// ## Note
+        ///
+        /// This should *never* be returned anymore as it's been replaced by the more detailed
+        /// [`Error::RateLimit`](crate::Error::RateLimit).
         RateLimitExceeded,
 
         /// 429 Too Many Requests.
