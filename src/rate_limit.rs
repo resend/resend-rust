@@ -38,7 +38,7 @@ impl Default for RetryOptions {
 ///
 /// ```rust
 /// use resend_rs::{
-///  retry::{send_with_retry, send_with_retry_opts, RetryOptions},
+///  rate_limit::{send_with_retry, send_with_retry_opts, RetryOptions},
 ///  types::CreateEmailBaseOptions,
 ///};
 ///use resend_rs::{Resend, Result};
@@ -59,7 +59,7 @@ impl Default for RetryOptions {
 ///
 /// ```rust
 /// use resend_rs::{
-///  retry::{send_with_retry, send_with_retry_opts, RetryOptions},
+///  rate_limit::{send_with_retry, send_with_retry_opts, RetryOptions},
 ///  types::CreateEmailBaseOptions,
 ///};
 ///use resend_rs::{Resend, Result};
