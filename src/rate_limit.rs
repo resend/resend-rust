@@ -3,13 +3,10 @@
 //! The [`retry!`](crate::retry!) and [`retry_opts!`](crate::retry_opts) macros are also implemented
 //! as slightly-less-verbose alternatives.
 
-// TODO: Some tests (esp amt of retries, maybe add a cfg test var)
-
 use crate::{Error, Result};
 use rand::Rng;
 use std::{future::Future, ops::Range, time::Duration};
 
-// TODO: Make fields public/editable
 /// Configuration options for retrying requests.
 #[derive(Debug, Clone)]
 pub struct RetryOptions {
@@ -90,6 +87,8 @@ impl Default for RetryOptions {
 pub async fn send_with_retry_opts<A: Future<Output = Result<B>> + Send, B: Send>(
     f: impl Fn() -> A + Send,
     opts: &RetryOptions,
+    // This is used to test the recursion depth
+    #[cfg(test)] retry_count: &mut u32,
 ) -> Result<B> {
     let res = f().await;
 
@@ -115,7 +114,18 @@ pub async fn send_with_retry_opts<A: Future<Output = Result<B>> + Send, B: Send>
         let jitter = rand::thread_rng().gen_range(opts.jitter_range_ms.clone());
         std::thread::sleep(Duration::from_millis(sleep_millis + jitter));
 
-        Box::pin(send_with_retry_opts(f, &opts)).await
+        #[cfg(test)]
+        {
+            *retry_count += 1;
+        }
+
+        Box::pin(send_with_retry_opts(
+            f,
+            &opts,
+            #[cfg(test)]
+            retry_count,
+        ))
+        .await
     } else {
         res
     }
@@ -126,7 +136,13 @@ pub async fn send_with_retry_opts<A: Future<Output = Result<B>> + Send, B: Send>
 pub async fn send_with_retry<A: Future<Output = Result<B>> + Send, B: Send>(
     f: impl Fn() -> A + Send,
 ) -> Result<B> {
-    send_with_retry_opts(f, &RetryOptions::default()).await
+    send_with_retry_opts(
+        f,
+        &RetryOptions::default(),
+        #[cfg(test)]
+        &mut 0,
+    )
+    .await
 }
 
 /// Equivalent to [`send_with_retry`].
@@ -185,4 +201,57 @@ macro_rules! retry_opts {
     ( $f:expr, $opts:expr ) => {{
         send_with_retry_opts(|| $f, &$opts).await
     }};
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{send_with_retry_opts, RetryOptions};
+    use crate::Error;
+
+    #[tokio::test]
+    #[cfg(not(feature = "blocking"))]
+    async fn test_retry_count_err() {
+        let mut run_count = 0u32;
+
+        let f = || async {
+            let err = Error::RateLimit {
+                ratelimit_limit: Some(10),
+                ratelimit_remaining: Some(10),
+                ratelimit_reset: Some(1),
+            };
+            Result::<(), Error>::Err(err)
+        };
+        let mut opts = RetryOptions::default();
+
+        let res = send_with_retry_opts(f, &opts, &mut run_count).await;
+
+        assert!(res.is_err());
+        assert!(run_count == 3);
+
+        run_count = 0;
+        opts.max_retries = 2;
+        let res = send_with_retry_opts(f, &opts, &mut run_count).await;
+        assert!(res.is_err());
+        assert!(run_count == 2);
+
+        run_count = 0;
+        opts.max_retries = 0;
+        let res = send_with_retry_opts(f, &opts, &mut run_count).await;
+        assert!(res.is_err());
+        assert!(run_count == 0);
+    }
+
+    #[tokio::test]
+    #[cfg(not(feature = "blocking"))]
+    async fn test_retry_count_ok() {
+        let mut retry_count = 0u32;
+
+        let f = || async { Result::<(), Error>::Ok(()) };
+        let opts = RetryOptions::default();
+
+        let res = send_with_retry_opts(f, &opts, &mut retry_count).await;
+
+        assert!(res.is_ok());
+        assert!(retry_count == 0);
+    }
 }
