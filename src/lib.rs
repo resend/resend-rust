@@ -1,6 +1,30 @@
 #![forbid(unsafe_code)]
 #![doc = include_str!("../README.md")]
-//! #### Examples
+//! ### Rate Limits
+//!
+//! Resend implements rate limitting on their API which can sometimes get in the way of whatever
+//! you are trying to do. This crate handles that in 2 ways:
+//!
+//! - Firstly *all* requests made by the [`Resend`] client are automatically rate limitted to
+//!   9 req/1.1s to avoid collisions with the 10 req/s limit that Resend imposes at the time of
+//!   writing this.
+//!
+//!   Note that the client can be safely cloned as well as used in async/parallel contexts and the
+//!   rate limit will work as intended. The only exception to this is creating 2 clients via the
+//!   [`Resend::new`] or [`Resend::with_client`] methods which should be avoided, use `.clone()`
+//!   instead.
+//!
+//! - Secondly, a couple of helper methods as well as macros are implemented in the [`rate_limit`]
+//!   module that allow catching rate limit errors and retrying the request instead of failing.
+//!   
+//!   These were implemented to handle cases where this crate is used in a horizontally scaled
+//!   environment and thus needs to work on different machines at the same time in which case the
+//!   internal rate limits alone cannot guarantee that there will be no rate limit errors.
+//!
+//!   As long as only one program is interacting with the Resend servers on your behalf, this
+//!   module does not need to be used.
+//!
+//! ### Examples
 //!
 //! ```rust,no_run
 //! use resend_rs::types::{CreateEmailBaseOptions, Tag};

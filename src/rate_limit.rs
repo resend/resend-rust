@@ -1,12 +1,16 @@
-// ! Helper methods for retrying requests in case of a rate limit error.
-// TODO: Some tests
-// TODO: Docs, examples
+//! Helper methods for retrying requests in case of a rate limit error.
+//!
+//! The [`retry!`](crate::retry!) and [`retry_opts!`](crate::retry_opts) macros are also implemented
+//! as slightly-less-verbose alternatives.
+
+// TODO: Some tests (esp amt of retries, maybe add a cfg test var)
 
 use crate::{Error, Result};
 use rand::Rng;
 use std::{future::Future, ops::Range, time::Duration};
 
 // TODO: Make fields public/editable
+/// Configuration options for retrying requests.
 #[derive(Debug, Clone)]
 pub struct RetryOptions {
     /// The amount of milliseconds to wait between requests.
