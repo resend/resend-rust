@@ -111,7 +111,8 @@ pub enum Error {
     #[error("Failed to parse Resend API response. Received: \n{0}")]
     Parse(String),
 
-    /// Detailed rate limit error.
+    /// Detailed rate limit error. For the old error variant see
+    /// [`types::ErrorKind::RateLimitExceeded`].
     #[error("Too many requests. Limit is {ratelimit_limit:?} per {ratelimit_reset:?} seconds.")]
     RateLimit {
         ratelimit_limit: Option<u64>,
