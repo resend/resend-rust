@@ -8,6 +8,17 @@ and this project adheres to
 
 <!-- ## [Unreleased] -->
 
+## [0.8.1] - 2024-07-11
+
+### Changed
+
+- `Email.text` is now optional
+
+### Fixed
+
+- The `cc`, `bcc` and `text` fields of the `Email` struct are nullable which broke deserialization.
+  It now works as expected.
+
 ## [0.8.0] - 2024-07-05
 
 ### Added
@@ -123,6 +134,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+[0.8.1]: https://crates.io/crates/resend-rs/0.8.1
 [0.8.0]: https://crates.io/crates/resend-rs/0.8.0
 [0.7.0]: https://crates.io/crates/resend-rs/0.7.0
 [0.6.0]: https://crates.io/crates/resend-rs/0.6.0

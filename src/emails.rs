@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use reqwest::Method;
+use serde::{Deserialize, Deserializer};
 
 use crate::types::{CreateEmailBaseOptions, CreateEmailResponse, Email};
 use crate::{Config, Result};
@@ -33,8 +34,6 @@ impl EmailsSvc {
 
         let request = self.0.build(Method::GET, &path);
         let response = self.0.send(request).await?;
-        // dbg!(response.text().await);
-        // todo!();
         let content = response.json::<Email>().await?;
 
         Ok(content)
@@ -47,6 +46,8 @@ pub mod types {
 
     use ecow::EcoString;
     use serde::{Deserialize, Serialize};
+
+    use crate::emails::parse_nullable_vec;
 
     /// Unique [`Email`] identifier.
     #[derive(Debug, Clone, Deserialize)]
@@ -350,11 +351,13 @@ pub mod types {
         /// The HTML body of the email.
         pub html: Option<String>,
         /// The plain text body of the email.
-        pub text: String,
+        pub text: Option<String>,
 
         /// The email addresses of the blind carbon copy recipients.
+        #[serde(deserialize_with = "parse_nullable_vec")]
         pub bcc: Vec<String>,
         /// The email addresses of the carbon copy recipients.
+        #[serde(deserialize_with = "parse_nullable_vec")]
         pub cc: Vec<String>,
         /// The email addresses to which replies should be sent.
         pub reply_to: Option<Vec<String>>,
@@ -363,9 +366,20 @@ pub mod types {
     }
 }
 
+/// Turns:
+/// - `null` -> `[]`
+/// - `["text"]` -> `["text"]`
+fn parse_nullable_vec<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let opt = Option::deserialize(deserializer)?;
+    Ok(opt.unwrap_or_else(Vec::new))
+}
+
 #[cfg(test)]
 mod test {
-    use crate::types::{CreateEmailBaseOptions, Tag};
+    use crate::types::{CreateEmailBaseOptions, Email, Tag};
     use crate::{tests::CLIENT, Resend, Result};
 
     #[tokio::test]
@@ -391,6 +405,57 @@ mod test {
         let _email = resend.emails.get(&email.id).await?;
 
         Ok(())
+    }
+
+    #[test]
+    fn deserialize_test() {
+        let email = r#"{
+            "object": "email",
+            "id": "6757a66c-3a5b-49ee-98cc-fca7a5f423c0",
+            "to": [
+                "email@gmail.com"
+            ],
+            "from": "email@gmail.com>",
+            "created_at": "2024-07-11 07:49:53.682607+00",
+            "subject": "Subject",
+            "bcc": null,
+            "cc": null,
+            "reply_to": null,
+            "last_event": "delivered",
+            "html": "<div></div>",
+            "text": null
+        }"#;
+
+        let res = serde_json::from_str::<Email>(email);
+        assert!(res.is_ok());
+        let res = res.unwrap();
+        assert!(res.cc.is_empty());
+        assert!(res.bcc.is_empty());
+        assert!(res.text.is_none());
+
+        let email = r#"{
+            "object": "email",
+            "id": "6757a66c-3a5b-49ee-98cc-fca7a5f423c0",
+            "to": [
+                "email@gmail.com"
+            ],
+            "from": "email@gmail.com>",
+            "created_at": "2024-07-11 07:49:53.682607+00",
+            "subject": "Subject",
+            "bcc": ["hello", "world"],
+            "cc": ["!"],
+            "reply_to": null,
+            "last_event": "delivered",
+            "html": "<div></div>",
+            "text": "Not null"
+        }"#;
+
+        let res = serde_json::from_str::<Email>(email);
+        assert!(res.is_ok());
+        let res = res.unwrap();
+        assert!(!res.cc.is_empty());
+        assert!(!res.bcc.is_empty());
+        assert!(res.text.is_some());
     }
 
     #[test]
