@@ -247,8 +247,6 @@ pub mod types {
     #[derive(Debug, Clone, Deserialize)]
     pub struct CancelScheduleResponse {
         /// The ID of the cancelled email.
-        // TODO: Make sure the rename is up to date
-        #[serde(rename = "email")]
         pub id: EmailId,
     }
 
