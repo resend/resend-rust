@@ -34,14 +34,13 @@ impl EmailsSvc {
 
         let request = self.0.build(Method::GET, &path);
         let response = self.0.send(request).await?;
-        println!("{}", response.text().await.unwrap());
-        todo!();
         let content = response.json::<Email>().await?;
 
         Ok(content)
     }
 
     // TODO: Add doc
+    #[maybe_async::maybe_async]
     pub async fn cancel_schedule(&self, email_id: &str) -> Result<CancelScheduleResponse> {
         let path = format!("/email/{email_id}/schedule");
 
@@ -537,8 +536,8 @@ mod test {
         std::thread::sleep(std::time::Duration::from_secs(1));
 
         // Get
-        // TODO: Assert that last_event is scheduled or something
         let email = resend.emails.get(&email.id).await?;
+        assert_eq!(email.last_event, "scheduled".to_string());
 
         // Cancel
         let _cancelled = resend.emails.cancel_schedule(&email.id).await?;
