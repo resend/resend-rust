@@ -92,7 +92,6 @@ rustflags = [
     "-Wmissing_debug_implementations",
     "-Wnon_ascii_idents",
     "-Wnoop_method_call",
-    "-Wpointer_structural_match",
     "-Wrust_2021_incompatible_closure_captures",
     "-Wrust_2021_incompatible_or_patterns",
     "-Wrust_2021_prefixes_incompatible_syntax",
