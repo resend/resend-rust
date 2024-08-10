@@ -311,6 +311,7 @@ mod test {
         // Create audience.
         let audience = resend.audiences.create(audience).await?;
         let audience_id = audience.id;
+        std::thread::sleep(std::time::Duration::from_secs(1));
 
         // Create.
         let contact = ContactData::new("antonios.barotsis@pm.me")
@@ -318,10 +319,12 @@ mod test {
             .with_last_name("Barotsis")
             .with_unsubscribed(false);
         let id = resend.contacts.create(&audience_id, contact).await?;
+        std::thread::sleep(std::time::Duration::from_secs(1));
 
         // Update.
         let changes = ContactChanges::new().with_unsubscribed(true);
         let _res = resend.contacts.update(&id, &audience_id, changes).await?;
+        std::thread::sleep(std::time::Duration::from_secs(1));
 
         // Retrieve.
         let contact = resend.contacts.get(&id, &audience_id).await?;
@@ -339,6 +342,7 @@ mod test {
 
         // Delete audience.
         let _ = resend.audiences.delete(&audience_id).await?;
+        std::thread::sleep(std::time::Duration::from_secs(1));
 
         // List.
         let contacts = resend.contacts.list(&audience_id).await?;
