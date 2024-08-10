@@ -6,14 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-<!-- ## [Unreleased] -->
-
-<!-- TODO: Make sure the date is correct when this is pushed -->
-## [0.9.0] - 2024-08-07
+## [Unreleased]
 
 ### Added
 
 - `email.scheduled_at` field (and `emails::with_scheduled` method for setting it)
+- `emails::update` method
 - `emails::cancel_schedule` method
 
 ## [0.8.1] - 2024-07-11
@@ -142,7 +140,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
-[0.9.0]: https://crates.io/crates/resend-rs/0.9.0
+<!-- [0.9.0]: https://crates.io/crates/resend-rs/0.9.0 -->
 [0.8.1]: https://crates.io/crates/resend-rs/0.8.1
 [0.8.0]: https://crates.io/crates/resend-rs/0.8.0
 [0.7.0]: https://crates.io/crates/resend-rs/0.7.0
