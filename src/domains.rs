@@ -403,7 +403,7 @@ mod test {
             .add(CreateDomainOptions::new("example.com"))
             .await?;
 
-        std::thread::sleep(std::time::Duration::from_secs(2));
+        std::thread::sleep(std::time::Duration::from_secs(4));
 
         // List.
         let list = resend.domains.list().await?;
