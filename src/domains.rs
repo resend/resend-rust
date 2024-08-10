@@ -403,7 +403,7 @@ mod test {
             .add(CreateDomainOptions::new("example.com"))
             .await?;
 
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        std::thread::sleep(std::time::Duration::from_secs(2));
 
         // List.
         let list = resend.domains.list().await?;
@@ -419,6 +419,7 @@ mod test {
             .with_tls(Tls::Enforced);
 
         let domain = resend.domains.update(&domain.id, updates).await?;
+        std::thread::sleep(std::time::Duration::from_secs(1));
 
         // Delete
         let resp = resend.domains.delete(&domain.id).await?;
