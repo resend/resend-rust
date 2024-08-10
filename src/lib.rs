@@ -90,7 +90,7 @@ pub mod types {
     };
     pub use super::emails::types::{
         Attachment, CancelScheduleResponse, ContentOrPath, CreateEmailBaseOptions,
-        CreateEmailResponse, Email, EmailId, Tag,
+        CreateEmailResponse, Email, EmailId, Tag, UpdateEmailOptions, UpdateEmailResponse,
     };
     pub use super::error::types::{ErrorKind, ErrorResponse};
 }
