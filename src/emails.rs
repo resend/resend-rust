@@ -3,7 +3,10 @@ use std::sync::Arc;
 use reqwest::Method;
 use serde::{Deserialize, Deserializer};
 
-use crate::types::{CreateEmailBaseOptions, CreateEmailResponse, Email};
+use crate::types::{
+    CancelScheduleResponse, CreateEmailBaseOptions, CreateEmailResponse, Email, UpdateEmailOptions,
+    UpdateEmailResponse,
+};
 use crate::{Config, Result};
 
 /// `Resend` APIs for `/emails` endpoints.
@@ -35,6 +38,40 @@ impl EmailsSvc {
         let request = self.0.build(Method::GET, &path);
         let response = self.0.send(request).await?;
         let content = response.json::<Email>().await?;
+
+        Ok(content)
+    }
+
+    /// Update a scheduled email.
+    ///
+    /// <https://resend.com/docs/api-reference/emails/update-email>
+    #[maybe_async::maybe_async]
+    // Reasoning for allow: https://github.com/resend/resend-rust/pull/1#issuecomment-2081646115
+    #[allow(clippy::needless_pass_by_value)]
+    pub async fn update(
+        &self,
+        email_id: &str,
+        update: UpdateEmailOptions,
+    ) -> Result<UpdateEmailResponse> {
+        let path = format!("/emails/{email_id}");
+
+        let request = self.0.build(Method::PATCH, &path);
+        let response = self.0.send(request.json(&update)).await?;
+        let content = response.json::<UpdateEmailResponse>().await?;
+
+        Ok(content)
+    }
+
+    /// Cancel a scheduled email.
+    ///
+    /// <https://resend.com/docs/api-reference/emails/cancel-email>
+    #[maybe_async::maybe_async]
+    pub async fn cancel_schedule(&self, email_id: &str) -> Result<CancelScheduleResponse> {
+        let path = format!("/emails/{email_id}/cancel");
+
+        let request = self.0.build(Method::POST, &path);
+        let response = self.0.send(request).await?;
+        let content = response.json::<CancelScheduleResponse>().await?;
 
         Ok(content)
     }
@@ -127,6 +164,11 @@ pub mod types {
         /// Email tags.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub tags: Option<Vec<Tag>>,
+
+        /// Schedule email to be sent later. The date should be in ISO 8601 format
+        /// (e.g: `2024-08-05T11:52:01.858Z`).
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub scheduled_at: Option<String>,
     }
 
     impl CreateEmailBaseOptions {
@@ -151,6 +193,7 @@ pub mod types {
                 headers: None,
                 attachments: None,
                 tags: None,
+                scheduled_at: None,
             }
         }
 
@@ -212,11 +255,50 @@ pub mod types {
             tags.push(tag.into());
             self
         }
+
+        /// Schedules the email.
+        pub fn with_scheduled(mut self, scheduled_at: &str) -> Self {
+            self.scheduled_at = Some(scheduled_at.to_owned());
+            self
+        }
     }
 
     #[derive(Debug, Clone, Deserialize)]
     pub struct CreateEmailResponse {
         /// The ID of the sent email.
+        pub id: EmailId,
+    }
+
+    /// List of changes to apply to an [`Email`].
+    #[must_use]
+    #[derive(Debug, Default, Clone, Serialize)]
+    pub struct UpdateEmailOptions {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub scheduled_at: Option<String>,
+    }
+
+    impl UpdateEmailOptions {
+        #[inline]
+        pub fn new() -> Self {
+            Self::default()
+        }
+
+        #[inline]
+        pub fn with_scheduled_at(mut self, scheduled_at: &str) -> Self {
+            self.scheduled_at = Some(scheduled_at.to_owned());
+            self
+        }
+    }
+
+    #[derive(Debug, Clone, Deserialize)]
+    pub struct UpdateEmailResponse {
+        /// Unique identifier for the updated contact.
+        pub id: EmailId,
+    }
+
+    #[derive(Debug, Clone, Deserialize)]
+    pub struct CancelScheduleResponse {
+        /// The ID of the cancelled email.
         pub id: EmailId,
     }
 
@@ -363,6 +445,11 @@ pub mod types {
         pub reply_to: Option<Vec<String>>,
         /// The status of the email.
         pub last_event: String,
+
+        /// Schedule email to be sent later. The date should be in ISO 8601 format
+        /// (e.g: `2024-08-05T11:52:01.858Z`).
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub scheduled_at: Option<String>,
     }
 }
 
@@ -378,9 +465,11 @@ where
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod test {
-    use crate::types::{CreateEmailBaseOptions, Email, Tag};
+    use crate::types::{CreateEmailBaseOptions, Email, Tag, UpdateEmailOptions};
     use crate::{tests::CLIENT, Resend, Result};
+    use jiff::{Span, Timestamp, ToSpan, Zoned};
 
     #[tokio::test]
     #[cfg(not(feature = "blocking"))]
@@ -423,7 +512,8 @@ mod test {
             "reply_to": null,
             "last_event": "delivered",
             "html": "<div></div>",
-            "text": null
+            "text": null,
+            "scheduled_at": null
         }"#;
 
         let res = serde_json::from_str::<Email>(email);
@@ -447,7 +537,8 @@ mod test {
             "reply_to": null,
             "last_event": "delivered",
             "html": "<div></div>",
-            "text": "Not null"
+            "text": "Not null",
+            "scheduled_at": "2024-08-07 15:15:37+00"
         }"#;
 
         let res = serde_json::from_str::<Email>(email);
@@ -473,6 +564,73 @@ mod test {
         let _ = resend.emails.send(email)?;
 
         std::thread::sleep(std::time::Duration::from_millis(1100));
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[cfg(not(feature = "blocking"))]
+    async fn schedule_email() -> Result<()> {
+        let now_plus_1h = Zoned::now()
+            .checked_add(Span::new().hours(1))
+            .expect("Valid date")
+            .timestamp()
+            .to_string();
+
+        let now_plus_2h = Zoned::now()
+            .checked_add(Span::new().hours(2))
+            .expect("Valid date")
+            .timestamp()
+            .to_string();
+
+        let from = "Acme <onboarding@resend.dev>";
+        let to = ["delivered@resend.dev"];
+        let subject = "Hello World!";
+
+        let resend = CLIENT.get_or_init(Resend::default);
+
+        // Create
+        let email = CreateEmailBaseOptions::new(from, to, subject)
+            .with_text("Hello World!")
+            .with_scheduled(&now_plus_1h);
+        let email = resend.emails.send(email).await?;
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
+        // Get
+        let email = resend.emails.get(&email.id).await?;
+        assert_eq!(email.last_event, "scheduled".to_string());
+        assert!(email.scheduled_at.is_some());
+        let time = email
+            .scheduled_at
+            .unwrap()
+            .parse::<Timestamp>()
+            .expect("Valid timestamp");
+        let time_delta = (time - Timestamp::now()).round(jiff::Unit::Hour).unwrap();
+        assert_eq!(time_delta, 1.hour());
+
+        // Update
+        let changes = UpdateEmailOptions::new().with_scheduled_at(&now_plus_2h);
+        let email = resend.emails.update(&email.id, changes).await?;
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
+        // Get
+        let email = resend.emails.get(&email.id).await?;
+        assert_eq!(email.last_event, "scheduled".to_string());
+        assert!(email.scheduled_at.is_some());
+        let time = email
+            .scheduled_at
+            .unwrap()
+            .parse::<Timestamp>()
+            .expect("Valid timestamp");
+        let time_delta = (time - Timestamp::now()).round(jiff::Unit::Hour).unwrap();
+        assert_eq!(time_delta, 2.hour());
+
+        // Cancel
+        let _cancelled = resend.emails.cancel_schedule(&email.id).await?;
+
+        // Get again, make sure it was cancelled
+        let email = resend.emails.get(&email.id).await?;
+        assert_eq!(email.last_event, "canceled".to_string());
 
         Ok(())
     }
