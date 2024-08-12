@@ -104,17 +104,17 @@ pub mod types {
     #[derive(Debug, Clone, Serialize)]
     pub struct CreateApiKeyOptions {
         /// The API key name.
-        pub name: String,
+        name: String,
 
         /// The API key can have full access to Resend’s API or be only restricted to send emails.
         /// * `full_access` - Can create, delete, get, and update any resource.
         /// * `sending_access` - Can only send emails.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub permission: Option<Permission>,
+        permission: Option<Permission>,
         /// Restrict an API key to send emails only from a specific domain.
         /// Only used when the permission is `sending_access`.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub domain_id: Option<DomainId>,
+        domain_id: Option<DomainId>,
     }
 
     impl CreateApiKeyOptions {
@@ -128,7 +128,9 @@ pub mod types {
             }
         }
 
-        /// Allows an API key to create, delete, get, and update any resource.
+        /// The API key can have full access to Resend’s API or be only restricted to send emails.
+        /// * `full_access` - Can create, delete, get, and update any resource.
+        /// * `sending_access` - Can only send emails.
         #[inline]
         pub const fn with_full_access(mut self) -> Self {
             self.permission = Some(Permission::FullAccess);

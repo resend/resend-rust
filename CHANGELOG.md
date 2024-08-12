@@ -14,6 +14,18 @@ and this project adheres to
 - `emails::update` method
 - `emails::cancel_schedule` method
 
+### Changed
+
+- The following structs had all their fields made private in order to prevent future breaking
+  changes when new fields are added. Simply use the relevant builder methods instead.
+  [GitHub issue](https://github.com/resend/resend-rust/issues/15).
+
+  - `CreateEmailBaseOptions`
+  - `ContactData`
+  - `ContactChanges`
+  - `CreateDomainOptions`
+  - `DomainChanges`
+
 ## [0.8.1] - 2024-07-11
 
 ### Changed
