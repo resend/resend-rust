@@ -129,7 +129,7 @@ pub type Result<T, E = Error> = std::result::Result<T, E>;
 
 #[cfg(test)]
 pub(crate) mod tests {
-    use std::sync::OnceLock;
+    use std::sync::LazyLock;
 
     use crate::Resend;
 
@@ -137,7 +137,7 @@ pub(crate) mod tests {
     ///
     /// Instantiate with:
     /// ```
-    /// let resend = CLIENT.get_or_init(Resend::default);
+    /// let resend = &*CLIENT;
     /// ```
-    pub static CLIENT: OnceLock<Resend> = OnceLock::new();
+    pub static CLIENT: LazyLock<Resend> = LazyLock::new(Resend::default);
 }

@@ -474,7 +474,7 @@ where
 #[allow(clippy::unwrap_used)]
 mod test {
     use crate::types::{CreateEmailBaseOptions, Email, Tag, UpdateEmailOptions};
-    use crate::{tests::CLIENT, Resend, Result};
+    use crate::{tests::CLIENT, Result};
     use jiff::{Span, Timestamp, ToSpan, Zoned};
 
     #[tokio::test]
@@ -484,7 +484,7 @@ mod test {
         let to = ["delivered@resend.dev"];
         let subject = "Hello World!";
 
-        let resend = CLIENT.get_or_init(Resend::default);
+        let resend = &*CLIENT;
 
         // Create
         let email = CreateEmailBaseOptions::new(from, to, subject)
@@ -562,7 +562,7 @@ mod test {
         let to = ["delivered@resend.dev"];
         let subject = "Hello World!";
 
-        let resend = CLIENT.get_or_init(Resend::default);
+        let resend = &*CLIENT;
         let email = CreateEmailBaseOptions::new(from, to, subject)
             .with_text("Hello World!")
             .with_tag(Tag::new("category", "confirm_email"));
@@ -593,7 +593,7 @@ mod test {
         let to = ["delivered@resend.dev"];
         let subject = "Hello World!";
 
-        let resend = CLIENT.get_or_init(Resend::default);
+        let resend = &*CLIENT;
 
         // Create
         let email = CreateEmailBaseOptions::new(from, to, subject)

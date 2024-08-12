@@ -167,12 +167,12 @@ pub mod types {
 #[cfg(test)]
 mod test {
     use crate::tests::CLIENT;
-    use crate::{Resend, Result};
+    use crate::Result;
 
     #[tokio::test]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> Result<()> {
-        let resend = CLIENT.get_or_init(Resend::default);
+        let resend = &*CLIENT;
         let audience = "test_audiences";
 
         // Create.

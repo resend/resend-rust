@@ -391,13 +391,13 @@ mod test {
     use crate::{
         domains::types::{CreateDomainOptions, DomainChanges, Tls},
         tests::CLIENT,
-        Resend, Result,
+        Result,
     };
 
     #[tokio::test]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> Result<()> {
-        let resend = CLIENT.get_or_init(Resend::default);
+        let resend = &*CLIENT;
 
         // Create
         let domain = resend
