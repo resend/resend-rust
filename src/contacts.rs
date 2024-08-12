@@ -159,17 +159,17 @@ pub mod types {
     #[derive(Debug, Clone, Serialize)]
     pub struct ContactData {
         /// Email address of the contact.
-        pub email: String,
+        email: String,
 
         /// First name of the contact.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub first_name: Option<String>,
+        first_name: Option<String>,
         /// Last name of the contact.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub last_name: Option<String>,
+        last_name: Option<String>,
         /// Indicates if the contact is unsubscribed.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub unsubscribed: Option<bool>,
+        unsubscribed: Option<bool>,
     }
 
     impl ContactData {
@@ -242,13 +242,13 @@ pub mod types {
     pub struct ContactChanges {
         /// First name of the contact.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub first_name: Option<String>,
+        first_name: Option<String>,
         /// Last name of the contact.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub last_name: Option<String>,
+        last_name: Option<String>,
         /// Indicates the subscription status of the contact.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub unsubscribed: Option<bool>,
+        unsubscribed: Option<bool>,
     }
 
     impl ContactChanges {

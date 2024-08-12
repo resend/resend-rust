@@ -167,16 +167,18 @@ pub mod types {
     pub struct CreateDomainOptions {
         /// The name of the domain you want to create.
         #[serde(rename = "name")]
-        pub name: String,
+        name: String,
         /// The region where the email will be sent from.
         ///
         /// Possible values are 'us-east-1' | 'eu-west-1' | 'sa-east-1'.
         #[serde(rename = "region", skip_serializing_if = "Option::is_none")]
-        pub region: Option<Region>,
+        region: Option<Region>,
     }
 
     impl CreateDomainOptions {
         /// Creates a new [`CreateDomainOptions`].
+        ///
+        /// - `name`: The name of the domain you want to create.
         pub fn new(name: &str) -> Self {
             Self {
                 name: name.to_owned(),
@@ -184,7 +186,7 @@ pub mod types {
             }
         }
 
-        /// Specifies the region for sending emails from the domain.
+        /// The region where the email will be sent from.
         pub fn with_region(mut self, region: impl Into<Region>) -> Self {
             self.region = Some(region.into());
             self
@@ -326,12 +328,12 @@ pub mod types {
     pub struct DomainChanges {
         /// Enable or disable click tracking for the domain.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub click_tracking: Option<bool>,
+        click_tracking: Option<bool>,
         /// Enable or disable open tracking for the domain.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub open_tracking: Option<bool>,
+        open_tracking: Option<bool>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub tls: Option<Tls>,
+        tls: Option<Tls>,
     }
 
     impl DomainChanges {

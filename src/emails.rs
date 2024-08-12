@@ -133,46 +133,51 @@ pub mod types {
         /// To include a friendly name, use the format:
         ///
         /// `Your Name <sender@domain.com>`
-        pub from: String,
+        from: String,
         /// Recipient email address. Max 50.
-        pub to: Vec<String>,
+        to: Vec<String>,
         /// Email subject.
-        pub subject: String,
+        subject: String,
 
         /// The HTML version of the message.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub html: Option<String>,
+        html: Option<String>,
         /// The plain text version of the message.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub text: Option<String>,
+        text: Option<String>,
 
         /// Bcc recipient email address.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub bcc: Option<Vec<String>>,
+        bcc: Option<Vec<String>>,
         /// Cc recipient email address.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub cc: Option<Vec<String>>,
+        cc: Option<Vec<String>>,
         /// Reply-to email address.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub reply_to: Option<Vec<String>>,
         /// Custom headers to add to the email.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub headers: Option<HashMap<String, String>>,
+        headers: Option<HashMap<String, String>>,
         /// Filename and content of attachments (max 40mb per email).
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub attachments: Option<Vec<Attachment>>,
+        attachments: Option<Vec<Attachment>>,
         /// Email tags.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub tags: Option<Vec<Tag>>,
+        tags: Option<Vec<Tag>>,
 
         /// Schedule email to be sent later. The date should be in ISO 8601 format
         /// (e.g: `2024-08-05T11:52:01.858Z`).
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub scheduled_at: Option<String>,
+        scheduled_at: Option<String>,
     }
 
     impl CreateEmailBaseOptions {
         /// Creates a new [`CreateEmailBaseOptions`].
+        ///
+        /// - `from`: Sender email address.
+        ///           To include a friendly name, use the format: `Your Name <sender@domain.com>`.
+        /// - `to`: Recipient email addresses. Max 50.
+        /// - `subject`: Email subject.
         pub fn new<T, A>(from: impl Into<String>, to: T, subject: impl Into<String>) -> Self
         where
             T: IntoIterator<Item = A>,
@@ -256,7 +261,8 @@ pub mod types {
             self
         }
 
-        /// Schedules the email.
+        /// Schedule email to be sent later. The date should be in ISO 8601 format
+        /// (e.g: `2024-08-05T11:52:01.858Z`).
         pub fn with_scheduled(mut self, scheduled_at: &str) -> Self {
             self.scheduled_at = Some(scheduled_at.to_owned());
             self
