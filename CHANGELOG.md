@@ -25,6 +25,7 @@ and this project adheres to
   - `ContactChanges`
   - `CreateDomainOptions`
   - `DomainChanges`
+  - `UpdateEmailOptions`
 
 ## [0.8.1] - 2024-07-11
 

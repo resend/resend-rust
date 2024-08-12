@@ -280,7 +280,7 @@ pub mod types {
     #[derive(Debug, Default, Clone, Serialize)]
     pub struct UpdateEmailOptions {
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub scheduled_at: Option<String>,
+        scheduled_at: Option<String>,
     }
 
     impl UpdateEmailOptions {
