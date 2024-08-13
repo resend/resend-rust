@@ -66,7 +66,7 @@ impl EmailsSvc {
     ///
     /// <https://resend.com/docs/api-reference/emails/cancel-email>
     #[maybe_async::maybe_async]
-    pub async fn cancel_schedule(&self, email_id: &str) -> Result<CancelScheduleResponse> {
+    pub async fn cancel(&self, email_id: &str) -> Result<CancelScheduleResponse> {
         let path = format!("/emails/{email_id}/cancel");
 
         let request = self.0.build(Method::POST, &path);
@@ -263,7 +263,7 @@ pub mod types {
 
         /// Schedule email to be sent later. The date should be in ISO 8601 format
         /// (e.g: `2024-08-05T11:52:01.858Z`).
-        pub fn with_scheduled(mut self, scheduled_at: &str) -> Self {
+        pub fn with_scheduled_at(mut self, scheduled_at: &str) -> Self {
             self.scheduled_at = Some(scheduled_at.to_owned());
             self
         }
@@ -598,7 +598,7 @@ mod test {
         // Create
         let email = CreateEmailBaseOptions::new(from, to, subject)
             .with_text("Hello World!")
-            .with_scheduled(&now_plus_1h);
+            .with_scheduled_at(&now_plus_1h);
         let email = resend.emails.send(email).await?;
         std::thread::sleep(std::time::Duration::from_secs(1));
 
@@ -632,7 +632,7 @@ mod test {
         assert_eq!(time_delta, 2.hour());
 
         // Cancel
-        let _cancelled = resend.emails.cancel_schedule(&email.id).await?;
+        let _cancelled = resend.emails.cancel(&email.id).await?;
 
         // Get again, make sure it was cancelled
         let email = resend.emails.get(&email.id).await?;

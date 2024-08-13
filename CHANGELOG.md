@@ -8,7 +8,16 @@ and this project adheres to
 
 <!-- ## [Unreleased] -->
 
+## [0.9.1] - 2024-08-13
+
+### Changed
+
+- renamed `CreateEmailBaseOptions::with_scheduled` to `with_scheduled_at`
+- renamed `emails::cancel_schedule` to `cancel`
+
 ## [0.9.0] - 2024-08-12
+
+Yanked due to some method naming, use `0.9.1` instead.
 
 ### Added
 
@@ -155,6 +164,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+[0.9.1]: https://crates.io/crates/resend-rs/0.9.1
 [0.9.0]: https://crates.io/crates/resend-rs/0.9.0
 [0.8.1]: https://crates.io/crates/resend-rs/0.8.1
 [0.8.0]: https://crates.io/crates/resend-rs/0.8.0
