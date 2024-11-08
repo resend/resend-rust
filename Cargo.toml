@@ -28,7 +28,7 @@ rustls-tls = ["reqwest/rustls-tls"]
 reqwest = { version = "0.12.5", default-features = false, features = ["json"] }
 serde = { version = "1.0.199", features = ["derive"] }
 ecow = { version = "0.2.2", features = ["serde"] }
-thiserror = { version = "1.0.59" }
+thiserror = { version = "2.0.0" }
 maybe-async = { version = "0.2.10" }
 governor = "0.6.3"
 rand = "0.8.5"
