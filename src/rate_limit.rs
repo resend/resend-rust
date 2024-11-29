@@ -28,6 +28,7 @@ impl Default for RetryOptions {
     }
 }
 
+#[allow(clippy::too_long_first_doc_paragraph)] // It really is not that long though
 /// Helper method that executes the passed function. If the function returns [`Ok`],
 /// or a non-rate limit related [`Err`] the result is returned immediately. If the function
 /// errors due to rate limits, the function will be retried with the specified [`RetryOptions`].

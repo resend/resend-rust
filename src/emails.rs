@@ -373,7 +373,7 @@ pub mod types {
     impl Attachment {
         /// Creates a new [`Attachment`] from the content of an attached file.
         #[inline]
-        pub fn from_content(content: Vec<u8>) -> Self {
+        pub const fn from_content(content: Vec<u8>) -> Self {
             Self {
                 content_or_path: ContentOrPath::Content(content),
                 filename: None,
@@ -487,6 +487,7 @@ mod test {
         let resend = &*CLIENT;
 
         // Create
+        #[allow(clippy::string_lit_as_bytes)] // False warning
         let email = CreateEmailBaseOptions::new(from, to, subject)
             .with_text("Hello World!")
             .with_attachment("Hello World as file.".as_bytes())
