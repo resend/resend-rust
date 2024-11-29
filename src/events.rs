@@ -1,7 +1,7 @@
 //! Parsing for Resend's Events.
 //!
 //! For an example on how to add (Axum) middleware that verifies incoming event signatures,
-//! check out [this example](https://github.com/resend/resend-rust/examples/axum-verify-event-middleware.rs).
+//! check out [this example](https://github.com/resend/resend-rust/blob/main/examples/axum-verify-event-middleware.rs).
 
 #![allow(dead_code)]
 
