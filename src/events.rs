@@ -8,7 +8,7 @@ use crate::{types::Domain, Result};
 
 /// Parses a JSON event into an [`Event`].
 /// ## Example
-/// 
+///
 /// ```
 /// use resend_rs::events::{Event, try_parse_event};
 ///
