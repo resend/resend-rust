@@ -1,3 +1,4 @@
+// Used:
 // axum = "0.7.9"
 // svix = "1.42.0"
 // http-body-util = "0.1.2"
@@ -14,6 +15,7 @@ use axum::{
 
 use http::{HeaderMap, StatusCode};
 
+use http_body_util::BodyExt;
 use resend_rs::events::try_parse_event;
 use svix::webhooks::Webhook;
 
@@ -41,6 +43,7 @@ async fn handler(data: String) -> StatusCode {
     StatusCode::OK
 }
 
+// Mostly taken from https://github.com/tokio-rs/axum/blob/main/examples/consume-body-in-extractor-or-middleware/src/main.rs
 async fn verify_middleware(
     headers: HeaderMap,
     request: Request,
@@ -48,7 +51,8 @@ async fn verify_middleware(
 ) -> Result<impl IntoResponse, Response> {
     let (parts, body) = request.into_parts();
 
-    let bytes = http_body_util::BodyExt::collect(body)
+    let bytes = body
+        .collect()
         .await
         .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response())?
         .to_bytes();
