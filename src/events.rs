@@ -34,7 +34,6 @@ pub fn try_parse_event(data: &str) -> Result<Event> {
     serde_json::from_str::<Event>(data).map_err(|e| crate::Error::Parse(e.to_string()))
 }
 
-// TODO: Add some helper methods to extract this (return Option)
 /// Represents any [Resend Event Type](https://resend.com/docs/dashboard/webhooks/event-types).
 #[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
@@ -207,7 +206,6 @@ mod tests {
         }
     }
 
-    // TODO: Currently fails, waiting for clarification on the docs
     #[test]
     fn email_delivery_delayed() {
         let data = r#"
