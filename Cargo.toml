@@ -37,3 +37,7 @@ serde_json = "1.0.120"
 [dev-dependencies]
 jiff = { version = "0.1.4", features = ["serde"] }
 tokio = { version = "1.37.0", features = ["macros", "test-util", "rt-multi-thread"] }
+# Used in examples
+axum = "0.7.9"
+svix = "1.42.0"
+http-body-util = "0.1.2"
