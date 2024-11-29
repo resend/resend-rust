@@ -8,6 +8,12 @@ and this project adheres to
 
 <!-- ## [Unreleased] -->
 
+## [0.9.2] - 2024-11-29
+
+### Added
+
+- Added webhook support with the `events` module
+
 ## [0.9.1] - 2024-08-13
 
 ### Changed
@@ -164,6 +170,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+[0.9.2]: https://crates.io/crates/resend-rs/0.9.2
 [0.9.1]: https://crates.io/crates/resend-rs/0.9.1
 [0.9.0]: https://crates.io/crates/resend-rs/0.9.0
 [0.8.1]: https://crates.io/crates/resend-rs/0.8.1
