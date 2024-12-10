@@ -154,7 +154,7 @@ pub mod types {
         cc: Option<Vec<String>>,
         /// Reply-to email address.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub reply_to: Option<Vec<String>>,
+        reply_to: Option<Vec<String>>,
         /// Custom headers to add to the email.
         #[serde(skip_serializing_if = "Option::is_none")]
         headers: Option<HashMap<String, String>>,
