@@ -203,7 +203,7 @@ mod test {
     use crate::types::CreateApiKeyOptions;
     use crate::Result;
 
-    #[tokio::test]
+    #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> Result<()> {
         let resend = &*CLIENT;

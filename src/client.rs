@@ -40,7 +40,8 @@ impl Resend {
     ///
     /// [`Resend`]: https://resend.com
     pub fn new(api_key: &str) -> Self {
-        Self::with_client(api_key, ReqwestClient::default())
+        Self::with_client(api_key, ReqwestClient::builder().pool_max_idle_per_host(0).build().unwrap())
+        // Self::with_client(api_key, ReqwestClient::default())
     }
 
     /// Creates a new [`Resend`] client with a provided [`reqwest::Client`].

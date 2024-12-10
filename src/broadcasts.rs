@@ -263,7 +263,7 @@ mod test {
         Result,
     };
 
-    #[tokio::test]
+    #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
     async fn create_send_broadcast() -> Result<()> {
         let resend = &*CLIENT;
@@ -298,7 +298,7 @@ mod test {
         Ok(())
     }
 
-    #[tokio::test]
+    #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
     async fn list_get_broadcast() -> Result<()> {
         let resend = &*CLIENT;

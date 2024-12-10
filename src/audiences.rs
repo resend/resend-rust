@@ -170,7 +170,7 @@ mod test {
     use crate::tests::CLIENT;
     use crate::Result;
 
-    #[tokio::test]
+    #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> Result<()> {
         let resend = &*CLIENT;

@@ -484,7 +484,7 @@ mod test {
     use crate::{tests::CLIENT, Result};
     use jiff::{Span, Timestamp, ToSpan, Zoned};
 
-    #[tokio::test]
+    #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> Result<()> {
         let from = "Acme <onboarding@resend.dev>";
@@ -582,7 +582,7 @@ mod test {
         Ok(())
     }
 
-    #[tokio::test]
+    #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
     async fn schedule_email() -> Result<()> {
         let now_plus_1h = Zoned::now()
