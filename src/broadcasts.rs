@@ -267,6 +267,7 @@ mod test {
     #[cfg(not(feature = "blocking"))]
     async fn create_send_broadcast() -> Result<()> {
         let resend = &*CLIENT;
+        std::thread::sleep(std::time::Duration::from_secs(1));
 
         let audience_id = resend.audiences.create("audience").await?.id;
         let from = "Acme <onboarding@resend.dev>";
@@ -290,6 +291,8 @@ mod test {
         std::thread::sleep(std::time::Duration::from_secs(2));
 
         let deleted = resend.audiences.delete(audience_id).await?;
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
         assert!(deleted);
 
         Ok(())
@@ -299,6 +302,8 @@ mod test {
     #[cfg(not(feature = "blocking"))]
     async fn list_get_broadcast() -> Result<()> {
         let resend = &*CLIENT;
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
 
         let broadcasts = resend.broadcasts.list().await?;
         assert!(!broadcasts.is_empty(), "No broadcasts found");
@@ -319,6 +324,8 @@ mod test {
         let res = resend.broadcasts.create(broadcast).await?;
         std::thread::sleep(std::time::Duration::from_secs(2));
         let deleted = resend.broadcasts.delete(res.id).await;
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
         assert!(deleted.is_ok());
 
         Ok(())
