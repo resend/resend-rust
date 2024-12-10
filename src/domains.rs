@@ -7,7 +7,7 @@ use types::DeleteDomainResponse;
 use crate::types::{CreateDomainOptions, Domain, DomainChanges};
 use crate::{Config, Result};
 
-use self::types::UpdateDomainResponse;
+use self::types::{DomainId, UpdateDomainResponse};
 
 /// `Resend` APIs for `/domains` endpoints.
 #[derive(Clone)]
@@ -92,7 +92,7 @@ impl DomainsSvc {
     ///
     /// <https://resend.com/docs/api-reference/domains/delete-domain>
     #[maybe_async::maybe_async]
-    pub async fn delete(&self, domain_id: &str) -> Result<DeleteDomainResponse> {
+    pub async fn delete(&self, domain_id: DomainId) -> Result<DeleteDomainResponse> {
         let path = format!("/domains/{domain_id}");
 
         let request = self.0.build(Method::DELETE, &path);
@@ -424,7 +424,7 @@ mod test {
         std::thread::sleep(std::time::Duration::from_secs(1));
 
         // Delete
-        let resp = resend.domains.delete(&domain.id).await?;
+        let resp = resend.domains.delete(domain.id).await?;
         assert!(resp.deleted);
 
         // List.

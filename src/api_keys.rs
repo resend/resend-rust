@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
-use crate::types::{ApiKey, ApiKeyToken, CreateApiKeyOptions};
+use crate::types::{ApiKey, ApiKeyId, ApiKeyToken, CreateApiKeyOptions};
 use crate::{Config, Result};
 
 /// `Resend` APIs for `/api-keys` endpoints.
@@ -41,7 +41,7 @@ impl ApiKeysSvc {
     ///
     /// <https://resend.com/docs/api-reference/api-keys/delete-api-key>
     #[maybe_async::maybe_async]
-    pub async fn delete(&self, api_key_id: &str) -> Result<()> {
+    pub async fn delete(&self, api_key_id: ApiKeyId) -> Result<()> {
         let path = format!("/api-keys/{api_key_id}");
 
         let request = self.0.build(Method::DELETE, &path);
@@ -219,7 +219,7 @@ mod test {
         let api_keys_amt = api_keys.len();
 
         // Delete.
-        resend.api_keys.delete(&id).await?;
+        resend.api_keys.delete(id).await?;
 
         // List.
         let api_keys = resend.api_keys.list().await?;

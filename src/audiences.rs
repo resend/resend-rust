@@ -6,7 +6,7 @@ use reqwest::Method;
 use crate::types::Audience;
 use crate::{Config, Result};
 
-use self::types::CreateAudienceResponse;
+use self::types::{AudienceId, CreateAudienceResponse};
 
 /// `Resend` APIs for `/audiences` endpoints.
 #[derive(Clone)]
@@ -49,7 +49,7 @@ impl AudiencesSvc {
     ///
     /// <https://resend.com/docs/api-reference/audiences/delete-audience>
     #[maybe_async::maybe_async]
-    pub async fn delete(&self, id: &str) -> Result<bool> {
+    pub async fn delete(&self, id: AudienceId) -> Result<bool> {
         let path = format!("/audiences/{id}");
 
         let request = self.0.build(Method::DELETE, &path);
@@ -190,7 +190,7 @@ mod test {
         assert!(audiences_before > 1);
 
         // Delete.
-        let deleted = resend.audiences.delete(&id).await?;
+        let deleted = resend.audiences.delete(id).await?;
         assert!(deleted);
 
         Ok(())

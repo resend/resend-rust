@@ -341,7 +341,7 @@ mod test {
             .await?;
 
         // Delete audience.
-        let _ = resend.audiences.delete(&audience_id).await?;
+        let _ = resend.audiences.delete(audience_id.clone()).await?;
         std::thread::sleep(std::time::Duration::from_secs(1));
 
         // List.
