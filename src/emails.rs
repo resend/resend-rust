@@ -237,6 +237,13 @@ pub mod types {
             self
         }
 
+        /// Append multiple `reply_to` addresses to the email.
+        pub fn with_reply_multiple(mut self, to: &[String]) -> Self {
+            let reply_to = self.reply_to.get_or_insert_with(Vec::new);
+            reply_to.extend_from_slice(to);
+            self
+        }
+
         /// Adds or overwrites an email header.
         pub fn with_header(mut self, name: &str, value: &str) -> Self {
             let headers = self.headers.get_or_insert_with(HashMap::new);
