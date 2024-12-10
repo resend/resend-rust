@@ -41,6 +41,7 @@ impl ApiKeysSvc {
     ///
     /// <https://resend.com/docs/api-reference/api-keys/delete-api-key>
     #[maybe_async::maybe_async]
+    #[allow(clippy::needless_pass_by_value)]
     pub async fn delete(&self, api_key_id: ApiKeyId) -> Result<()> {
         let path = format!("/api-keys/{api_key_id}");
 

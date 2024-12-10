@@ -17,6 +17,7 @@ impl BroadcastsSvc {
     ///
     /// <https://resend.com/docs/api-reference/broadcasts/create-broadcast>
     #[maybe_async::maybe_async]
+    #[allow(clippy::needless_pass_by_value)]
     pub async fn create(
         &self,
         broadcast: CreateBroadcastOptions,
@@ -31,6 +32,8 @@ impl BroadcastsSvc {
     /// Start sending broadcasts to your audience through the Resend API.
     ///
     /// <https://resend.com/docs/api-reference/broadcasts/send-broadcast>
+    #[maybe_async::maybe_async]
+    #[allow(clippy::needless_pass_by_value)]
     pub async fn send(&self, broadcast: SendBroadcastOptions) -> Result<SendBroadcastResponse> {
         let path = format!("/broadcasts/{}/send", broadcast.broadcast_id);
 
@@ -42,6 +45,8 @@ impl BroadcastsSvc {
     }
 
     // TODO: docs
+    #[maybe_async::maybe_async]
+    #[allow(clippy::needless_pass_by_value)]
     pub async fn list(&self) -> Result<Vec<Broadcast>> {
         let request = self.0.build(Method::GET, "/broadcasts");
         let response = self.0.send(request).await?;
@@ -51,7 +56,9 @@ impl BroadcastsSvc {
     }
 
     // TODO: docs
-    pub async fn get(&self, broadcast_id: &BroadcastId) -> Result<Broadcast> {
+    #[maybe_async::maybe_async]
+    #[allow(clippy::needless_pass_by_value)]
+    pub async fn get(&self, broadcast_id: BroadcastId) -> Result<Broadcast> {
         let path = format!("/broadcasts/{broadcast_id}");
 
         let request = self.0.build(Method::GET, &path);
@@ -62,6 +69,8 @@ impl BroadcastsSvc {
     }
 
     // TODO: docs
+    #[maybe_async::maybe_async]
+    #[allow(clippy::needless_pass_by_value)]
     pub async fn delete(&self, broadcast_id: BroadcastId) -> Result<bool> {
         let path = format!("/broadcasts/{broadcast_id}");
 
@@ -295,7 +304,7 @@ mod test {
         assert!(!broadcasts.is_empty(), "No broadcasts found");
         let broadcast = broadcasts[0].clone();
 
-        let _res = resend.broadcasts.get(&broadcast.id).await?;
+        let _res = resend.broadcasts.get(broadcast.id.clone()).await?;
         let deleted = resend.broadcasts.delete(broadcast.id).await;
         // Already used broadcasts cant be deleted
         assert!(deleted.is_err());

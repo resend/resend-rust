@@ -92,6 +92,7 @@ impl DomainsSvc {
     ///
     /// <https://resend.com/docs/api-reference/domains/delete-domain>
     #[maybe_async::maybe_async]
+    #[allow(clippy::needless_pass_by_value)]
     pub async fn delete(&self, domain_id: DomainId) -> Result<DeleteDomainResponse> {
         let path = format!("/domains/{domain_id}");
 

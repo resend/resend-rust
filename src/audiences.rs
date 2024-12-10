@@ -49,6 +49,7 @@ impl AudiencesSvc {
     ///
     /// <https://resend.com/docs/api-reference/audiences/delete-audience>
     #[maybe_async::maybe_async]
+    #[allow(clippy::needless_pass_by_value)]
     pub async fn delete(&self, id: AudienceId) -> Result<bool> {
         let path = format!("/audiences/{id}");
 
