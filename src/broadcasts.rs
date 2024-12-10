@@ -304,7 +304,6 @@ mod test {
         let resend = &*CLIENT;
         std::thread::sleep(std::time::Duration::from_secs(1));
 
-
         let broadcasts = resend.broadcasts.list().await?;
         assert!(!broadcasts.is_empty(), "No broadcasts found");
         let broadcast = broadcasts[0].clone();
