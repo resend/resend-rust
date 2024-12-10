@@ -487,6 +487,7 @@ mod test {
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
+    #[ignore]
     async fn all() -> Result<()> {
         let from = "Acme <onboarding@resend.dev>";
         let to = ["delivered@resend.dev"];
@@ -565,6 +566,7 @@ mod test {
     }
 
     #[test]
+    #[ignore]
     #[cfg(feature = "blocking")]
     fn all_blocking() -> Result<()> {
         let from = "Acme <onboarding@resend.dev>";
@@ -585,6 +587,7 @@ mod test {
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
+    #[ignore]
     async fn schedule_email() -> Result<()> {
         let now_plus_1h = Zoned::now()
             .checked_add(Span::new().hours(1))

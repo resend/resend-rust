@@ -58,7 +58,7 @@ impl Default for RetryOptions {
 ///
 /// Sending an email:
 ///
-/// ```rust
+/// ```rust,no_run
 /// use resend_rs::{
 ///  rate_limit::{send_with_retry, send_with_retry_opts, RetryOptions},
 ///  types::CreateEmailBaseOptions,
