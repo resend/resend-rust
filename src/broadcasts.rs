@@ -182,7 +182,7 @@ pub mod types {
 
     impl fmt::Display for BroadcastId {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            fmt::Display::fmt(self.as_ref(), f)
+            fmt::Display::fmt(&self.0, f)
         }
     }
 
