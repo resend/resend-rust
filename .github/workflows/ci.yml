@@ -28,7 +28,7 @@ jobs:
         run: cargo build --verbose
 
       - name: Test
-        run: cargo --verbose t
+        run: cargo --verbose t --test-threads=1
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
 
