@@ -256,6 +256,7 @@ pub mod types {
 }
 
 #[cfg(test)]
+#[allow(clippy::needless_return)]
 mod test {
     use crate::{
         tests::CLIENT,

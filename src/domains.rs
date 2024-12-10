@@ -388,6 +388,7 @@ pub mod types {
 }
 
 #[cfg(test)]
+#[allow(clippy::needless_return)]
 mod test {
     use crate::{
         domains::types::{CreateDomainOptions, DomainChanges, Tls},
@@ -422,7 +423,7 @@ mod test {
             .with_tls(Tls::Enforced);
 
         let domain = resend.domains.update(&domain.id, updates).await?;
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        std::thread::sleep(std::time::Duration::from_secs(4));
 
         // Delete
         let resp = resend.domains.delete(domain.id).await?;

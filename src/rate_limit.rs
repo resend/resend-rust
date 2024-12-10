@@ -205,6 +205,7 @@ macro_rules! retry_opts {
 }
 
 #[cfg(test)]
+#[allow(clippy::needless_return)]
 mod tests {
     use super::{send_with_retry_opts, RetryOptions};
     use crate::Error;

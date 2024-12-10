@@ -479,6 +479,7 @@ where
 
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
+#[allow(clippy::needless_return)]
 mod test {
     use crate::types::{CreateEmailBaseOptions, Email, Tag, UpdateEmailOptions};
     use crate::{tests::CLIENT, Result};
