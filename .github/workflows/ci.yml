@@ -6,6 +6,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  RUST_TEST_THREAD: 1
 
 jobs:
   aarch64-unknown-linux-gnu:
@@ -28,7 +29,7 @@ jobs:
         run: cargo build --verbose
 
       - name: Test
-        run: cargo --verbose t --test-threads=1
+        run: cargo --verbose t
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
 
