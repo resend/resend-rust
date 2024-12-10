@@ -96,7 +96,7 @@ pub mod types {
 
     impl fmt::Display for ApiKeyId {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            fmt::Display::fmt(&self, f)
+            fmt::Display::fmt(&self.0, f)
         }
     }
 
