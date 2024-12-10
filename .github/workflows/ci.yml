@@ -6,7 +6,6 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  RUST_TEST_THREAD: 1
 
 jobs:
   aarch64-unknown-linux-gnu:
