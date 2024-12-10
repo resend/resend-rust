@@ -6,7 +6,9 @@ use reqwest::blocking::Client as ReqwestClient;
 #[cfg(not(feature = "blocking"))]
 use reqwest::Client as ReqwestClient;
 
-use crate::services::{ApiKeysSvc, AudiencesSvc, ContactsSvc, DomainsSvc, EmailsSvc};
+use crate::services::{
+    ApiKeysSvc, AudiencesSvc, BroadcastsSvc, ContactsSvc, DomainsSvc, EmailsSvc,
+};
 use crate::{batch::BatchSvc, config::Config};
 
 /// The [Resend](https://resend.com) client.
@@ -25,6 +27,8 @@ pub struct Resend {
     pub contacts: ContactsSvc,
     /// `Resend` APIs for `/domains` endpoints.
     pub domains: DomainsSvc,
+    /// `Resend` APIs for `/broadcasts` endpoints.
+    pub broadcasts: BroadcastsSvc,
 }
 
 impl Resend {
@@ -56,7 +60,8 @@ impl Resend {
             contacts: ContactsSvc(inner.clone()),
             domains: DomainsSvc(inner.clone()),
             emails: EmailsSvc(inner.clone()),
-            batch: BatchSvc(inner),
+            batch: BatchSvc(inner.clone()),
+            broadcasts: BroadcastsSvc(inner),
         }
     }
 

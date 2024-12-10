@@ -55,6 +55,7 @@ pub(crate) use config::Config;
 mod api_keys;
 mod audiences;
 mod batch;
+mod broadcasts;
 mod client;
 mod config;
 mod contacts;
@@ -70,6 +71,7 @@ pub mod services {
     pub use super::api_keys::ApiKeysSvc;
     pub use super::audiences::AudiencesSvc;
     pub use super::batch::BatchSvc;
+    pub use super::broadcasts::BroadcastsSvc;
     pub use super::contacts::ContactsSvc;
     pub use super::domains::DomainsSvc;
     pub use super::emails::EmailsSvc;
@@ -92,6 +94,11 @@ pub mod types {
     pub use super::emails::types::{
         Attachment, CancelScheduleResponse, ContentOrPath, CreateEmailBaseOptions,
         CreateEmailResponse, Email, EmailId, Tag, UpdateEmailOptions, UpdateEmailResponse,
+    };
+    // TODO: Add broadcasts here
+    pub use super::broadcasts::types::{
+        Broadcast, BroadcastId, CreateBroadcastOptions, CreateBroadcastResponse,
+        RemoveBroadcastResponse, SendBroadcastOptions, SendBroadcastResponse,
     };
     pub use super::error::types::{ErrorKind, ErrorResponse};
 }
