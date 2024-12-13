@@ -44,7 +44,7 @@ impl BroadcastsSvc {
         Ok(content)
     }
 
-    // TODO: docs
+    /// Retrieve a list of broadcasts.
     #[maybe_async::maybe_async]
     #[allow(clippy::needless_pass_by_value)]
     pub async fn list(&self) -> Result<Vec<Broadcast>> {
@@ -55,7 +55,9 @@ impl BroadcastsSvc {
         Ok(content.data)
     }
 
-    // TODO: docs
+    /// Retrieve a single broadcast.
+    ///
+    /// <https://resend.com/docs/api-reference/broadcasts/get-broadcast>
     #[maybe_async::maybe_async]
     #[allow(clippy::needless_pass_by_value)]
     pub async fn get(&self, broadcast_id: BroadcastId) -> Result<Broadcast> {
@@ -68,7 +70,7 @@ impl BroadcastsSvc {
         Ok(content)
     }
 
-    // TODO: docs
+    /// Remove an existing broadcast.
     #[maybe_async::maybe_async]
     #[allow(clippy::needless_pass_by_value)]
     pub async fn delete(&self, broadcast_id: BroadcastId) -> Result<bool> {
@@ -161,7 +163,7 @@ pub mod types {
         }
     }
 
-    /// Unique [`Email`] identifier.
+    /// Unique [`Broadcast`] identifier.
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct BroadcastId(EcoString);
 
