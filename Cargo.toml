@@ -30,7 +30,7 @@ serde = { version = "1.0.199", features = ["derive"] }
 ecow = { version = "0.2.2", features = ["serde"] }
 thiserror = { version = "2.0.6" }
 maybe-async = { version = "0.2.10" }
-governor = "0.7.0"
+governor = "0.8.0"
 rand = "0.8.5"
 serde_json = "1.0.120"
 
