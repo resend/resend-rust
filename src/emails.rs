@@ -645,6 +645,7 @@ mod test {
 
         // Cancel
         let _cancelled = resend.emails.cancel(&email.id).await?;
+        std::thread::sleep(std::time::Duration::from_secs(1));
 
         // Get again, make sure it was cancelled
         let email = resend.emails.get(&email.id).await?;
