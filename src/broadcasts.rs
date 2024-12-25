@@ -266,6 +266,8 @@ mod test {
         Result,
     };
 
+    use super::types::Broadcast;
+
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
     async fn create_send_broadcast() -> Result<()> {
@@ -331,5 +333,25 @@ mod test {
         assert!(deleted.is_ok());
 
         Ok(())
+    }
+
+    #[test]
+    fn parse_broadcast_test() {
+        let data = r#"{
+    "object": "broadcast",
+    "id": "498ee8e4-7aa2-4eb5-9f04-4194848049d1",
+    "name": "Untitled",
+    "audience_id": "fd644f07-a05a-467e-9bae-23bb7c35766a",
+    "from": "Acme <onboarding@resend.dev>",
+    "subject": "Hello!",
+    "reply_to": [],
+    "preview_text": null,
+    "status": "scheduled",
+    "created_at": "2024-12-18 18:05:09.905933+00",
+    "scheduled_at": null,
+    "sent_at": null
+}"#;
+
+        let _parsed = serde_json::from_str::<Broadcast>(data).expect("Parsing failed");
     }
 }
