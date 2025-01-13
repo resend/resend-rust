@@ -8,6 +8,27 @@ and this project adheres to
 
 <!-- ## [Unreleased] -->
 
+## [0.11.0] - 202-01-13
+
+### Added
+
+- `BroadcastId::new`
+
+### Changed
+
+- Made the following methods require `&str` instead of their specific ID types. This was changed to
+  make their usage a bit simpler from the user's perspective, after all, the ID types were meant to
+  be more like hints that a string is of an id type, rather than having specific properties in the
+  program itself. The ID types are still used in the return types for this reason and they are
+  also all constructable in case you want to use them. All the ID types dereference to a string
+  so `&IdType` is equivalent to a `&str` (you might need to make this change if you were
+  using any ID types directly before).
+  - `ApiKeys::delete`
+  - `Audiences::delete`
+  - `Broadcasts::get,delete`
+  - `Domains::delete`
+- `SendBroadcastOptions::new` is no longer `const`
+
 ## [0.10.0] - 2024-12-13
 
 ### Added
@@ -186,6 +207,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+[0.11.0]: https://crates.io/crates/resend-rs/0.10.0
 [0.10.0]: https://crates.io/crates/resend-rs/0.10.0
 [0.9.2]: https://crates.io/crates/resend-rs/0.9.2
 [0.9.1]: https://crates.io/crates/resend-rs/0.9.1

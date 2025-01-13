@@ -3,7 +3,7 @@ use std::sync::Arc;
 use reqwest::Method;
 
 use crate::types::{
-    Broadcast, BroadcastId, CreateBroadcastOptions, CreateBroadcastResponse,
+    Broadcast, CreateBroadcastOptions, CreateBroadcastResponse,
     RemoveBroadcastResponse, SendBroadcastOptions, SendBroadcastResponse,
 };
 use crate::{Config, Result};
@@ -60,7 +60,7 @@ impl BroadcastsSvc {
     /// <https://resend.com/docs/api-reference/broadcasts/get-broadcast>
     #[maybe_async::maybe_async]
     #[allow(clippy::needless_pass_by_value)]
-    pub async fn get(&self, broadcast_id: BroadcastId) -> Result<Broadcast> {
+    pub async fn get(&self, broadcast_id: &str) -> Result<Broadcast> {
         let path = format!("/broadcasts/{broadcast_id}");
 
         let request = self.0.build(Method::GET, &path);
@@ -73,7 +73,7 @@ impl BroadcastsSvc {
     /// Remove an existing broadcast.
     #[maybe_async::maybe_async]
     #[allow(clippy::needless_pass_by_value)]
-    pub async fn delete(&self, broadcast_id: BroadcastId) -> Result<bool> {
+    pub async fn delete(&self, broadcast_id: &str) -> Result<bool> {
         let path = format!("/broadcasts/{broadcast_id}");
 
         let request = self.0.build(Method::DELETE, &path);
@@ -167,6 +167,15 @@ pub mod types {
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct BroadcastId(EcoString);
 
+    impl BroadcastId {
+        /// Creates a new [`BroadcastId`].
+        #[inline]
+        #[must_use]
+        pub fn new(id: &str) -> Self {
+            Self(EcoString::from(id))
+        }
+    }
+
     impl Deref for BroadcastId {
         type Target = str;
 
@@ -204,7 +213,9 @@ pub mod types {
     }
 
     impl SendBroadcastOptions {
-        pub const fn new(broadcast_id: BroadcastId) -> Self {
+        pub fn new(broadcast_id: &str) -> Self {
+            let broadcast_id = BroadcastId(EcoString::from(broadcast_id.to_owned()));
+
             Self {
                 broadcast_id,
                 scheduled_at: None,
@@ -289,13 +300,13 @@ mod test {
         std::thread::sleep(std::time::Duration::from_secs(2));
 
         // Send
-        let opts = SendBroadcastOptions::new(res.id);
+        let opts = SendBroadcastOptions::new(&res.id);
         let _res = resend.broadcasts.send(opts).await?;
 
         // Cleanup
         std::thread::sleep(std::time::Duration::from_secs(2));
 
-        let deleted = resend.audiences.delete(audience_id).await?;
+        let deleted = resend.audiences.delete(&audience_id).await?;
         std::thread::sleep(std::time::Duration::from_secs(1));
 
         assert!(deleted);
@@ -313,8 +324,8 @@ mod test {
         assert!(!broadcasts.is_empty(), "No broadcasts found");
         let broadcast = broadcasts[0].clone();
 
-        let _res = resend.broadcasts.get(broadcast.id.clone()).await?;
-        let deleted = resend.broadcasts.delete(broadcast.id).await;
+        let _res = resend.broadcasts.get(&broadcast.id.clone()).await?;
+        let deleted = resend.broadcasts.delete(&broadcast.id).await;
         // Already used broadcasts cant be deleted
         assert!(deleted.is_err());
 
@@ -327,7 +338,7 @@ mod test {
         let broadcast = CreateBroadcastOptions::new(&audience_id, from, subject).with_text(text);
         let res = resend.broadcasts.create(broadcast).await?;
         std::thread::sleep(std::time::Duration::from_secs(2));
-        let deleted = resend.broadcasts.delete(res.id).await;
+        let deleted = resend.broadcasts.delete(&res.id).await;
         std::thread::sleep(std::time::Duration::from_secs(1));
 
         assert!(deleted.is_ok());
