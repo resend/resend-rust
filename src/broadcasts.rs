@@ -3,8 +3,8 @@ use std::sync::Arc;
 use reqwest::Method;
 
 use crate::types::{
-    Broadcast, CreateBroadcastOptions, CreateBroadcastResponse,
-    RemoveBroadcastResponse, SendBroadcastOptions, SendBroadcastResponse,
+    Broadcast, CreateBroadcastOptions, CreateBroadcastResponse, RemoveBroadcastResponse,
+    SendBroadcastOptions, SendBroadcastResponse,
 };
 use crate::{Config, Result};
 
