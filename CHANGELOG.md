@@ -8,7 +8,18 @@ and this project adheres to
 
 <!-- ## [Unreleased] -->
 
-## [0.11.0] - 202-01-13
+## [0.11.1] - 2025-01-16
+
+### Added
+
+- `Contacts::update_by_id`, `Contacts::update_by_email`
+
+### Changed
+
+- `Contacts::update` has been deprecated in favor of the above methods. The ability to use emails
+  instead of ids was just added to the Resend backend.
+
+## [0.11.0] - 2025-01-13
 
 ### Added
 
@@ -207,6 +218,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+[0.11.1]: https://crates.io/crates/resend-rs/0.10.0
 [0.11.0]: https://crates.io/crates/resend-rs/0.10.0
 [0.10.0]: https://crates.io/crates/resend-rs/0.10.0
 [0.9.2]: https://crates.io/crates/resend-rs/0.9.2

@@ -51,6 +51,10 @@ impl ContactsSvc {
     #[maybe_async::maybe_async]
     // Reasoning for allow: https://github.com/resend/resend-rust/pull/1#issuecomment-2081646115
     #[allow(clippy::needless_pass_by_value)]
+    #[deprecated(
+        since = "0.11.1",
+        note = "Use `update_by_id` instead or alternatively `update_by_email`. This method will likely be removed in the future."
+    )]
     pub async fn update(
         &self,
         contact_id: &str,
@@ -66,14 +70,56 @@ impl ContactsSvc {
         Ok(content)
     }
 
+    /// Updates an existing contact identified by its id.
+    ///
+    /// <https://resend.com/docs/api-reference/contacts/update-contact>
+    #[maybe_async::maybe_async]
+    // Reasoning for allow: https://github.com/resend/resend-rust/pull/1#issuecomment-2081646115
+    #[allow(clippy::needless_pass_by_value)]
+    pub async fn update_by_id(
+        &self,
+        contact_id: &str,
+        audience_id: &str,
+        update: ContactChanges,
+    ) -> Result<UpdateContactResponse> {
+        let path = format!("/audiences/{audience_id}/contacts/{contact_id}");
+
+        let request = self.0.build(Method::PATCH, &path);
+        let response = self.0.send(request.json(&update)).await?;
+        let content = response.json::<UpdateContactResponse>().await?;
+
+        Ok(content)
+    }
+
+    /// Updates an existing contact identified by its email.
+    ///
+    /// <https://resend.com/docs/api-reference/contacts/update-contact>
+    #[maybe_async::maybe_async]
+    // Reasoning for allow: https://github.com/resend/resend-rust/pull/1#issuecomment-2081646115
+    #[allow(clippy::needless_pass_by_value)]
+    pub async fn update_by_email(
+        &self,
+        contact_email: &str,
+        audience_id: &str,
+        update: ContactChanges,
+    ) -> Result<UpdateContactResponse> {
+        let path = format!("/audiences/{audience_id}/contacts/{contact_email}");
+
+        let request = self.0.build(Method::PATCH, &path);
+        let response = self.0.send(request.json(&update)).await?;
+        let content = response.json::<UpdateContactResponse>().await?;
+
+        Ok(content)
+    }
+
     /// Removes an existing contact from an audience by their email.
     ///
     /// Returns whether the contact was deleted successfully.
     ///
     /// <https://resend.com/docs/api-reference/contacts/delete-contact>
     #[maybe_async::maybe_async]
-    pub async fn delete_by_email(&self, audience_id: &str, email: &str) -> Result<bool> {
-        let path = format!("/audiences/{audience_id}/contacts/{email}");
+    pub async fn delete_by_email(&self, audience_id: &str, contact_email: &str) -> Result<bool> {
+        let path = format!("/audiences/{audience_id}/contacts/{contact_email}");
 
         let request = self.0.build(Method::DELETE, &path);
         let response = self.0.send(request).await?;
@@ -324,7 +370,10 @@ mod test {
 
         // Update.
         let changes = ContactChanges::new().with_unsubscribed(true);
-        let _res = resend.contacts.update(&id, &audience_id, changes).await?;
+        let _res = resend
+            .contacts
+            .update_by_id(&id, &audience_id, changes)
+            .await?;
         std::thread::sleep(std::time::Duration::from_secs(1));
 
         // Retrieve.
