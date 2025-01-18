@@ -27,7 +27,7 @@ pub mod types {
     ///
     /// [`Resend`]: crate::Resend
     #[non_exhaustive]
-    #[derive(Debug, Copy, Clone)]
+    #[derive(Debug, Copy, Clone, PartialEq, Eq)]
     pub enum ErrorKind {
         /// Error name is not in the API spec.
         Unrecognized,
