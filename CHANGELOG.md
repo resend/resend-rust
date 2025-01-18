@@ -12,7 +12,7 @@ and this project adheres to
 
 ### Added
 
-- `ErrorKind` now implements `PartialEq, Eq` (#23)
+- `ErrorKind` now implements `PartialEq, Eq` (https://github.com/resend/resend-rust/pull/23)
 
 ## [0.11.1] - 2025-01-16
 
