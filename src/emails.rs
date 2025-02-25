@@ -624,7 +624,10 @@ mod test {
             .parse::<Timestamp>()
             .expect("Valid timestamp");
         let time_delta = (time - Timestamp::now()).round(jiff::Unit::Hour).unwrap();
-        assert_eq!(time_delta.compare(Span::new().hours(1)).unwrap(), std::cmp::Ordering::Equal);
+        assert_eq!(
+            time_delta.compare(Span::new().hours(1)).unwrap(),
+            std::cmp::Ordering::Equal
+        );
 
         // Update
         let changes = UpdateEmailOptions::new().with_scheduled_at(&now_plus_2h);
@@ -641,7 +644,10 @@ mod test {
             .parse::<Timestamp>()
             .expect("Valid timestamp");
         let time_delta = (time - Timestamp::now()).round(jiff::Unit::Hour).unwrap();
-        assert_eq!(time_delta.compare(Span::new().hours(2)).unwrap(), std::cmp::Ordering::Equal);
+        assert_eq!(
+            time_delta.compare(Span::new().hours(2)).unwrap(),
+            std::cmp::Ordering::Equal
+        );
 
         // Cancel
         let _cancelled = resend.emails.cancel(&email.id).await?;

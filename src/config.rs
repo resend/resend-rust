@@ -23,7 +23,14 @@ pub struct Config {
     pub(crate) base_url: Url,
     pub(crate) client: Client,
     #[cfg(not(feature = "blocking"))]
-    limiter: Arc<RateLimiter<NotKeyed, InMemoryState, MonotonicClock, NoOpMiddleware<<MonotonicClock as governor::clock::Clock>::Instant>>>,
+    limiter: Arc<
+        RateLimiter<
+            NotKeyed,
+            InMemoryState,
+            MonotonicClock,
+            NoOpMiddleware<<MonotonicClock as governor::clock::Clock>::Instant>,
+        >,
+    >,
 }
 
 impl Config {
