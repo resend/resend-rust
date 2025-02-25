@@ -22,15 +22,14 @@ async fn fetch(
     let to = ["delivered@resend.dev"];
     let subject = "hello world";
     let html = "<p>it works!</p>";
-  
-    let email = CreateEmailBaseOptions::new(from, to, subject)
-      .with_html(html);
-  
+
+    let email = CreateEmailBaseOptions::new(from, to, subject).with_html(html);
+
     let _email = resend.emails.send(email).await.unwrap();
 
     // let _clock = MonotonicClock::default();
     // let tmp = std::time::Instant::now();
-  
+
     Ok(router().call(req).await?)
 }
 
