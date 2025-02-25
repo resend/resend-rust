@@ -112,7 +112,7 @@ pub async fn send_with_retry_opts<A: Future<Output = Result<B>> + Send, B: Send>
         };
 
         let sleep_millis = ratelimit_reset.map_or(opts.duration_ms, |r| r.saturating_mul(1000));
-        let jitter = rand::thread_rng().gen_range(opts.jitter_range_ms.clone());
+        let jitter = rand::rng().random_range(opts.jitter_range_ms.clone());
         std::thread::sleep(Duration::from_millis(sleep_millis + jitter));
 
         #[cfg(test)]
