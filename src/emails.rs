@@ -483,7 +483,7 @@ where
 mod test {
     use crate::types::{CreateEmailBaseOptions, Email, Tag, UpdateEmailOptions};
     use crate::{tests::CLIENT, Result};
-    use jiff::{Span, Timestamp, ToSpan, Zoned};
+    use jiff::{Span, Timestamp, Zoned};
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
@@ -624,7 +624,7 @@ mod test {
             .parse::<Timestamp>()
             .expect("Valid timestamp");
         let time_delta = (time - Timestamp::now()).round(jiff::Unit::Hour).unwrap();
-        assert_eq!(time_delta, 1.hour());
+        assert_eq!(time_delta.compare(Span::new().hours(1)).unwrap(), std::cmp::Ordering::Equal);
 
         // Update
         let changes = UpdateEmailOptions::new().with_scheduled_at(&now_plus_2h);
@@ -641,7 +641,7 @@ mod test {
             .parse::<Timestamp>()
             .expect("Valid timestamp");
         let time_delta = (time - Timestamp::now()).round(jiff::Unit::Hour).unwrap();
-        assert_eq!(time_delta, 2.hour());
+        assert_eq!(time_delta.compare(Span::new().hours(2)).unwrap(), std::cmp::Ordering::Equal);
 
         // Cancel
         let _cancelled = resend.emails.cancel(&email.id).await?;
