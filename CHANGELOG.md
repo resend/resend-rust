@@ -8,6 +8,12 @@ and this project adheres to
 
 <!-- ## [Unreleased] -->
 
+## [0.12.0] - 2025-02-25
+
+## Added
+
+- WASM support
+
 ## [0.11.2] - 2025-01-18
 
 ### Added
@@ -224,6 +230,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+[0.12.0]: https://crates.io/crates/resend-rs/0.12.0
 [0.11.2]: https://crates.io/crates/resend-rs/0.11.2
 [0.11.1]: https://crates.io/crates/resend-rs/0.11.1
 [0.11.0]: https://crates.io/crates/resend-rs/0.11.0

@@ -1,6 +1,6 @@
 #[cfg(not(feature = "blocking"))]
 use governor::{
-    clock::{QuantaClock, QuantaInstant},
+    clock::MonotonicClock,
     middleware::NoOpMiddleware,
     state::{InMemoryState, NotKeyed},
     Quota, RateLimiter,
@@ -23,7 +23,7 @@ pub struct Config {
     pub(crate) base_url: Url,
     pub(crate) client: Client,
     #[cfg(not(feature = "blocking"))]
-    limiter: Arc<RateLimiter<NotKeyed, InMemoryState, QuantaClock, NoOpMiddleware<QuantaInstant>>>,
+    limiter: Arc<RateLimiter<NotKeyed, InMemoryState, MonotonicClock, NoOpMiddleware<<MonotonicClock as governor::clock::Clock>::Instant>>>,
 }
 
 impl Config {
@@ -53,7 +53,7 @@ impl Config {
             );
 
         #[cfg(not(feature = "blocking"))]
-        let limiter = Arc::new(RateLimiter::direct(quota));
+        let limiter = Arc::new(RateLimiter::direct_with_clock(quota, MonotonicClock));
         // ====================================================
 
         Self {

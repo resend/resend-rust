@@ -29,6 +29,7 @@ Crate documentation is available in [docsrs][docs-url]. Example usage is availab
 - `blocking` to enable the blocking client.
 - `native-tls` to use system-native TLS. **Enabled by default**.
 - `rustls-tls` to use TLS backed by `rustls`.
+- WASM support (see [example](https://github.com/resend/resend-rust/tree/main/examples/cf-worker))
 
 ### Variables
 

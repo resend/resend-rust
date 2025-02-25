@@ -1,0 +1,6 @@
+name = "cf-worker-test"
+main = "build/worker/shim.mjs"
+compatibility_date = "2025-01-22"
+
+[build]
+command = "cargo install -q worker-build && worker-build --release"
