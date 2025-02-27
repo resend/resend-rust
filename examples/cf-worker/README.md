@@ -11,6 +11,9 @@ Build & run with:
 ```sh
 RUSTFLAGS='--cfg getrandom_backend="wasm_js"' worker-build
 RUSTFLAGS='--cfg getrandom_backend="wasm_js"' npx wrangler dev
+
+> WASM support was added to `resend-rust` in `v0.12.0`
+
 ```
 ## Relevant Docs
 
