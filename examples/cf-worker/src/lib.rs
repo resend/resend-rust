@@ -1,5 +1,4 @@
 use axum::{routing::get, Router};
-use governor::clock::MonotonicClock;
 use resend_rs::{types::CreateEmailBaseOptions, Resend};
 use tower_service::Service;
 use worker::*;
@@ -26,9 +25,6 @@ async fn fetch(
     let email = CreateEmailBaseOptions::new(from, to, subject).with_html(html);
 
     let _email = resend.emails.send(email).await.unwrap();
-
-    // let _clock = MonotonicClock::default();
-    // let tmp = std::time::Instant::now();
 
     Ok(router().call(req).await?)
 }
