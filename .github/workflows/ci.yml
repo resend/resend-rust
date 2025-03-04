@@ -7,6 +7,10 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   aarch64-unknown-linux-gnu:
     runs-on: ubuntu-22.04
