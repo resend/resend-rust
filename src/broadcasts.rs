@@ -338,10 +338,12 @@ mod test {
         let broadcast = CreateBroadcastOptions::new(&audience_id, from, subject).with_text(text);
         let res = resend.broadcasts.create(broadcast).await?;
         std::thread::sleep(std::time::Duration::from_secs(2));
-        let deleted = resend.broadcasts.delete(&res.id).await;
+        let deleted_broadcast = resend.broadcasts.delete(&res.id).await;
+        let deleted_audience = resend.audiences.delete(&audience_id).await;
         std::thread::sleep(std::time::Duration::from_secs(1));
 
-        assert!(deleted.is_ok());
+        assert!(deleted_broadcast.is_ok());
+        assert!(deleted_audience.is_ok());
 
         Ok(())
     }
