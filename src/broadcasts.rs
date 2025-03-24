@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use reqwest::Method;
+use types::{UpdateBroadcastOptions, UpdateBroadcastResponse};
 
 use crate::types::{
     Broadcast, CreateBroadcastOptions, CreateBroadcastResponse, RemoveBroadcastResponse,
@@ -82,6 +83,23 @@ impl BroadcastsSvc {
 
         Ok(content.deleted)
     }
+
+    /// Update a broadcast to send to your audience.
+    #[maybe_async::maybe_async]
+    #[allow(clippy::needless_pass_by_value)]
+    pub async fn update(
+        &self,
+        broadcast_id: &str,
+        update: UpdateBroadcastOptions,
+    ) -> Result<UpdateBroadcastResponse> {
+        let path = format!("/broadcasts/{broadcast_id}");
+
+        let request = self.0.build(Method::PATCH, &path);
+        let response = self.0.send(request.json(&update)).await?;
+        let content = response.json::<UpdateBroadcastResponse>().await?;
+
+        Ok(content)
+    }
 }
 
 pub mod types {
@@ -161,6 +179,82 @@ pub mod types {
             self.name = Some(name.to_owned());
             self
         }
+    }
+
+    #[must_use]
+    #[derive(Debug, Clone, Serialize, Default)]
+    pub struct UpdateBroadcastOptions {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        from: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        subject: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        reply_to: Option<Vec<String>>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        html: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        text: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        name: Option<String>,
+    }
+
+    impl UpdateBroadcastOptions {
+        /// Creates a new [`UpdateBroadcastOptions`].
+        pub fn new() -> Self {
+            Self::default()
+        }
+
+        /// Adds or overwrites the sender email address.
+        pub fn with_from(mut self, from: &str) -> Self {
+            self.from = Some(from.to_owned());
+            self
+        }
+
+        pub fn with_subject(mut self, subject: &str) -> Self {
+            self.subject = Some(subject.to_owned());
+            self
+        }
+
+        /// Appends `reply_to` address to the broadcast.
+        pub fn with_reply(mut self, to: &str) -> Self {
+            let reply_to = self.reply_to.get_or_insert_with(Vec::new);
+            reply_to.push(to.to_owned());
+            self
+        }
+
+        /// Appends multiple `reply_to` addresses to the broadcast.
+        pub fn with_reply_multiple(mut self, to: &[String]) -> Self {
+            let reply_to = self.reply_to.get_or_insert_with(Vec::new);
+            reply_to.extend_from_slice(to);
+            self
+        }
+
+        /// Adds or overwrites the HTML version of the message.
+        #[inline]
+        pub fn with_html(mut self, html: &str) -> Self {
+            self.html = Some(html.to_owned());
+            self
+        }
+
+        /// Adds or overwrites the plain text version of the message.
+        #[inline]
+        pub fn with_text(mut self, text: &str) -> Self {
+            self.text = Some(text.to_owned());
+            self
+        }
+
+        /// Sets the broadast name.
+        #[inline]
+        pub fn with_name(mut self, name: &str) -> Self {
+            self.name = Some(name.to_owned());
+            self
+        }
+    }
+
+    #[derive(Debug, Clone, Deserialize)]
+    pub struct UpdateBroadcastResponse {
+        /// Unique identifier for the updated broadcast.
+        pub id: BroadcastId,
     }
 
     /// Unique [`Broadcast`] identifier.
@@ -273,7 +367,7 @@ pub mod types {
 mod test {
     use crate::{
         tests::CLIENT,
-        types::{CreateBroadcastOptions, SendBroadcastOptions},
+        types::{CreateBroadcastOptions, SendBroadcastOptions, UpdateBroadcastOptions},
         Result,
     };
 
@@ -344,6 +438,43 @@ mod test {
 
         assert!(deleted_broadcast.is_ok());
         assert!(deleted_audience.is_ok());
+
+        Ok(())
+    }
+
+    #[tokio_shared_rt::test(shared = true)]
+    #[cfg(not(feature = "blocking"))]
+    async fn update_broadcast() -> Result<()> {
+        let resend = &*CLIENT;
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
+        // Create audience & broadcast
+        let audience_id = resend.audiences.create("audience").await?.id;
+        let from = "Acme <onboarding@resend.dev>";
+        let subject = "hello world";
+
+        let create_broadcast =
+            CreateBroadcastOptions::new(&audience_id, from, subject).with_text("text");
+        let broadcast_id = resend.broadcasts.create(create_broadcast).await?.id;
+
+        // Assert subject == initial subject
+        let broadcast = resend.broadcasts.get(&broadcast_id).await?;
+        assert_eq!(Some(subject.to_string()), broadcast.subject);
+
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
+        // Update subject
+        let subject = "updated";
+        let opts = UpdateBroadcastOptions::new().with_subject(subject);
+        let _ = resend.broadcasts.update(&broadcast_id, opts).await?;
+
+        // Assert subject == updated subject
+        let broadcast = resend.broadcasts.get(&broadcast_id).await?;
+        assert_eq!(Some(subject.to_string()), broadcast.subject);
+
+        // Delete
+        let deleted = resend.broadcasts.delete(&broadcast_id).await?;
+        assert!(deleted);
 
         Ok(())
     }

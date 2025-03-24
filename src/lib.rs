@@ -99,6 +99,7 @@ pub mod types {
     pub use super::broadcasts::types::{
         Broadcast, BroadcastId, CreateBroadcastOptions, CreateBroadcastResponse,
         RemoveBroadcastResponse, SendBroadcastOptions, SendBroadcastResponse,
+        UpdateBroadcastOptions, UpdateBroadcastResponse,
     };
     pub use super::error::types::{ErrorKind, ErrorResponse};
 }
