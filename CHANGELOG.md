@@ -8,6 +8,10 @@ and this project adheres to
 
 <!-- ## [Unreleased] -->
 
+## Added
+
+- `broadcasts::update` and `UpdateBroadcastOptions`, `UpdateBroadcastResponse`
+
 ## [0.12.0] - 2025-02-25
 
 ## Added
