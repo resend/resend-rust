@@ -482,13 +482,13 @@ where
 #[allow(clippy::needless_return)]
 mod test {
     use crate::types::{CreateEmailBaseOptions, Email, Tag, UpdateEmailOptions};
-    use crate::{tests::CLIENT, Result};
+    use crate::{test::DebugResult, tests::CLIENT};
     use jiff::{Span, Timestamp, Zoned};
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
     // #[ignore]
-    async fn all() -> Result<()> {
+    async fn all() -> DebugResult<()> {
         let from = "Acme <onboarding@resend.dev>";
         let to = ["delivered@resend.dev"];
         let subject = "Hello World!";
@@ -568,7 +568,7 @@ mod test {
     #[test]
     // #[ignore]
     #[cfg(feature = "blocking")]
-    fn all_blocking() -> Result<()> {
+    fn all_blocking() -> DebugResult<()> {
         let from = "Acme <onboarding@resend.dev>";
         let to = ["delivered@resend.dev"];
         let subject = "Hello World!";
@@ -588,7 +588,7 @@ mod test {
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
     // #[ignore]
-    async fn schedule_email() -> Result<()> {
+    async fn schedule_email() -> DebugResult<()> {
         let now_plus_1h = Zoned::now()
             .checked_add(Span::new().hours(1))
             .expect("Valid date")

@@ -345,13 +345,13 @@ pub mod types {
 #[cfg(test)]
 #[allow(clippy::needless_return)]
 mod test {
+    use crate::test::DebugResult;
     use crate::tests::CLIENT;
     use crate::types::{ContactChanges, ContactData};
-    use crate::Result;
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
-    async fn all() -> Result<()> {
+    async fn all() -> DebugResult<()> {
         let resend = &*CLIENT;
         let audience = "test_contacts";
 

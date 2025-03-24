@@ -392,13 +392,13 @@ pub mod types {
 mod test {
     use crate::{
         domains::types::{CreateDomainOptions, DomainChanges, Tls},
+        test::DebugResult,
         tests::CLIENT,
-        Result,
     };
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
-    async fn all() -> Result<()> {
+    async fn all() -> DebugResult<()> {
         let resend = &*CLIENT;
 
         // Create

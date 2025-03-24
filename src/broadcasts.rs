@@ -366,16 +366,16 @@ pub mod types {
 #[allow(clippy::needless_return)]
 mod test {
     use crate::{
+        test::DebugResult,
         tests::CLIENT,
         types::{CreateBroadcastOptions, SendBroadcastOptions, UpdateBroadcastOptions},
-        Result,
     };
 
     use super::types::Broadcast;
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
-    async fn create_send_broadcast() -> Result<()> {
+    async fn create_send_broadcast() -> DebugResult<()> {
         let resend = &*CLIENT;
         std::thread::sleep(std::time::Duration::from_secs(1));
 
@@ -410,7 +410,7 @@ mod test {
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
-    async fn list_get_broadcast() -> Result<()> {
+    async fn list_get_broadcast() -> DebugResult<()> {
         let resend = &*CLIENT;
         std::thread::sleep(std::time::Duration::from_secs(1));
 
@@ -444,7 +444,8 @@ mod test {
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
-    async fn update_broadcast() -> Result<()> {
+    #[track_caller]
+    async fn update_broadcast() -> DebugResult<()> {
         let resend = &*CLIENT;
         std::thread::sleep(std::time::Duration::from_secs(1));
 

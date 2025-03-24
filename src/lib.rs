@@ -2,10 +2,10 @@
 #![doc = include_str!("../README.md")]
 //! ### Rate Limits
 //!
-//! Resend implements rate limitting on their API which can sometimes get in the way of whatever
+//! Resend implements rate limiting on their API which can sometimes get in the way of whatever
 //! you are trying to do. This crate handles that in 2 ways:
 //!
-//! - Firstly *all* requests made by the [`Resend`] client are automatically rate limitted to
+//! - Firstly *all* requests made by the [`Resend`] client are automatically rate limited to
 //!   9 req/1.1s to avoid collisions with the 10 req/s limit that Resend imposes at the time of
 //!   writing this.
 //!
@@ -85,6 +85,11 @@ pub mod types {
     };
     pub use super::audiences::types::{Audience, AudienceId, CreateAudienceResponse};
     pub use super::batch::BatchSvc;
+    pub use super::broadcasts::types::{
+        Broadcast, BroadcastId, CreateBroadcastOptions, CreateBroadcastResponse,
+        RemoveBroadcastResponse, SendBroadcastOptions, SendBroadcastResponse,
+        UpdateBroadcastOptions, UpdateBroadcastResponse,
+    };
     pub use super::contacts::types::{Contact, ContactChanges, ContactData, ContactId};
     pub use super::domains::types::{
         CreateDomainOptions, DkimRecordType, Domain, DomainChanges, DomainDkimRecord, DomainId,
@@ -94,12 +99,6 @@ pub mod types {
     pub use super::emails::types::{
         Attachment, CancelScheduleResponse, ContentOrPath, CreateEmailBaseOptions,
         CreateEmailResponse, Email, EmailId, Tag, UpdateEmailOptions, UpdateEmailResponse,
-    };
-    // TODO: Add broadcasts here
-    pub use super::broadcasts::types::{
-        Broadcast, BroadcastId, CreateBroadcastOptions, CreateBroadcastResponse,
-        RemoveBroadcastResponse, SendBroadcastOptions, SendBroadcastResponse,
-        UpdateBroadcastOptions, UpdateBroadcastResponse,
     };
     pub use super::error::types::{ErrorKind, ErrorResponse};
 }
@@ -129,6 +128,30 @@ pub enum Error {
         ratelimit_remaining: Option<u64>,
         ratelimit_reset: Option<u64>,
     },
+}
+
+#[cfg(test)]
+mod test {
+    use crate::Error;
+
+    #[derive(Debug)]
+    #[allow(dead_code)]
+    pub struct LocatedError<E: std::error::Error + 'static> {
+        inner: E,
+        location: &'static std::panic::Location<'static>,
+    }
+
+    impl From<Error> for LocatedError<Error> {
+        #[track_caller]
+        fn from(value: Error) -> Self {
+            Self {
+                inner: value,
+                location: std::panic::Location::caller(),
+            }
+        }
+    }
+
+    pub type DebugResult<T, E = LocatedError<Error>> = Result<T, E>;
 }
 
 /// Specialized [`Result`] type for an [`Error`].
