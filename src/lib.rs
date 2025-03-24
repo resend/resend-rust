@@ -134,7 +134,6 @@ pub enum Error {
 mod test {
     use crate::Error;
 
-    #[derive(Debug)]
     #[allow(dead_code)]
     pub struct LocatedError<E: std::error::Error + 'static> {
         inner: E,
@@ -148,6 +147,12 @@ mod test {
                 inner: value,
                 location: std::panic::Location::caller(),
             }
+        }
+    }
+
+    impl<T: std::error::Error + 'static> std::fmt::Debug for LocatedError<T> {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "{}:{}:{}\n{:?}", self.location.file(), self.location.line(), self.location.column(), self.inner)
         }
     }
 
