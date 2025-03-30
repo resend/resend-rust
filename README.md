@@ -51,4 +51,4 @@ Crate documentation is available in [docsrs][docs-url]. Example usage is availab
 [reqwest]: https://github.com/seanmonstar/reqwest
 [serde]: https://github.com/serde-rs/serde
 [get-started]: https://resend.com/docs/send-with-rust
-[resend-api-ref]: https://resend.com/api-reference
+[resend-api-ref]: https://resend.com/docs/api-reference/
