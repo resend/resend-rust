@@ -119,4 +119,5 @@ rustflags = [
     "-Wclippy::similar_names",
     "-Wclippy::uninlined_format_args",
     "-Wclippy::unwrap_or_default",
+    "-Wclippy::clone_on_ref_ptr",
 ]
