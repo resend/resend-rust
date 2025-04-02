@@ -55,12 +55,12 @@ impl Resend {
         let inner = Arc::new(Config::new(api_key, client));
 
         Self {
-            api_keys: ApiKeysSvc(inner.clone()),
-            audiences: AudiencesSvc(inner.clone()),
-            contacts: ContactsSvc(inner.clone()),
-            domains: DomainsSvc(inner.clone()),
-            emails: EmailsSvc(inner.clone()),
-            batch: BatchSvc(inner.clone()),
+            api_keys: ApiKeysSvc(Arc::clone(&inner)),
+            audiences: AudiencesSvc(Arc::clone(&inner)),
+            contacts: ContactsSvc(Arc::clone(&inner)),
+            domains: DomainsSvc(Arc::clone(&inner)),
+            emails: EmailsSvc(Arc::clone(&inner)),
+            batch: BatchSvc(Arc::clone(&inner)),
             broadcasts: BroadcastsSvc(inner),
         }
     }
