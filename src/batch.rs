@@ -3,8 +3,8 @@ use std::sync::Arc;
 use reqwest::Method;
 
 use crate::{
-    emails::types::{CreateEmailBaseOptions, CreateEmailResponse, SendEmailBatchResponse},
     Config, Result,
+    emails::types::{CreateEmailBaseOptions, CreateEmailResponse, SendEmailBatchResponse},
 };
 
 /// `Resend` APIs for `/emails` endpoints.

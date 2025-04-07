@@ -199,15 +199,13 @@ macro_rules! retry {
 /// ```
 #[macro_export]
 macro_rules! retry_opts {
-    ( $f:expr, $opts:expr ) => {{
-        send_with_retry_opts(|| $f, &$opts).await
-    }};
+    ( $f:expr, $opts:expr ) => {{ send_with_retry_opts(|| $f, &$opts).await }};
 }
 
 #[cfg(test)]
 #[allow(clippy::needless_return)]
 mod tests {
-    use super::{send_with_retry_opts, RetryOptions};
+    use super::{RetryOptions, send_with_retry_opts};
     use crate::Error;
 
     #[tokio_shared_rt::test(shared = true)]

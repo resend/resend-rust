@@ -7,7 +7,7 @@
 
 use serde::Deserialize;
 
-use crate::{types::Domain, Result};
+use crate::{Result, types::Domain};
 
 /// Parses a JSON event into an [`Event`].
 /// ## Example
@@ -151,7 +151,7 @@ pub struct ContactBody {
 #[cfg(test)]
 mod tests {
     use crate::events::{
-        try_parse_event, ContactEventType, DomainEventType, EmailEventType, Event,
+        ContactEventType, DomainEventType, EmailEventType, Event, try_parse_event,
     };
 
     #[test]

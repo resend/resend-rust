@@ -1,21 +1,21 @@
 #[cfg(not(feature = "blocking"))]
 use governor::{
+    Quota, RateLimiter,
     clock::MonotonicClock,
     middleware::NoOpMiddleware,
     state::{InMemoryState, NotKeyed},
-    Quota, RateLimiter,
 };
 #[cfg(feature = "blocking")]
 use reqwest::blocking::{Client, RequestBuilder, Response};
-use reqwest::{header::USER_AGENT, StatusCode};
 #[cfg(not(feature = "blocking"))]
 use reqwest::{Client, RequestBuilder, Response};
 use reqwest::{Method, Url};
+use reqwest::{StatusCode, header::USER_AGENT};
 use std::{env, fmt};
 #[cfg(not(feature = "blocking"))]
 use std::{num::NonZeroU32, sync::Arc, time::Duration};
 
-use crate::{error::types::ErrorResponse, Error, Result};
+use crate::{Error, Result, error::types::ErrorResponse};
 
 pub struct Config {
     pub(crate) user_agent: String,

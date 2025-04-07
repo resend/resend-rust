@@ -1,10 +1,10 @@
 use std::sync::Arc;
 use std::{env, fmt};
 
-#[cfg(feature = "blocking")]
-use reqwest::blocking::Client as ReqwestClient;
 #[cfg(not(feature = "blocking"))]
 use reqwest::Client as ReqwestClient;
+#[cfg(feature = "blocking")]
+use reqwest::blocking::Client as ReqwestClient;
 
 use crate::services::{
     ApiKeysSvc, AudiencesSvc, BroadcastsSvc, ContactsSvc, DomainsSvc, EmailsSvc,
