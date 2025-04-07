@@ -26,7 +26,7 @@ jobs:
       - name: Use cached dependencies
         uses: Swatinem/rust-cache@v2
         with:
-          key: "ubuntu-22.04-aarch64-unknown-linux-gnu"
+          key: "ubuntu-24.04-aarch64-unknown-linux-gnu"
 
       - name: Build
         run: cargo build --verbose
@@ -51,7 +51,7 @@ jobs:
       - name: Use cached dependencies
         uses: Swatinem/rust-cache@v2
         with:
-          key: "ubuntu-22.04-x86_64-unknown-linux-gnu"
+          key: "ubuntu-24.04-x86_64-unknown-linux-gnu"
 
       - name: Build
         run: cargo build --verbose
