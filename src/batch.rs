@@ -1,11 +1,9 @@
 use std::sync::Arc;
 
 use reqwest::Method;
+use types::SendEmailBatchResponse;
 
-use crate::{
-    Config, Result,
-    emails::types::{CreateEmailBaseOptions, CreateEmailResponse, SendEmailBatchResponse},
-};
+use crate::{Config, Result, emails::types::CreateEmailBaseOptions, types::CreateEmailResponse};
 
 /// `Resend` APIs for `/emails` endpoints.
 #[derive(Clone, Debug)]
@@ -30,5 +28,16 @@ impl BatchSvc {
         let content = response.json::<SendEmailBatchResponse>().await?;
 
         Ok(content.data)
+    }
+}
+
+#[allow(unreachable_pub)]
+pub mod types {
+    use crate::types::CreateEmailResponse;
+
+    #[derive(Debug, Clone, serde::Deserialize)]
+    pub struct SendEmailBatchResponse {
+        /// The IDs of the sent emails.
+        pub data: Vec<CreateEmailResponse>,
     }
 }

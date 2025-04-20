@@ -110,6 +110,7 @@ impl fmt::Debug for DomainsSvc {
     }
 }
 
+#[allow(unreachable_pub)]
 pub mod types {
     use std::{fmt, ops::Deref};
 

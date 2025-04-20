@@ -1,3 +1,4 @@
+#[allow(unreachable_pub)]
 pub mod types {
     use serde::Deserialize;
 

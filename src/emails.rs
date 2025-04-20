@@ -77,6 +77,7 @@ impl EmailsSvc {
     }
 }
 
+#[allow(unreachable_pub)]
 pub mod types {
     use std::fmt;
     use std::{collections::HashMap, ops::Deref};
@@ -175,7 +176,7 @@ pub mod types {
         /// Creates a new [`CreateEmailBaseOptions`].
         ///
         /// - `from`: Sender email address.
-        ///           To include a friendly name, use the format: `Your Name <sender@domain.com>`.
+        ///   To include a friendly name, use the format: `Your Name <sender@domain.com>`.
         /// - `to`: Recipient email addresses. Max 50.
         /// - `subject`: Email subject.
         pub fn new<T, A>(from: impl Into<String>, to: T, subject: impl Into<String>) -> Self
@@ -247,7 +248,7 @@ pub mod types {
         /// Adds or overwrites an email header.
         pub fn with_header(mut self, name: &str, value: &str) -> Self {
             let headers = self.headers.get_or_insert_with(HashMap::new);
-            let _ = headers.insert(name.to_owned(), value.to_owned());
+            let _unused = headers.insert(name.to_owned(), value.to_owned());
 
             self
         }
@@ -313,12 +314,6 @@ pub mod types {
     pub struct CancelScheduleResponse {
         /// The ID of the cancelled email.
         pub id: EmailId,
-    }
-
-    #[derive(Debug, Clone, Deserialize)]
-    pub struct SendEmailBatchResponse {
-        /// The IDs of the sent emails.
-        pub data: Vec<CreateEmailResponse>,
     }
 
     /// Name and value of the attached [`Email`] tag.

@@ -17,6 +17,7 @@ use std::{num::NonZeroU32, sync::Arc, time::Duration};
 
 use crate::{Error, Result, error::types::ErrorResponse};
 
+#[allow(unreachable_pub)]
 pub struct Config {
     pub(crate) user_agent: String,
     pub(crate) api_key: String,
@@ -35,7 +36,7 @@ pub struct Config {
 
 impl Config {
     /// Creates a new [`Config`].
-    pub fn new(api_key: &str, client: Client) -> Self {
+    pub(crate) fn new(api_key: &str, client: Client) -> Self {
         let env_base_url = env::var("RESEND_BASE_URL")
             .map_or_else(
                 |_| Url::parse("https://api.resend.com"),
@@ -74,7 +75,7 @@ impl Config {
     }
 
     /// Constructs a new [`RequestBuilder`].
-    pub fn build(&self, method: Method, path: &str) -> RequestBuilder {
+    pub(crate) fn build(&self, method: Method, path: &str) -> RequestBuilder {
         let path = self
             .base_url
             .join(path)
@@ -86,6 +87,7 @@ impl Config {
             .header(USER_AGENT, self.user_agent.as_str())
     }
 
+    #[allow(unreachable_pub)]
     #[maybe_async::maybe_async]
     pub async fn send(&self, request: RequestBuilder) -> Result<Response> {
         #[cfg(not(feature = "blocking"))]

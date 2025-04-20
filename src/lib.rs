@@ -84,7 +84,7 @@ pub mod types {
         ApiKey, ApiKeyId, ApiKeyToken, CreateApiKeyOptions, Permission,
     };
     pub use super::audiences::types::{Audience, AudienceId, CreateAudienceResponse};
-    pub use super::batch::BatchSvc;
+    pub use super::batch::types::SendEmailBatchResponse;
     pub use super::broadcasts::types::{
         Broadcast, BroadcastId, CreateBroadcastOptions, CreateBroadcastResponse,
         RemoveBroadcastResponse, SendBroadcastOptions, SendBroadcastResponse,
@@ -134,8 +134,8 @@ pub enum Error {
 mod test {
     use crate::Error;
 
-    #[allow(dead_code)]
-    pub struct LocatedError<E: std::error::Error + 'static> {
+    #[allow(dead_code, clippy::redundant_pub_crate)]
+    pub(crate) struct LocatedError<E: std::error::Error + 'static> {
         inner: E,
         location: &'static std::panic::Location<'static>,
     }
@@ -163,7 +163,8 @@ mod test {
         }
     }
 
-    pub type DebugResult<T, E = LocatedError<Error>> = Result<T, E>;
+    #[allow(clippy::redundant_pub_crate)]
+    pub(crate) type DebugResult<T, E = LocatedError<Error>> = Result<T, E>;
 }
 
 /// Specialized [`Result`] type for an [`Error`].
@@ -177,11 +178,12 @@ pub(crate) mod tests {
 
     use crate::Resend;
 
+    #[allow(clippy::redundant_pub_crate)]
     /// Use this client in all tests to ensure rate limits are respected.
     ///
     /// Instantiate with:
     /// ```
     /// let resend = &*CLIENT;
     /// ```
-    pub static CLIENT: LazyLock<Resend> = LazyLock::new(Resend::default);
+    pub(crate) static CLIENT: LazyLock<Resend> = LazyLock::new(Resend::default);
 }

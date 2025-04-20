@@ -99,6 +99,7 @@ impl Resend {
         self.config().client.clone()
     }
 
+    #[allow(clippy::missing_const_for_fn)]
     /// Returns the reference to the inner [`Config`].
     #[inline]
     fn config(&self) -> &Config {

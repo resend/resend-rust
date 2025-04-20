@@ -58,6 +58,7 @@ impl fmt::Debug for ApiKeysSvc {
     }
 }
 
+#[allow(unreachable_pub)]
 pub mod types {
     use std::{fmt, ops::Deref};
 

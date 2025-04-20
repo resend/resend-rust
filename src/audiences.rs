@@ -79,6 +79,7 @@ impl fmt::Debug for AudiencesSvc {
     }
 }
 
+#[allow(unreachable_pub)]
 pub mod types {
     use std::{fmt, ops::Deref};
 

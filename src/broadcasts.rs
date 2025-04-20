@@ -102,6 +102,7 @@ impl BroadcastsSvc {
     }
 }
 
+#[allow(unreachable_pub)]
 pub mod types {
     use std::{fmt, ops::Deref};
 
@@ -467,7 +468,7 @@ mod test {
         // Update subject
         let subject = "updated";
         let opts = UpdateBroadcastOptions::new().with_subject(subject);
-        let _ = resend.broadcasts.update(&broadcast_id, opts).await?;
+        let _unused = resend.broadcasts.update(&broadcast_id, opts).await?;
 
         // Assert subject == updated subject
         let broadcast = resend.broadcasts.get(&broadcast_id).await?;

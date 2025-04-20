@@ -160,6 +160,7 @@ impl fmt::Debug for ContactsSvc {
     }
 }
 
+#[allow(unreachable_pub)]
 pub mod types {
     use std::{fmt, ops::Deref};
 
