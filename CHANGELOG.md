@@ -6,7 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+<!-- ## [Unreleased] -->
+
+## [0.13.0] - 2025-04-20
+
+### Added
+
+- `CreateEmailBaseOptions::with_idempotency_key`
 
 ### Changed
 
@@ -14,13 +20,15 @@ and this project adheres to
 - Made `LocatedError`, `DebugResult` and `CLIENT` (all used for testing internals) private (they
   were accidentally public before, very unlikely they were used by anyone)
 
-## Added
+## [0.12.1] - 2025-03-26
+
+### Added
 
 - `broadcasts::update` and `UpdateBroadcastOptions`, `UpdateBroadcastResponse`
 
 ## [0.12.0] - 2025-02-25
 
-## Added
+### Added
 
 - WASM support
 
@@ -240,6 +248,8 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+[0.13.0]: https://crates.io/crates/resend-rs/0.13.0
+[0.12.1]: https://crates.io/crates/resend-rs/0.12.1
 [0.12.0]: https://crates.io/crates/resend-rs/0.12.0
 [0.11.2]: https://crates.io/crates/resend-rs/0.11.2
 [0.11.1]: https://crates.io/crates/resend-rs/0.11.1

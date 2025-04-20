@@ -21,7 +21,12 @@ impl EmailsSvc {
     // Reasoning for allow: https://github.com/resend/resend-rust/pull/1#issuecomment-2081646115
     #[allow(clippy::needless_pass_by_value)]
     pub async fn send(&self, email: CreateEmailBaseOptions) -> Result<CreateEmailResponse> {
-        let request = self.0.build(Method::POST, "/emails");
+        let mut request = self.0.build(Method::POST, "/emails");
+
+        if let Some(ref idempotency_key) = email.idempotency_key {
+            request = request.header("Idempotency-Key", idempotency_key);
+        }
+
         let response = self.0.send(request.json(&email)).await?;
         let content = response.json::<CreateEmailResponse>().await?;
 
@@ -170,6 +175,9 @@ pub mod types {
         /// (e.g: `2024-08-05T11:52:01.858Z`).
         #[serde(skip_serializing_if = "Option::is_none")]
         scheduled_at: Option<String>,
+
+        #[serde(skip)]
+        pub(crate) idempotency_key: Option<String>,
     }
 
     impl CreateEmailBaseOptions {
@@ -200,6 +208,8 @@ pub mod types {
                 attachments: None,
                 tags: None,
                 scheduled_at: None,
+
+                idempotency_key: None,
             }
         }
 
@@ -273,6 +283,12 @@ pub mod types {
         /// (e.g: `2024-08-05T11:52:01.858Z`).
         pub fn with_scheduled_at(mut self, scheduled_at: &str) -> Self {
             self.scheduled_at = Some(scheduled_at.to_owned());
+            self
+        }
+
+        // Adds an `Idempotency-Key` header to the request.
+        pub fn with_idempotency_key(mut self, idempotency_key: &str) -> Self {
+            self.idempotency_key = Some(idempotency_key.to_owned());
             self
         }
     }
