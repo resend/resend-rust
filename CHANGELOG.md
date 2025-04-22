@@ -8,6 +8,20 @@ and this project adheres to
 
 <!-- ## [Unreleased] -->
 
+## [0.14.0] - 2025-04-22
+
+### Added
+
+- `contacts::get_by_id` and `contacts::get_by_email`
+
+### Changed
+
+- Deprecated `contacts::get` in favor of `contacts::get_by_id` and `contacts::get_by_email`
+
+### Removed
+
+- Removed deprecated `contacts::update` function (use `contacts::update_by_id`/`contacts::update_by_email`)
+
 ## [0.13.0] - 2025-04-20
 
 ### Added
@@ -248,6 +262,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+[0.14.0]: https://crates.io/crates/resend-rs/0.14.0
 [0.13.0]: https://crates.io/crates/resend-rs/0.13.0
 [0.12.1]: https://crates.io/crates/resend-rs/0.12.1
 [0.12.0]: https://crates.io/crates/resend-rs/0.12.0

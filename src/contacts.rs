@@ -34,6 +34,10 @@ impl ContactsSvc {
     /// Retrieves a single contact from an audience.
     ///
     /// <https://resend.com/docs/api-reference/contacts/get-contact>
+    #[deprecated(
+        since = "0.14.0",
+        note = "Use `get_by_id` instead or alternatively `get_by_email`. This method will likely be removed in the future."
+    )]
     #[maybe_async::maybe_async]
     pub async fn get(&self, contact_id: &str, audience_id: &str) -> Result<Contact> {
         let path = format!("/audiences/{audience_id}/contacts/{contact_id}");
@@ -45,27 +49,30 @@ impl ContactsSvc {
         Ok(content)
     }
 
-    /// Updates an existing contact.
+    /// Retrieves a single contact from an audience by its id.
     ///
-    /// <https://resend.com/docs/api-reference/contacts/update-contact>
+    /// <https://resend.com/docs/api-reference/contacts/get-contact>
     #[maybe_async::maybe_async]
-    // Reasoning for allow: https://github.com/resend/resend-rust/pull/1#issuecomment-2081646115
-    #[allow(clippy::needless_pass_by_value)]
-    #[deprecated(
-        since = "0.11.1",
-        note = "Use `update_by_id` instead or alternatively `update_by_email`. This method will likely be removed in the future."
-    )]
-    pub async fn update(
-        &self,
-        contact_id: &str,
-        audience_id: &str,
-        update: ContactChanges,
-    ) -> Result<UpdateContactResponse> {
+    pub async fn get_by_id(&self, contact_id: &str, audience_id: &str) -> Result<Contact> {
         let path = format!("/audiences/{audience_id}/contacts/{contact_id}");
 
-        let request = self.0.build(Method::PATCH, &path);
-        let response = self.0.send(request.json(&update)).await?;
-        let content = response.json::<UpdateContactResponse>().await?;
+        let request = self.0.build(Method::GET, &path);
+        let response = self.0.send(request).await?;
+        let content = response.json::<Contact>().await?;
+
+        Ok(content)
+    }
+
+    /// Retrieves a single contact from an audience by its email.
+    ///
+    /// <https://resend.com/docs/api-reference/contacts/get-contact>
+    #[maybe_async::maybe_async]
+    pub async fn get_by_email(&self, contact_email: &str, audience_id: &str) -> Result<Contact> {
+        let path = format!("/audiences/{audience_id}/contacts/{contact_email}");
+
+        let request = self.0.build(Method::GET, &path);
+        let response = self.0.send(request).await?;
+        let content = response.json::<Contact>().await?;
 
         Ok(content)
     }
@@ -378,7 +385,14 @@ mod test {
         std::thread::sleep(std::time::Duration::from_secs(1));
 
         // Retrieve.
-        let contact = resend.contacts.get(&id, &audience_id).await?;
+        let contact = resend.contacts.get_by_id(&id, &audience_id).await?;
+        assert!(contact.unsubscribed);
+
+        // Retrieve by email.
+        let contact = resend
+            .contacts
+            .get_by_email("antonios.barotsis@pm.me", &audience_id)
+            .await?;
         assert!(contact.unsubscribed);
 
         // List.
