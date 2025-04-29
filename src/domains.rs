@@ -172,10 +172,13 @@ pub mod types {
         name: String,
         /// The region where the email will be sent from.
         ///
-        /// Possible values are 'us-east-1' | 'eu-west-1' | 'sa-east-1'.
+        /// Possible values are `'us-east-1' | 'eu-west-1' | 'sa-east-1'`.
         #[serde(rename = "region", skip_serializing_if = "Option::is_none")]
         region: Option<Region>,
-        // TODO: Add docs
+        /// For advanced use cases, choose a subdomain for the Return-Path address.
+        /// The custom return path is used for SPF authentication, DMARC alignment, and handling
+        /// bounced emails. Defaults to `send` (i.e., `send.yourdomain.tld`). Avoid setting values
+        /// that could undermine credibility (e.g. `testing`), as they may be exposed to recipients.
         #[serde(skip_serializing_if = "Option::is_none")]
         custom_return_path: Option<String>,
     }
@@ -198,7 +201,10 @@ pub mod types {
             self
         }
 
-        // TODO: Add docs
+        /// For advanced use cases, choose a subdomain for the Return-Path address.
+        /// The custom return path is used for SPF authentication, DMARC alignment, and handling
+        /// bounced emails. Defaults to `send` (i.e., `send.yourdomain.tld`). Avoid setting values
+        /// that could undermine credibility (e.g. `testing`), as they may be exposed to recipients.
         pub fn with_custom_return_path(mut self, custom_return_path: String) -> Self {
             self.custom_return_path = Some(custom_return_path);
             self
