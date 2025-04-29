@@ -176,6 +176,7 @@ pub mod types {
         #[serde(rename = "region", skip_serializing_if = "Option::is_none")]
         region: Option<Region>,
         // TODO: Add docs
+        #[serde(skip_serializing_if = "Option::is_none")]
         custom_return_path: Option<String>,
     }
 
