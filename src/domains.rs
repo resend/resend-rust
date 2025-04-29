@@ -175,6 +175,8 @@ pub mod types {
         /// Possible values are 'us-east-1' | 'eu-west-1' | 'sa-east-1'.
         #[serde(rename = "region", skip_serializing_if = "Option::is_none")]
         region: Option<Region>,
+        // TODO: Add docs
+        custom_return_path: Option<String>,
     }
 
     impl CreateDomainOptions {
@@ -185,12 +187,19 @@ pub mod types {
             Self {
                 name: name.to_owned(),
                 region: None,
+                custom_return_path: None,
             }
         }
 
         /// The region where the email will be sent from.
         pub fn with_region(mut self, region: impl Into<Region>) -> Self {
             self.region = Some(region.into());
+            self
+        }
+
+        // TODO: Add docs
+        pub fn with_custom_return_path(mut self, custom_return_path: String) -> Self {
+            self.custom_return_path = Some(custom_return_path);
             self
         }
     }

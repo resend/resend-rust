@@ -8,6 +8,10 @@ and this project adheres to
 
 <!-- ## [Unreleased] -->
 
+### Added
+
+- `CreateDomainOptions::with_custom_return_path`
+
 ## [0.14.0] - 2025-04-22
 
 ### Added
