@@ -33,6 +33,24 @@ pub mod types {
         /// Error name is not in the API spec.
         Unrecognized,
 
+        /// 400 Bad Request.
+        ///
+        /// - `invalid_idempotency_key`
+        ///
+        /// The key must be between 1-256 chars.
+        ///
+        /// Retry with a valid idempotency key.
+        InvalidIdempotencyKey,
+
+        /// 400 Bad Request.
+        ///
+        /// - `validation_error`
+        ///
+        /// We found an error with one or more fields in the request.
+        ///
+        /// The message will contain more details about what field and error were found.
+        ValidationError400,
+
         /// 401 Unauthorized.
         ///
         /// - `missing_api_key`
@@ -42,33 +60,37 @@ pub mod types {
         /// Include the following header `Authorization: Bearer YOUR_API_KEY` in the request.
         MissingApiKey,
 
+        /// 401 Unauthorized
+        ///
+        /// - `restricted_api_key`
+        ///
+        /// This API key is restricted to only send emails.
+        ///
+        /// Make sure the API key has `Full access` to perform actions other than sending emails.
+        RestrictedApiKey,
+
         /// 403 Forbidden.
         ///
         /// - `invalid_api_key`
         ///
-        /// The API key is not valid.
+        /// API key is invalid.
         ///
-        /// Generate a new API key in the dashboard.
+        /// Make sure the API key is correct or generate a new [API key in the dashboard].
+        ///
+        /// [API key in the dashboard]: https://resend.com/api-keys
         InvalidApiKey,
 
         /// 403 Forbidden.
         ///
-        /// - `invalid_from_address`
+        /// - `validation_error`
         ///
-        /// The from address is not valid.
+        /// You can only send testing emails to your own email address (`youremail@domain.com`).
         ///
-        /// Review your existing domains in the dashboard.
-        InvalidFromAddress,
-
-        /// 403 Forbidden.
+        /// In [Resend's Domain page], add and verify a domain for
+        /// which you have DNS access. This allows you to send emails to addresses beyond your own.
         ///
-        /// - `invalid_to_address`
-        ///
-        /// You can only send testing emails to your own email address.
-        ///
-        /// In order to send emails to any external address, you need to add a domain and
-        /// use that as the `from` address instead of `onboarding@resend.dev`.
-        InvalidToAddress,
+        /// [Resend's Domain page]: https://resend.com/domains
+        ValidationError403,
 
         /// 404 Not Found.
         ///
@@ -83,18 +105,28 @@ pub mod types {
         ///
         /// - `method_not_allowed`
         ///
-        /// This endpoint does not support the specified HTTP method.
+        /// Method is not allowed for the requested path.
         ///
-        /// Change the HTTP method to follow the documentation for the endpoint.
+        /// Change your API endpoint to use a valid method.
         MethodNotAllowed,
 
-        /// 422 Unprocessable Content.
+        /// 409 Conflict
         ///
-        /// - `missing_required_field`
+        /// - `invalid_idempotent_request`
         ///
-        /// The request body is missing one or more required fields.
-        /// Check the error message to see the list of missing fields.
-        MissingRequiredField,
+        /// Same idempotency key used with a different request payload.
+        ///
+        /// Change your idempotency key or payload.
+        InvalidIdempotentRequest,
+
+        /// 409 Conflict
+        ///
+        /// - `concurrent_idempotent_requests`
+        ///
+        /// Same idempotency key used while original request is still in progress.
+        ///
+        /// Try the request again later.
+        ConcurrentIdempotentRequests,
 
         /// 422 Unprocessable Content.
         ///
@@ -108,30 +140,49 @@ pub mod types {
 
         /// 422 Unprocessable Content.
         ///
-        /// - `invalid_scope`
+        /// - `invalid_from_address`
         ///
-        /// This endpoint does not support the specified scope.
-        /// Change the scope to follow the documentation for the endpoint.
-        InvalidScope,
+        /// Invalid from field.
+        ///
+        /// Make sure the from field is a valid. The email address needs to follow the
+        /// `email@example.com` or `Name <email@example.com>` format.
+        InvalidFromAddress,
 
-        /// 429 Too Many Requests.
+        /// 422 Unprocessable Content
         ///
-        /// - `rate_limit_exceeded`
+        /// - `invalid_access`
         ///
-        ///  Too many requests. Please limit the number of requests per second.
-        /// Or contact support to increase rate limit.
+        /// Access must be `"full_access" | "sending_access"`.
         ///
-        /// You should read the response headers and reduce the rate at which you request the API.
-        /// This can be done by introducing a queue mechanism or reducing the number of
-        /// concurrent requests per second.
+        /// Make sure the API key has necessary permissions.
+        InvalidAccess,
+
+        /// 422 Unprocessable Content
         ///
-        /// If you have specific requirements, contact support to request a rate increase.
+        /// - `invalid_parameter`
         ///
-        /// ## Note
+        /// The parameter must be a valid UUID.
         ///
-        /// This should *never* be returned anymore as it's been replaced by the more detailed
-        /// [`Error::RateLimit`](crate::Error::RateLimit).
-        RateLimitExceeded,
+        /// Check the value and make sure it’s valid.
+        InvalidParameter,
+
+        /// 422 Unprocessable Content
+        ///
+        /// - `invalid_region`
+        ///
+        /// Region must be `"us-east-1" | "us-east-1" | "sa-east-1"`.
+        ///
+        /// Make sure the correct region is selected.
+        InvalidRegion,
+
+        /// 422 Unprocessable Content.
+        ///
+        /// - `missing_required_field`
+        ///
+        /// The request body is missing one or more required fields.
+        ///
+        /// Check the error message to see the list of missing fields.
+        MissingRequiredField,
 
         /// 429 Too Many Requests.
         ///
@@ -139,9 +190,46 @@ pub mod types {
         ///
         /// You have reached your daily email sending quota.
         ///
-        /// Upgrade your plan to remove daily quota limit or
-        /// wait until 24 hours have passed to continue sending.
+        /// Upgrade your plan to remove the daily quota limit or wait
+        /// until 24 hours have passed to continue sending.
         DailyQuotaExceeded,
+
+        /// 429 Too Many Requests.
+        ///
+        /// - `rate_limit_exceeded`
+        ///
+        /// Too many requests. Please limit the number of requests per second.
+        /// Or contact support to increase rate limit.
+        ///
+        /// You should read the response headers and reduce the rate at which you request the API.
+        /// This can be done by introducing a queue mechanism or reducing the number of concurrent
+        /// requests per second. If you have specific requirements, contact support to request a
+        /// rate increase.
+        ///
+        /// ## Note
+        ///
+        /// This should *never* be returned anymore as it's been replaced by the more detailed
+        /// [`Error::RateLimit`](crate::Error::RateLimit).
+        RateLimitExceeded,
+
+        /// 451 Unavailable For Legal Reasons
+        ///
+        /// - `security_error`
+        ///
+        /// We may have found a security issue with the request.
+        ///
+        /// The message will contain more details. Contact support for more information.
+        SecurityError,
+
+        /// 500 Internal Server Error
+        ///
+        /// - `application_error`
+        ///
+        /// An unexpected error occurred.
+        ///
+        /// Try the request again later. If the error does not resolve, check our status page
+        /// for service updates.
+        ApplicationError,
 
         /// 500 Internal Server Error.
         ///
@@ -156,20 +244,43 @@ pub mod types {
         InternalServerError,
     }
 
+    impl From<ErrorResponse> for ErrorKind {
+        fn from(value: ErrorResponse) -> Self {
+            // There exist 2 validation_error variants, differentiate via status code
+            if value.name == "validation_error" {
+                return match value.status_code {
+                    400 => Self::ValidationError400,
+                    403 => Self::ValidationError403,
+                    _ => Self::Unrecognized,
+                };
+            }
+
+            // For the rest use old From implementation.
+            Self::from(value.name)
+        }
+    }
+
     impl<T: AsRef<str>> From<T> for ErrorKind {
         fn from(value: T) -> Self {
             match value.as_ref() {
+                "invalid_idempotency_key" => Self::InvalidIdempotencyKey,
                 "missing_api_key" => Self::MissingApiKey,
+                "restricted_api_key" => Self::RestrictedApiKey,
                 "invalid_api_key" => Self::InvalidApiKey,
-                "invalid_from_address" => Self::InvalidFromAddress,
-                "invalid_to_address" => Self::InvalidToAddress,
                 "not_found" => Self::NotFound,
                 "method_not_allowed" => Self::MethodNotAllowed,
-                "missing_required_field" => Self::MissingRequiredField,
+                "invalid_idempotent_request" => Self::InvalidIdempotentRequest,
+                "concurrent_idempotent_requests" => Self::ConcurrentIdempotentRequests,
                 "invalid_attachment" => Self::InvalidAttachment,
-                "invalid_scope" => Self::InvalidScope,
-                "rate_limit_exceeded" => Self::RateLimitExceeded,
+                "invalid_from_address" => Self::InvalidFromAddress,
+                "invalid_access" => Self::InvalidAccess,
+                "invalid_parameter" => Self::InvalidParameter,
+                "invalid_region" => Self::InvalidRegion,
+                "missing_required_field" => Self::MissingRequiredField,
                 "daily_quota_exceeded" => Self::DailyQuotaExceeded,
+                "rate_limit_exceeded" => Self::RateLimitExceeded,
+                "security_error" => Self::SecurityError,
+                "application_error" => Self::ApplicationError,
                 "internal_server_error" => Self::InternalServerError,
                 _ => Self::Unrecognized,
             }
