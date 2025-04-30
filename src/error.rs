@@ -29,6 +29,7 @@ pub mod types {
     /// [`Resend`]: crate::Resend
     #[non_exhaustive]
     #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+    #[cfg_attr(test, derive(strum::EnumCount))]
     pub enum ErrorKind {
         /// Error name is not in the API spec.
         Unrecognized,
@@ -285,5 +286,70 @@ pub mod types {
                 _ => Self::Unrecognized,
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    /// This test parses [all Resend errors] and makes sure [`crate::types::ErrorKind`] models
+    /// them correctly, namely:
+    ///
+    /// - No error is parsed as [`crate::types::ErrorKind::Unrecognized`] (they are all recognized)
+    /// - The amount of errors from the website + 1 (for the unrecognized variant) is equal to the
+    ///   number of error variants in [`crate::types::ErrorKind`].
+    ///
+    /// There is a very real chance this will break in the future if anything changes in the
+    /// structure of the errors page but for now it is useful to have to make sure all errors are
+    /// modelled in the code.
+    ///
+    /// [all Resend errors]: https://resend.com/docs/api-reference/errors
+    #[allow(clippy::unwrap_used)]
+    #[tokio_shared_rt::test(shared = true)]
+    #[cfg(not(feature = "blocking"))]
+    async fn errors_up_to_date() {
+        use strum::EnumCount;
+
+        use crate::types::{ErrorKind, ErrorResponse};
+
+        let response = reqwest::get("https://resend.com/docs/api-reference/errors")
+            .await
+            .unwrap();
+
+        let html = response.text().await.unwrap();
+
+        let fragment = scraper::Html::parse_document(&html);
+        let selector = scraper::Selector::parse("h3 > span").unwrap();
+
+        let re = regex::Regex::new(r"<code>(\w+)</code>").unwrap();
+
+        let actual = ErrorKind::COUNT;
+        let expected = fragment
+            .select(&selector)
+            .map(|el| el.inner_html())
+            .map(|inner| {
+                let mut results = vec![];
+                for (_, [error]) in re.captures_iter(&inner).map(|c| c.extract()) {
+                    results.push(error.to_string());
+                }
+                results
+            })
+            .collect::<Vec<_>>();
+
+        // Make sure no error is parsed as `ErrorKind::Unrecognized`
+        for error_name in expected.iter().flatten() {
+            let error_response = ErrorResponse {
+                status_code: 400,
+                message: String::new(),
+                name: error_name.to_string(),
+            };
+
+            let error_kind = ErrorKind::from(error_response);
+            assert!(!matches!(error_kind, ErrorKind::Unrecognized));
+        }
+
+        // Expected is actually one less than what we have because of the `Unrecognized` variant.
+        let expected = expected.len() + 1;
+
+        assert_eq!(actual, expected);
     }
 }
