@@ -11,11 +11,25 @@ and this project adheres to
 ### Changed
 
 - Updated `ErrorKind` to match <https://resend.com/docs/api-reference/errors>
+- Changed how `idempotency_key`s work;
+  - `CreateEmailBaseOptions` no longer has an `idempotency_key` field, rather its
+    `with_idempotency_key` method returns an instance of the new `Idempotent<T>` struct which
+    is then consumed by methods that support it. Because the methods that support it (`send` for now)
+    now take `Into<Idempotent<CreateEmailBaseOptions>>` and `CreateEmailBaseOptions` automatically
+    implements that, existing code should *just* work.
+
+    In order for batch emails to work similarly, a new trait `idempotent::IdempotentTrait` was
+    created. Importing that adds the `with_idempotency_key` to iterators of type
+    `CreateEmailBaseOptions`. This was all done to fix the bug I mention later.
 
 ### Removed
 
 - `ErrorKind::InvalidToAddress`
 - `ErrorKind::InvalidScope`
+
+### Fixed
+
+- Sending batch emails now correctly take 1 idempotency key instead of one per email.
 
 ## [0.14.1] - 2025-04-29
 

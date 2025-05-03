@@ -3,7 +3,10 @@ use std::sync::Arc;
 use reqwest::Method;
 use types::SendEmailBatchResponse;
 
-use crate::{Config, Result, emails::types::CreateEmailBaseOptions, types::CreateEmailResponse};
+use crate::{
+    Config, Result, emails::types::CreateEmailBaseOptions, idempotent::Idempotent,
+    types::CreateEmailResponse,
+};
 
 /// `Resend` APIs for `/emails` endpoints.
 #[derive(Clone, Debug)]
@@ -17,11 +20,16 @@ impl BatchSvc {
     ///
     /// <https://resend.com/docs/api-reference/emails/send-batch-emails>
     #[maybe_async::maybe_async]
-    pub async fn send<T>(&self, emails: T) -> Result<Vec<CreateEmailResponse>>
+    pub async fn send<T>(
+        &self,
+        emails: impl Into<Idempotent<T>>,
+    ) -> Result<Vec<CreateEmailResponse>>
     where
         T: IntoIterator<Item = CreateEmailBaseOptions> + Send,
     {
-        let emails: Vec<_> = emails.into_iter().collect();
+        let emails: Idempotent<T> = emails.into();
+
+        let emails: Vec<_> = emails.data.into_iter().collect();
 
         let request = self.0.build(Method::POST, "/emails/batch");
         let response = self.0.send(request.json(&emails)).await?;

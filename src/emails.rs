@@ -3,11 +3,14 @@ use std::sync::Arc;
 use reqwest::Method;
 use serde::{Deserialize, Deserializer};
 
-use crate::types::{
-    CancelScheduleResponse, CreateEmailBaseOptions, CreateEmailResponse, Email, UpdateEmailOptions,
-    UpdateEmailResponse,
-};
 use crate::{Config, Result};
+use crate::{
+    idempotent::Idempotent,
+    types::{
+        CancelScheduleResponse, CreateEmailBaseOptions, CreateEmailResponse, Email,
+        UpdateEmailOptions, UpdateEmailResponse,
+    },
+};
 
 /// `Resend` APIs for `/emails` endpoints.
 #[derive(Clone, Debug)]
@@ -20,7 +23,12 @@ impl EmailsSvc {
     #[maybe_async::maybe_async]
     // Reasoning for allow: https://github.com/resend/resend-rust/pull/1#issuecomment-2081646115
     #[allow(clippy::needless_pass_by_value)]
-    pub async fn send(&self, email: CreateEmailBaseOptions) -> Result<CreateEmailResponse> {
+    pub async fn send(
+        &self,
+        email: impl Into<Idempotent<CreateEmailBaseOptions>>,
+    ) -> Result<CreateEmailResponse> {
+        let email: Idempotent<CreateEmailBaseOptions> = email.into();
+
         let mut request = self.0.build(Method::POST, "/emails");
 
         if let Some(ref idempotency_key) = email.idempotency_key {
@@ -90,7 +98,7 @@ pub mod types {
     use ecow::EcoString;
     use serde::{Deserialize, Serialize};
 
-    use crate::emails::parse_nullable_vec;
+    use crate::{emails::parse_nullable_vec, idempotent::Idempotent};
 
     /// Unique [`Email`] identifier.
     #[derive(Debug, Clone, Deserialize)]
@@ -175,9 +183,6 @@ pub mod types {
         /// (e.g: `2024-08-05T11:52:01.858Z`).
         #[serde(skip_serializing_if = "Option::is_none")]
         scheduled_at: Option<String>,
-
-        #[serde(skip)]
-        pub(crate) idempotency_key: Option<String>,
     }
 
     impl CreateEmailBaseOptions {
@@ -208,8 +213,6 @@ pub mod types {
                 attachments: None,
                 tags: None,
                 scheduled_at: None,
-
-                idempotency_key: None,
             }
         }
 
@@ -287,9 +290,11 @@ pub mod types {
         }
 
         // Adds an `Idempotency-Key` header to the request.
-        pub fn with_idempotency_key(mut self, idempotency_key: &str) -> Self {
-            self.idempotency_key = Some(idempotency_key.to_owned());
-            self
+        pub fn with_idempotency_key(self, idempotency_key: &str) -> Idempotent<Self> {
+            Idempotent {
+                idempotency_key: Some(idempotency_key.to_owned()),
+                data: self,
+            }
         }
     }
 

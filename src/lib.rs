@@ -63,6 +63,7 @@ mod domains;
 mod emails;
 mod error;
 pub mod events;
+pub mod idempotent;
 pub mod rate_limit;
 
 pub mod services {
