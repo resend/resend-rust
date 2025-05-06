@@ -417,10 +417,31 @@ mod test {
         tests::CLIENT,
     };
 
+    // <https://stackoverflow.com/a/77859502/12756474>
+    async fn retry<O, E, F>(mut f: F, retries: i32, interval: std::time::Duration) -> Result<O, E>
+    where
+        F: AsyncFnMut() -> Result<O, E>,
+    {
+        let mut count = 0;
+        loop {
+            match f().await {
+                Ok(output) => break Ok(output),
+                Err(e) => {
+                    println!("try {count} failed");
+                    count += 1;
+                    if count == retries {
+                        return Err(e);
+                    }
+                    tokio::time::sleep(interval).await;
+                }
+            }
+        }
+    }
+
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> DebugResult<()> {
-        use crate::rate_limit::send_with_retry;
+        use crate::domains::types::DeleteDomainResponse;
 
         let resend = &*CLIENT;
 
@@ -449,7 +470,9 @@ mod test {
         std::thread::sleep(std::time::Duration::from_secs(4));
 
         // Delete
-        let resp = send_with_retry(|| resend.domains.delete(&domain.id)).await?;
+        let f = async || resend.domains.delete(&domain.id).await;
+        let resp: DeleteDomainResponse = retry(f, 4, std::time::Duration::from_secs(1)).await?;
+
         assert!(resp.deleted);
 
         // List.
