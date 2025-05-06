@@ -471,7 +471,7 @@ mod test {
 
         // Delete
         let f = async || resend.domains.delete(&domain.id).await;
-        let resp: DeleteDomainResponse = retry(f, 4, std::time::Duration::from_secs(1)).await?;
+        let resp: DeleteDomainResponse = retry(f, 5, std::time::Duration::from_secs(2)).await?;
 
         assert!(resp.deleted);
 
