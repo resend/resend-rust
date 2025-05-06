@@ -420,6 +420,8 @@ mod test {
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> DebugResult<()> {
+        use crate::rate_limit::send_with_retry;
+
         let resend = &*CLIENT;
 
         // Create
@@ -447,7 +449,7 @@ mod test {
         std::thread::sleep(std::time::Duration::from_secs(4));
 
         // Delete
-        let resp = resend.domains.delete(&domain.id).await?;
+        let resp = send_with_retry(|| resend.domains.delete(&domain.id)).await?;
         assert!(resp.deleted);
 
         // List.

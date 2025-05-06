@@ -104,6 +104,9 @@ pub async fn send_with_retry_opts<A: Future<Output = Result<B>> + Send, B: Send>
             return res;
         }
 
+        #[cfg(test)]
+        dbg!("Failed send, trying again...");
+
         // Decrement retries and try again
         let opts = RetryOptions {
             duration_ms: opts.duration_ms,
