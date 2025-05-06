@@ -102,6 +102,7 @@ pub mod types {
     impl Deref for AudienceId {
         type Target = str;
 
+        #[inline]
         fn deref(&self) -> &Self::Target {
             self.as_ref()
         }

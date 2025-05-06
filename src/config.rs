@@ -36,6 +36,7 @@ pub struct Config {
 
 impl Config {
     /// Creates a new [`Config`].
+    #[must_use]
     pub(crate) fn new(api_key: &str, client: Client) -> Self {
         let env_base_url = env::var("RESEND_BASE_URL")
             .map_or_else(

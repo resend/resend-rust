@@ -145,6 +145,7 @@ pub mod types {
     impl Deref for DomainId {
         type Target = str;
 
+        #[inline]
         fn deref(&self) -> &Self::Target {
             self.as_ref()
         }
@@ -187,6 +188,7 @@ pub mod types {
         /// Creates a new [`CreateDomainOptions`].
         ///
         /// - `name`: The name of the domain you want to create.
+        #[inline]
         pub fn new(name: &str) -> Self {
             Self {
                 name: name.to_owned(),
@@ -196,6 +198,7 @@ pub mod types {
         }
 
         /// The region where the email will be sent from.
+        #[inline]
         pub fn with_region(mut self, region: impl Into<Region>) -> Self {
             self.region = Some(region.into());
             self
@@ -205,6 +208,7 @@ pub mod types {
         /// The custom return path is used for SPF authentication, DMARC alignment, and handling
         /// bounced emails. Defaults to `send` (i.e., `send.yourdomain.tld`). Avoid setting values
         /// that could undermine credibility (e.g. `testing`), as they may be exposed to recipients.
+        #[inline]
         pub fn with_custom_return_path(mut self, custom_return_path: String) -> Self {
             self.custom_return_path = Some(custom_return_path);
             self

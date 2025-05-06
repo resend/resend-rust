@@ -147,6 +147,7 @@ pub mod types {
         }
 
         /// Appends `reply_to` address to the broadcast.
+        #[inline]
         pub fn with_reply(mut self, to: &str) -> Self {
             let reply_to = self.reply_to.get_or_insert_with(Vec::new);
             reply_to.push(to.to_owned());
@@ -154,6 +155,7 @@ pub mod types {
         }
 
         /// Appends multiple `reply_to` addresses to the broadcast.
+        #[inline]
         pub fn with_reply_multiple(mut self, to: &[String]) -> Self {
             let reply_to = self.reply_to.get_or_insert_with(Vec::new);
             reply_to.extend_from_slice(to);
@@ -206,11 +208,14 @@ pub mod types {
         }
 
         /// Adds or overwrites the sender email address.
+        #[inline]
         pub fn with_from(mut self, from: &str) -> Self {
             self.from = Some(from.to_owned());
             self
         }
 
+        /// Adds or overwrites the subject.
+        #[inline]
         pub fn with_subject(mut self, subject: &str) -> Self {
             self.subject = Some(subject.to_owned());
             self
@@ -224,6 +229,7 @@ pub mod types {
         }
 
         /// Appends multiple `reply_to` addresses to the broadcast.
+        #[inline]
         pub fn with_reply_multiple(mut self, to: &[String]) -> Self {
             let reply_to = self.reply_to.get_or_insert_with(Vec::new);
             reply_to.extend_from_slice(to);
@@ -274,6 +280,7 @@ pub mod types {
     impl Deref for BroadcastId {
         type Target = str;
 
+        #[inline]
         fn deref(&self) -> &Self::Target {
             self.as_ref()
         }
@@ -319,6 +326,7 @@ pub mod types {
 
         /// Schedule email to be sent later. The date should be in language natural (e.g.: in 1 min)
         /// or ISO 8601 format (e.g: 2024-08-05T11:52:01.858Z).
+        #[inline]
         pub fn with_scheduled_at(mut self, scheduled_at: &str) -> Self {
             self.scheduled_at = Some(scheduled_at.to_owned());
             self

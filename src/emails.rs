@@ -116,6 +116,7 @@ pub mod types {
     impl Deref for EmailId {
         type Target = str;
 
+        #[inline]
         fn deref(&self) -> &Self::Target {
             self.as_ref()
         }
@@ -231,6 +232,7 @@ pub mod types {
         }
 
         /// Attaches `bcc` recipient email address.
+        #[inline]
         pub fn with_bcc(mut self, address: &str) -> Self {
             let bcc = self.bcc.get_or_insert_with(Vec::new);
             bcc.push(address.to_owned());
@@ -238,6 +240,7 @@ pub mod types {
         }
 
         /// Attaches `cc` recipient email address.
+        #[inline]
         pub fn with_cc(mut self, address: &str) -> Self {
             let cc = self.cc.get_or_insert_with(Vec::new);
             cc.push(address.to_owned());
@@ -245,6 +248,7 @@ pub mod types {
         }
 
         /// Adds another `reply_to` address to the email.
+        #[inline]
         pub fn with_reply(mut self, to: &str) -> Self {
             let reply_to = self.reply_to.get_or_insert_with(Vec::new);
             reply_to.push(to.to_owned());
@@ -252,6 +256,7 @@ pub mod types {
         }
 
         /// Append multiple `reply_to` addresses to the email.
+        #[inline]
         pub fn with_reply_multiple(mut self, to: &[String]) -> Self {
             let reply_to = self.reply_to.get_or_insert_with(Vec::new);
             reply_to.extend_from_slice(to);
@@ -259,6 +264,7 @@ pub mod types {
         }
 
         /// Adds or overwrites an email header.
+        #[inline]
         pub fn with_header(mut self, name: &str, value: &str) -> Self {
             let headers = self.headers.get_or_insert_with(HashMap::new);
             let _unused = headers.insert(name.to_owned(), value.to_owned());
@@ -269,6 +275,7 @@ pub mod types {
         /// Adds another attachment.
         ///
         /// Limited to max 40mb per email.
+        #[inline]
         pub fn with_attachment(mut self, file: impl Into<Attachment>) -> Self {
             let attachments = self.attachments.get_or_insert_with(Vec::new);
             attachments.push(file.into());
@@ -276,6 +283,7 @@ pub mod types {
         }
 
         /// Adds additional email tag.
+        #[inline]
         pub fn with_tag(mut self, tag: impl Into<Tag>) -> Self {
             let tags = self.tags.get_or_insert_with(Vec::new);
             tags.push(tag.into());
@@ -284,12 +292,14 @@ pub mod types {
 
         /// Schedule email to be sent later. The date should be in ISO 8601 format
         /// (e.g: `2024-08-05T11:52:01.858Z`).
+        #[inline]
         pub fn with_scheduled_at(mut self, scheduled_at: &str) -> Self {
             self.scheduled_at = Some(scheduled_at.to_owned());
             self
         }
 
         // Adds an `Idempotency-Key` header to the request.
+        #[inline]
         pub fn with_idempotency_key(self, idempotency_key: &str) -> Idempotent<Self> {
             Idempotent {
                 idempotency_key: Some(idempotency_key.to_owned()),

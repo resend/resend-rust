@@ -8,6 +8,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- A bunch of `#[must_use]` and `#[inline]`.
+
 ### Changed
 
 - Updated `ErrorKind` to match <https://resend.com/docs/api-reference/errors>
@@ -26,6 +30,8 @@ and this project adheres to
 
 - `ErrorKind::InvalidToAddress`
 - `ErrorKind::InvalidScope`
+- removed already deprecated `contacts::get`, use `contacts::get_by_id` or `contacts::get_by_email`
+  instead
 
 ### Fixed
 

@@ -31,24 +31,6 @@ impl ContactsSvc {
         Ok(content.id)
     }
 
-    /// Retrieves a single contact from an audience.
-    ///
-    /// <https://resend.com/docs/api-reference/contacts/get-contact>
-    #[deprecated(
-        since = "0.14.0",
-        note = "Use `get_by_id` instead or alternatively `get_by_email`. This method will likely be removed in the future."
-    )]
-    #[maybe_async::maybe_async]
-    pub async fn get(&self, contact_id: &str, audience_id: &str) -> Result<Contact> {
-        let path = format!("/audiences/{audience_id}/contacts/{contact_id}");
-
-        let request = self.0.build(Method::GET, &path);
-        let response = self.0.send(request).await?;
-        let content = response.json::<Contact>().await?;
-
-        Ok(content)
-    }
-
     /// Retrieves a single contact from an audience by its id.
     ///
     /// <https://resend.com/docs/api-reference/contacts/get-contact>
@@ -190,6 +172,7 @@ pub mod types {
     impl Deref for ContactId {
         type Target = str;
 
+        #[inline]
         fn deref(&self) -> &Self::Target {
             self.as_ref()
         }
