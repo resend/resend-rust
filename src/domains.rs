@@ -209,8 +209,8 @@ pub mod types {
         /// bounced emails. Defaults to `send` (i.e., `send.yourdomain.tld`). Avoid setting values
         /// that could undermine credibility (e.g. `testing`), as they may be exposed to recipients.
         #[inline]
-        pub fn with_custom_return_path(mut self, custom_return_path: String) -> Self {
-            self.custom_return_path = Some(custom_return_path);
+        pub fn with_custom_return_path(mut self, custom_return_path: impl Into<String>) -> Self {
+            self.custom_return_path = Some(custom_return_path.into());
             self
         }
     }

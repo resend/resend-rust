@@ -25,6 +25,8 @@ and this project adheres to
     In order for batch emails to work similarly, a new trait `idempotent::IdempotentTrait` was
     created. Importing that adds the `with_idempotency_key` to iterators of type
     `CreateEmailBaseOptions`. This was all done to fix the bug I mention later.
+- `CreateDomainOptions::with_custom_return_path` now takes `Into<String>` so `&str` can also be
+  used
 
 ### Removed
 
