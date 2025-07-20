@@ -52,7 +52,7 @@ impl Resend {
     /// [`Resend`]: https://resend.com
     /// [`reqwest::Client`]: ReqwestClient
     pub fn with_client(api_key: &str, client: ReqwestClient) -> Self {
-        let inner = Arc::new(Config::new(api_key, client));
+        let inner = Arc::new(Config::new(api_key.to_owned(), client, None));
 
         Self {
             api_keys: ApiKeysSvc(Arc::clone(&inner)),
