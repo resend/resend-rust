@@ -7,6 +7,11 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 <!-- ## [Unreleased] -->
+## [0.15.1] - 2025-05-09
+
+### Added
+
+- `Client::with_config` allowing to create a `Resend` client with custom configuration
 
 ## [0.15.0] - 2025-05-09
 
