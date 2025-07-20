@@ -95,6 +95,8 @@ impl ConfigBuilder {
 }
 
 /// Configuration for `Resend` client.
+///
+/// Use [`Config::builder`] to start constructing your custom configuration.
 #[non_exhaustive]
 #[derive(Clone)]
 pub struct Config {
