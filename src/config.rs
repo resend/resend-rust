@@ -22,9 +22,10 @@ use crate::Resend;
 
 /// Convenience builder for [`Config`].
 ///
-/// This requires from you to set `api_key`, but also makes it possible to set
-/// a `reqwest` http client with your custom configuration (see also [`Resend::with_client`])
-/// as well as an override for the Resend's base url to send requests to.
+/// This requires from you to set the API key ([`ConfigBuilder::new`]), but also
+/// makes it possible to set a `reqwest` http client with your custom configuration
+/// (see also [`Resend::with_client`]) as well as an override for the Resend's
+/// base url to send requests to.
 ///
 /// ```no_run
 /// # use resend_rs::ConfigBuilder;
@@ -40,7 +41,8 @@ use crate::Resend;
 ///     // this can be your proxy's url (if any) or a test server url which
 ///     // is intercepting request and allows to inspect them later on
 ///     .base_url("http://wiremock:35353".parse().unwrap())
-///     .client(http_client);
+///     .client(http_client)
+///     .build();
 /// ```
 #[derive(Debug, Clone)]
 #[non_exhaustive]
