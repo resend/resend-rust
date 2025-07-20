@@ -58,7 +58,7 @@ impl ConfigBuilder {
     where
         S: Into<String>,
     {
-        ConfigBuilder {
+        Self {
             api_key: api_key.into(),
             base_url: None,
             client: None,
@@ -73,12 +73,14 @@ impl ConfigBuilder {
     /// If not provided here, `RESEND_BASE_URL` environment variable will be
     /// looped up and if not provided either - a [default](https://resend.com/docs/api-reference/introduction#base-url)
     /// url will be used.
+    #[must_use]
     pub fn base_url(mut self, url: Url) -> Self {
         self.base_url = Some(url);
         self
     }
 
     /// Set custom http client.
+    #[must_use]
     pub fn client(mut self, client: Client) -> Self {
         self.client = Some(client);
         self
@@ -86,11 +88,7 @@ impl ConfigBuilder {
 
     /// Builder's terminal method producing [`Config`].
     pub fn build(self) -> Config {
-        Config::new(
-            self.api_key,
-            self.client.unwrap_or(Client::default()),
-            self.base_url,
-        )
+        Config::new(self.api_key, self.client.unwrap_or_default(), self.base_url)
     }
 }
 

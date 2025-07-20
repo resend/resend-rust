@@ -56,7 +56,7 @@ impl Resend {
     /// [`reqwest::Client`]: ReqwestClient
     pub fn with_client(api_key: &str, client: ReqwestClient) -> Self {
         let config = Config::new(api_key.to_owned(), client, None);
-        Resend::with_config(config)
+        Self::with_config(config)
     }
 
     /// Creates a new [`Resend`] client with a provided [`Config`].
@@ -83,8 +83,8 @@ impl Resend {
     ///
     /// ### Panics
     ///
-    /// - Panics if the base url has not been set with [`ConfigBuilder::base_url`]
-    /// and the environment variable `RESEND_BASE_URL` _is_ set but is not a valid `URL`.
+    /// -   Panics if the base url has not been set with [`ConfigBuilder::base_url`]
+    ///     and the environment variable `RESEND_BASE_URL` _is_ set but is not a valid `URL`.
     ///
     /// [`Resend`]: https://resend.com
     /// [`reqwest::Client`]: ReqwestClient
