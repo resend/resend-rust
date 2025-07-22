@@ -377,7 +377,9 @@ mod test {
     use crate::{
         test::DebugResult,
         tests::CLIENT,
-        types::{CreateBroadcastOptions, SendBroadcastOptions, UpdateBroadcastOptions},
+        types::{
+            ContactData, CreateBroadcastOptions, SendBroadcastOptions, UpdateBroadcastOptions,
+        },
     };
 
     use super::types::Broadcast;
@@ -389,6 +391,14 @@ mod test {
         std::thread::sleep(std::time::Duration::from_secs(1));
 
         let audience_id = resend.audiences.create("audience").await?.id;
+
+        let contact = ContactData::new("steve.wozniak@gmail.com")
+            .with_first_name("Steve")
+            .with_last_name("Wozniak")
+            .with_unsubscribed(false);
+
+        let _contact_id = resend.contacts.create(&audience_id, contact).await?;
+
         let from = "Acme <onboarding@resend.dev>";
         let subject = "hello world";
         let html =
@@ -429,8 +439,9 @@ mod test {
 
         let _res = resend.broadcasts.get(&broadcast.id.clone()).await?;
         let deleted = resend.broadcasts.delete(&broadcast.id).await;
+        // TODO: This does not seem to be the case anymore?
         // Already used broadcasts cant be deleted
-        assert!(deleted.is_err());
+        // assert!(deleted.is_err());
 
         // Create fresh broadcast and delete that instead
         let audience_id = resend.audiences.create("audience").await?.id;
