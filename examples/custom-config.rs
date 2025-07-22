@@ -1,5 +1,5 @@
 //! Run this example with:
-//! 
+//!
 //! ```sh
 //! RESEND_API_KEY=re_your_api_key cargo run --example custom-config
 //! ```

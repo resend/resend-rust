@@ -72,7 +72,7 @@ impl Resend {
     /// // in plaintext, not to mention commit them; also consider using `secrecy` crate
     /// // and reveal the secret only for the purpose of building config here
     /// let config = ConfigBuilder::new("re_...")
-    ///     // this can be the url of  your proxy (if any) or a test server (e.g.`wiremock`) 
+    ///     // this can be the url of  your proxy (if any) or a test server (e.g.`wiremock`)
     ///     // which is intercepting request and allows to inspect them later on
     ///     .base_url("https://resend.acme".parse().unwrap())
     ///     .client(http_client)
