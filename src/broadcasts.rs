@@ -438,7 +438,7 @@ mod test {
         let broadcast = broadcasts[0].clone();
 
         let _res = resend.broadcasts.get(&broadcast.id.clone()).await?;
-        let deleted = resend.broadcasts.delete(&broadcast.id).await;
+        let _deleted = resend.broadcasts.delete(&broadcast.id).await;
         // TODO: This does not seem to be the case anymore?
         // Already used broadcasts cant be deleted
         // assert!(deleted.is_err());

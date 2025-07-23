@@ -37,7 +37,7 @@ async fn main() -> anyhow::Result<()> {
             .build(),
     );
 
-    let resp = resend
+    let _resp = resend
         .emails
         .send(
             CreateEmailBaseOptions::new("onboarding@resend.dev", ["delivered@resend.dev"], "Demo")
