@@ -17,7 +17,86 @@ use std::{num::NonZeroU32, sync::Arc, time::Duration};
 
 use crate::{Error, Result, error::types::ErrorResponse};
 
-#[allow(unreachable_pub)]
+#[cfg(doc)]
+use crate::Resend;
+
+/// Convenience builder for [`Config`].
+///
+/// This requires from you to set the API key ([`ConfigBuilder::new`]), but also
+/// makes it possible to set a `reqwest` http client with your custom configuration
+/// (see also [`Resend::with_client`]) as well as an override for the Resend's
+/// base url to send requests to.
+///
+/// ```no_run
+/// # use resend_rs::ConfigBuilder;
+/// let http_client = reqwest::Client::builder()
+///      .timeout(std::time::Duration::from_secs(10))
+///      .build()
+///      .unwrap();
+///
+/// // Make sure to not store secrets in code, instead consider using crates like `dotenvy`
+/// // or `secrecy`.
+/// let _config = ConfigBuilder::new("re_...")
+///     // this can be your proxy's url (if any) or a test server url which
+///     // is intercepting request and allows to inspect them later on
+///     .base_url("http://wiremock:35353".parse().unwrap())
+///     .client(http_client)
+///     .build();
+/// ```
+#[derive(Debug, Clone)]
+#[non_exhaustive]
+pub struct ConfigBuilder {
+    api_key: String,
+    base_url: Option<Url>,
+    client: Option<Client>,
+}
+
+impl ConfigBuilder {
+    /// Create new [`ConfigBuilder`] with `api_key` set.
+    pub fn new<S>(api_key: S) -> Self
+    where
+        S: Into<String>,
+    {
+        Self {
+            api_key: api_key.into(),
+            base_url: None,
+            client: None,
+        }
+    }
+
+    /// Set a custom Resend's base url.
+    ///
+    /// This can be your proxy's url (if any) or a test server url which
+    /// intercepting request and allows to inspect them later on.
+    ///
+    /// If not provided here, the `RESEND_BASE_URL` environment variable will be
+    /// used. If that is not not provided either - a [default] url will be used.
+    ///
+    /// [default]: https://resend.com/docs/api-reference/introduction#base-url
+    #[must_use]
+    pub fn base_url(mut self, url: Url) -> Self {
+        self.base_url = Some(url);
+        self
+    }
+
+    /// Set custom http client.
+    #[must_use]
+    pub fn client(mut self, client: Client) -> Self {
+        self.client = Some(client);
+        self
+    }
+
+    /// Builder's terminal method producing [`Config`].
+    pub fn build(self) -> Config {
+        Config::new(self.api_key, self.client.unwrap_or_default(), self.base_url)
+    }
+}
+
+/// Configuration for `Resend` client.
+///
+/// Use [`Config::builder`] to start constructing your custom configuration.
+#[non_exhaustive]
+#[derive(Clone)]
 pub struct Config {
     pub(crate) user_agent: String,
     pub(crate) api_key: String,
@@ -35,15 +114,30 @@ pub struct Config {
 }
 
 impl Config {
+    /// Create new [`ConfigBuilder`] with `api_key` set.
+    ///
+    /// A convenience method, that, internally, will call [`ConfigBuilder::new`].
+    pub fn builder<S>(api_key: S) -> ConfigBuilder
+    where
+        S: Into<String>,
+    {
+        ConfigBuilder::new(api_key.into())
+    }
+
     /// Creates a new [`Config`].
+    ///
+    /// Note: the `base_url` parameter takes presedence over the `RESEND_BASE_URL` environment
+    /// variable.
     #[must_use]
-    pub(crate) fn new(api_key: &str, client: Client) -> Self {
-        let env_base_url = env::var("RESEND_BASE_URL")
-            .map_or_else(
-                |_| Url::parse("https://api.resend.com"),
-                |env_var| Url::parse(env_var.as_str()),
-            )
-            .expect("env variable `RESEND_BASE_URL` should be a valid URL");
+    pub(crate) fn new(api_key: String, client: Client, base_url: Option<Url>) -> Self {
+        let env_base_url = base_url.unwrap_or_else(|| {
+            env::var("RESEND_BASE_URL")
+                .map_or_else(
+                    |_| Url::parse("https://api.resend.com"),
+                    |env_var| Url::parse(env_var.as_str()),
+                )
+                .expect("env variable `RESEND_BASE_URL` should be a valid URL")
+        });
 
         let env_user_agent = format!("{}/{}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
 
@@ -67,7 +161,7 @@ impl Config {
 
         Self {
             user_agent: env_user_agent,
-            api_key: api_key.to_owned(),
+            api_key,
             base_url: env_base_url,
             client,
             #[cfg(not(feature = "blocking"))]

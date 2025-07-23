@@ -11,6 +11,9 @@ use crate::services::{
 };
 use crate::{batch::BatchSvc, config::Config};
 
+#[cfg(doc)]
+use crate::ConfigBuilder;
+
 /// The [Resend](https://resend.com) client.
 #[must_use]
 #[derive(Clone)]
@@ -52,8 +55,23 @@ impl Resend {
     /// [`Resend`]: https://resend.com
     /// [`reqwest::Client`]: ReqwestClient
     pub fn with_client(api_key: &str, client: ReqwestClient) -> Self {
-        let inner = Arc::new(Config::new(api_key, client));
+        let config = Config::new(api_key.to_owned(), client, None);
+        Self::with_config(config)
+    }
 
+    /// Creates a new [`Resend`] client with a provided [`Config`].
+    ///
+    /// Use [`ConfigBuilder::new`] to construct a [`Config`] instance.
+    ///
+    /// ### Panics
+    ///
+    /// -   Panics if the base url has not been set with [`ConfigBuilder::base_url`]
+    ///     and the environment variable `RESEND_BASE_URL` _is_ set but is not a valid `URL`.
+    ///
+    /// [`Resend`]: https://resend.com
+    /// [`reqwest::Client`]: ReqwestClient
+    pub fn with_config(config: Config) -> Self {
+        let inner = Arc::new(config);
         Self {
             api_keys: ApiKeysSvc(Arc::clone(&inner)),
             audiences: AudiencesSvc(Arc::clone(&inner)),

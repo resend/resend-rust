@@ -51,7 +51,7 @@
 //! ```
 
 pub use client::Resend;
-pub(crate) use config::Config;
+pub use config::{Config, ConfigBuilder};
 
 mod api_keys;
 mod audiences;
