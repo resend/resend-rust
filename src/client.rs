@@ -61,25 +61,7 @@ impl Resend {
 
     /// Creates a new [`Resend`] client with a provided [`Config`].
     ///
-    /// ```no_run
-    /// # use resend_rs::{ConfigBuilder, Resend};
-    /// let http_client = reqwest::Client::builder()
-    ///      .timeout(std::time::Duration::from_secs(10))
-    ///      .build()
-    ///      .unwrap();
-    ///
-    /// // This is only for example's sake, make sure to not store secrets in code
-    /// // in plaintext, not to mention commit them; also consider using `secrecy` crate
-    /// // and reveal the secret only for the purpose of building config here
-    /// let config = ConfigBuilder::new("re_...")
-    ///     // this can be the url of  your proxy (if any) or a test server (e.g.`wiremock`)
-    ///     // which is intercepting request and allows to inspect them later on
-    ///     .base_url("https://resend.acme".parse().unwrap())
-    ///     .client(http_client)
-    ///     .build();
-    ///
-    /// let _resend = Resend::with_config(config);
-    /// ```
+    /// Use [`ConfigBuilder::new`] to construct a [`Config`] instance.
     ///
     /// ### Panics
     ///

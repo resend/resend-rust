@@ -34,9 +34,8 @@ use crate::Resend;
 ///      .build()
 ///      .unwrap();
 ///
-/// // This is only for example's sake, make sure to not store secrets in code
-/// // in plaintext, not to mention commit them; also consider using `secrecy` crate
-/// // and reveal the secret only for the purpose of building config here
+/// // Make sure to not store secrets in code, instead consider using crates like `dotenvy`
+/// // or `secrecy`.
 /// let _config = ConfigBuilder::new("re_...")
 ///     // this can be your proxy's url (if any) or a test server url which
 ///     // is intercepting request and allows to inspect them later on
@@ -70,9 +69,10 @@ impl ConfigBuilder {
     /// This can be your proxy's url (if any) or a test server url which
     /// intercepting request and allows to inspect them later on.
     ///
-    /// If not provided here, `RESEND_BASE_URL` environment variable will be
-    /// looped up and if not provided either - a [default](https://resend.com/docs/api-reference/introduction#base-url)
-    /// url will be used.
+    /// If not provided here, the `RESEND_BASE_URL` environment variable will be
+    /// used. If that is not not provided either - a [default] url will be used.
+    ///
+    /// [default]: https://resend.com/docs/api-reference/introduction#base-url
     #[must_use]
     pub fn base_url(mut self, url: Url) -> Self {
         self.base_url = Some(url);
@@ -125,6 +125,9 @@ impl Config {
     }
 
     /// Creates a new [`Config`].
+    ///
+    /// Note: the `base_url` parameter takes presedence over the `RESEND_BASE_URL` environment
+    /// variable.
     #[must_use]
     pub(crate) fn new(api_key: String, client: Client, base_url: Option<Url>) -> Self {
         let env_base_url = base_url.unwrap_or_else(|| {
