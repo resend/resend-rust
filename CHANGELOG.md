@@ -10,8 +10,15 @@ and this project adheres to
 
 ### Added
 
+- `Attachment::with_inline_content_id`
 - `Client::with_config` allowing to create a `Resend` client with custom configuration
   (https://github.com/resend/resend-rust/pull/28)
+
+### Changed
+
+- `Attachment` fields were made private to avoid future breaking changes when new fields are added.
+  Use the `Attachment` for setting the fields instead.
+- `Tag` fields were also made private.
 
 ## [0.15.0] - 2025-05-09
 

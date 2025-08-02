@@ -353,10 +353,10 @@ pub mod types {
     pub struct Tag {
         /// The name of the email tag. It can only contain ASCII letters (a–z, A–Z), numbers (0–9),
         /// underscores (_), or dashes (-). It can contain no more than 256 characters.
-        pub name: String,
+        name: String,
         /// The value of the email tag. It can only contain ASCII letters (a–z, A–Z), numbers (0–9),
         /// underscores (_), or dashes (-). It can contain no more than 256 characters.
-        pub value: String,
+        value: String,
     }
 
     impl Tag {
@@ -381,14 +381,19 @@ pub mod types {
     pub struct Attachment {
         /// Content or path of an attached file.
         #[serde(flatten)]
-        pub content_or_path: ContentOrPath,
+        content_or_path: ContentOrPath,
         /// Name of attached file.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub filename: Option<String>,
+        filename: Option<String>,
         /// Optional content type for the attachment, if not set will be derived from the filename
         /// property.
         #[serde(rename = "contentType", skip_serializing_if = "Option::is_none")]
-        pub content_type: Option<String>,
+        content_type: Option<String>,
+        /// Optional content ID for the attachment, to be used as a reference in the HTML content.
+        /// If set, this attachment will be sent as an inline attachment and you can reference it
+        /// in the HTML content using the `cid:` prefix.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        inline_content_id: Option<String>,
     }
 
     /// Content or path of the [`Attachment`].
@@ -411,6 +416,7 @@ pub mod types {
                 content_or_path: ContentOrPath::Content(content),
                 filename: None,
                 content_type: None,
+                inline_content_id: None,
             }
         }
 
@@ -421,6 +427,7 @@ pub mod types {
                 content_or_path: ContentOrPath::Path(path.to_owned()),
                 filename: None,
                 content_type: None,
+                inline_content_id: None,
             }
         }
 
@@ -435,6 +442,13 @@ pub mod types {
         #[inline]
         pub fn with_content_type(mut self, content_type: &str) -> Self {
             self.content_type = Some(content_type.to_owned());
+            self
+        }
+
+        /// Adds an inline content id to the attached file.
+        #[inline]
+        pub fn with_inline_content_id(mut self, inline_content_id: &str) -> Self {
+            self.inline_content_id = Some(inline_content_id.to_owned());
             self
         }
     }
