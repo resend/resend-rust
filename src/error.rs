@@ -340,7 +340,7 @@ mod tests {
             let error_response = ErrorResponse {
                 status_code: 400,
                 message: String::new(),
-                name: error_name.to_string(),
+                name: error_name.clone(),
             };
 
             let error_kind = ErrorKind::from(error_response);

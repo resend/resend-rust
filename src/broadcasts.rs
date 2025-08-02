@@ -372,7 +372,7 @@ pub mod types {
 }
 
 #[cfg(test)]
-#[allow(clippy::needless_return)]
+#[allow(clippy::needless_return, clippy::indexing_slicing)]
 mod test {
     use crate::{
         test::DebugResult,
