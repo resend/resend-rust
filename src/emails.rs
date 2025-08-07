@@ -393,7 +393,7 @@ pub mod types {
         /// If set, this attachment will be sent as an inline attachment and you can reference it
         /// in the HTML content using the `cid:` prefix.
         #[serde(skip_serializing_if = "Option::is_none")]
-        inline_content_id: Option<String>,
+        content_id: Option<String>,
     }
 
     /// Content or path of the [`Attachment`].
@@ -416,7 +416,7 @@ pub mod types {
                 content_or_path: ContentOrPath::Content(content),
                 filename: None,
                 content_type: None,
-                inline_content_id: None,
+                content_id: None,
             }
         }
 
@@ -427,7 +427,7 @@ pub mod types {
                 content_or_path: ContentOrPath::Path(path.to_owned()),
                 filename: None,
                 content_type: None,
-                inline_content_id: None,
+                content_id: None,
             }
         }
 
@@ -446,9 +446,19 @@ pub mod types {
         }
 
         /// Adds an inline content id to the attached file.
+        #[deprecated(
+            since = "0.16.1",
+            note = "Parameter got internally renamed to just `content_id`. Use `with_content_id` instead."
+        )]
         #[inline]
         pub fn with_inline_content_id(mut self, inline_content_id: &str) -> Self {
-            self.inline_content_id = Some(inline_content_id.to_owned());
+            self.content_id = Some(inline_content_id.to_owned());
+            self
+        }
+
+        #[inline]
+        pub fn with_content_id(mut self, content_id: &str) -> Self {
+            self.content_id = Some(content_id.to_owned());
             self
         }
     }
