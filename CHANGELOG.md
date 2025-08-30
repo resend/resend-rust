@@ -8,6 +8,14 @@ and this project adheres to
 
 <!-- ## [Unreleased] -->
 
+## [0.16.2] (Not published yet)
+
+### Added
+
+- `Vec<CreateEmailOptions>` now implements `Idempotent` (should've added this earlier, oops)
+- Support for batch validation modes via `BatchSvc::send_with_batch_validation`
+  (and `SendEmailBatchResponse`).
+
 ## [0.16.1]
 
 ### Added
@@ -322,6 +330,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+[0.16.2]: https://crates.io/crates/resend-rs/0.16.2
 [0.16.1]: https://crates.io/crates/resend-rs/0.16.1
 [0.16.0]: https://crates.io/crates/resend-rs/0.16.0
 [0.15.0]: https://crates.io/crates/resend-rs/0.15.0

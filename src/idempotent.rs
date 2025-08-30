@@ -56,6 +56,7 @@ macro_rules! idempotent_from {
 }
 
 idempotent_from!(CreateEmailBaseOptions);
+idempotent_from!(Vec<CreateEmailBaseOptions>);
 
 /// Used to add easy conversion of trait impls to [`Idempotent`].
 pub trait IdempotentTrait<T> {

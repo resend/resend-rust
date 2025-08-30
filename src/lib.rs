@@ -86,7 +86,10 @@ pub mod types {
         ApiKey, ApiKeyId, ApiKeyToken, CreateApiKeyOptions, Permission,
     };
     pub use super::audiences::types::{Audience, AudienceId, CreateAudienceResponse};
-    pub use super::batch::types::SendEmailBatchResponse;
+    pub use super::batch::types::{
+        BatchValidation, PermissiveBatchErrors, SendEmailBatchPermissiveResponse,
+        SendEmailBatchResponse,
+    };
     pub use super::broadcasts::types::{
         Broadcast, BroadcastId, CreateBroadcastOptions, CreateBroadcastResponse,
         RemoveBroadcastResponse, SendBroadcastOptions, SendBroadcastResponse,
