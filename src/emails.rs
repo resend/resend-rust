@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use reqwest::Method;
 use serde::{Deserialize, Deserializer};
+use types::Response;
 
 use crate::{Config, Result};
 use crate::{
@@ -26,7 +27,7 @@ impl EmailsSvc {
     pub async fn send(
         &self,
         email: impl Into<Idempotent<CreateEmailBaseOptions>>,
-    ) -> Result<CreateEmailResponse> {
+    ) -> Result<Response<CreateEmailResponse>> {
         let email: Idempotent<CreateEmailBaseOptions> = email.into();
 
         let mut request = self.0.build(Method::POST, "/emails");
@@ -38,7 +39,10 @@ impl EmailsSvc {
         let response = self.0.send(request.json(&email)).await?;
         let content = response.json::<CreateEmailResponse>().await?;
 
-        Ok(content)
+        Ok(Response {
+            data: content,
+            headers: response.headers(),
+        })
     }
 
     /// Retrieve a single email.
@@ -95,6 +99,7 @@ pub mod types {
     use std::fmt;
     use std::{collections::HashMap, ops::Deref};
 
+    use axum::http::HeaderMap;
     use ecow::EcoString;
     use serde::{Deserialize, Serialize};
 
@@ -308,10 +313,22 @@ pub mod types {
         }
     }
 
+    #[derive(Debug, Clone)]
+    pub struct Response<T> {
+        pub data: T,
+        pub headers: HeaderMap,
+    }
+
     #[derive(Debug, Clone, Deserialize)]
     pub struct CreateEmailResponse {
         /// The ID of the sent email.
         pub id: EmailId,
+    }
+
+    impl From<Response<CreateEmailResponse>> for CreateEmailResponse {
+        fn from(value: Response<CreateEmailResponse>) -> Self {
+            value.data
+        }
     }
 
     /// List of changes to apply to an [`Email`].
