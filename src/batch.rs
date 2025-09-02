@@ -158,6 +158,7 @@ mod test {
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
     #[allow(clippy::unwrap_used, clippy::indexing_slicing)]
+    #[ignore = "Temporarily disable test due to backend bug"]
     async fn permissive_error() -> DebugResult<()> {
         let resend = &*CLIENT;
         std::thread::sleep(std::time::Duration::from_secs(1));
