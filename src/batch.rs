@@ -127,6 +127,7 @@ mod test {
     #[allow(clippy::unwrap_used, clippy::indexing_slicing)]
     async fn strict_error() -> DebugResult<()> {
         let resend = &*CLIENT;
+        std::thread::sleep(std::time::Duration::from_secs(1));
 
         let emails = vec![
             CreateEmailBaseOptions::new(
@@ -159,6 +160,7 @@ mod test {
     #[allow(clippy::unwrap_used, clippy::indexing_slicing)]
     async fn permissive_error() -> DebugResult<()> {
         let resend = &*CLIENT;
+        std::thread::sleep(std::time::Duration::from_secs(1));
 
         let emails = vec![
             CreateEmailBaseOptions::new(
@@ -196,6 +198,7 @@ mod test {
     #[allow(clippy::unwrap_used, clippy::indexing_slicing)]
     async fn permissive_ok() -> DebugResult<()> {
         let resend = &*CLIENT;
+        std::thread::sleep(std::time::Duration::from_secs(1));
 
         let emails = vec![
             CreateEmailBaseOptions::new(
@@ -232,6 +235,7 @@ mod test {
     #[allow(clippy::unwrap_used, clippy::indexing_slicing)]
     async fn strict_ok() -> DebugResult<()> {
         let resend = &*CLIENT;
+        std::thread::sleep(std::time::Duration::from_secs(1));
 
         let emails = vec![
             CreateEmailBaseOptions::new(
@@ -251,9 +255,8 @@ mod test {
         let emails = resend.batch.send(emails).await;
 
         // This should be all ok
-        dbg!(&emails);
         assert!(emails.is_ok());
-        let emails = emails.unwrap();
+        let _emails = emails.unwrap();
 
         Ok(())
     }
