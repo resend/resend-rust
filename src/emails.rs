@@ -543,6 +543,8 @@ pub mod types {
 
     /// Query parameters for retrieving a list of [`Email`]s.
     ///
+    /// Note that [`ListEmailOptions::default()`] applies no filters.
+    ///
     /// ## Example
     ///
     /// ```
