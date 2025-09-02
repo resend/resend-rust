@@ -3,7 +3,10 @@ use std::sync::Arc;
 use reqwest::Method;
 use serde::{Deserialize, Deserializer};
 
-use crate::{Config, Result};
+use crate::{
+    Config, Result,
+    types::{ListEmailOptions, ListEmailResponse},
+};
 use crate::{
     idempotent::Idempotent,
     types::{
@@ -85,6 +88,18 @@ impl EmailsSvc {
         let request = self.0.build(Method::POST, &path);
         let response = self.0.send(request).await?;
         let content = response.json::<CancelScheduleResponse>().await?;
+
+        Ok(content)
+    }
+
+    /// Retrieve a list of emails.
+    ///
+    /// <https://resend.com/docs/api-reference/emails/list-emails>
+    #[maybe_async::maybe_async]
+    pub async fn list<T>(&self, list_opts: ListEmailOptions<T>) -> Result<ListEmailResponse> {
+        let request = self.0.build(Method::GET, "/emails").query(&list_opts);
+        let response = self.0.send(request).await?;
+        let content = response.json::<ListEmailResponse>().await?;
 
         Ok(content)
     }
@@ -514,6 +529,86 @@ pub mod types {
         #[serde(skip_serializing_if = "Option::is_none")]
         pub scheduled_at: Option<String>,
     }
+
+    #[derive(Debug, Clone, Copy)]
+    pub struct ListBefore {}
+
+    #[derive(Debug, Clone, Copy)]
+    pub struct ListAfter {}
+
+    #[derive(Debug, Clone, Copy)]
+    pub struct TimeNotSpecified {}
+
+    /// Query parameters for retrieving a list of [`Email`]s.
+    ///
+    /// ## Example
+    ///
+    /// ```
+    /// # use resend_rs::types::ListEmailOptions;
+    /// let list_opts = ListEmailOptions::default()
+    ///   .with_limit(3)
+    ///   .list_before("71f170f3-826e-47e3-9128-a5958e3b375e");
+    /// ```
+    #[must_use]
+    #[derive(Debug, Clone, Serialize)]
+    pub struct ListEmailOptions<List = TimeNotSpecified> {
+        #[serde(skip)]
+        list: std::marker::PhantomData<List>,
+        /// Number of emails to retrieve. Default is 20, maximum is 100.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        limit: Option<u8>,
+        #[serde(rename = "before")]
+        before_id: Option<String>,
+        #[serde(rename = "after")]
+        after_id: Option<String>,
+    }
+
+    impl Default for ListEmailOptions {
+        fn default() -> Self {
+            Self {
+                list: std::marker::PhantomData::<TimeNotSpecified>,
+                limit: None,
+                before_id: None,
+                after_id: None,
+            }
+        }
+    }
+
+    impl<T> ListEmailOptions<T> {
+        #[inline]
+        pub const fn with_limit(mut self, limit: u8) -> Self {
+            self.limit = Some(limit);
+            self
+        }
+    }
+
+    impl ListEmailOptions<TimeNotSpecified> {
+        #[inline]
+        pub fn list_before(self, email_id: &str) -> ListEmailOptions<ListBefore> {
+            ListEmailOptions::<ListBefore> {
+                list: std::marker::PhantomData,
+                limit: self.limit,
+                before_id: Some(email_id.to_string()),
+                after_id: None,
+            }
+        }
+
+        #[inline]
+        pub fn list_after(self, email_id: &str) -> ListEmailOptions<ListAfter> {
+            ListEmailOptions::<ListAfter> {
+                list: std::marker::PhantomData,
+                limit: self.limit,
+                before_id: None,
+                after_id: Some(email_id.to_string()),
+            }
+        }
+    }
+
+    #[derive(Debug, Clone, Deserialize)]
+    pub struct ListEmailResponse {
+        pub has_more: bool,
+        pub data: Vec<Email>,
+    }
 }
 
 /// Turns:
@@ -531,13 +626,12 @@ where
 #[allow(clippy::unwrap_used)]
 #[allow(clippy::needless_return)]
 mod test {
-    use crate::types::{CreateEmailBaseOptions, Email, Tag, UpdateEmailOptions};
+    use crate::types::{CreateEmailBaseOptions, Email, ListEmailOptions, Tag, UpdateEmailOptions};
     use crate::{test::DebugResult, tests::CLIENT};
     use jiff::{Span, Timestamp, Zoned};
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
-    // #[ignore]
     async fn all() -> DebugResult<()> {
         let from = "Acme <onboarding@resend.dev>";
         let to = ["delivered@resend.dev"];
@@ -616,7 +710,6 @@ mod test {
     }
 
     #[test]
-    // #[ignore]
     #[cfg(feature = "blocking")]
     fn all_blocking() -> DebugResult<()> {
         let from = "Acme <onboarding@resend.dev>";
@@ -637,7 +730,6 @@ mod test {
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
-    // #[ignore]
     async fn schedule_email() -> DebugResult<()> {
         let now_plus_1h = Zoned::now()
             .checked_add(Span::new().hours(1))
@@ -706,6 +798,26 @@ mod test {
         // Get again, make sure it was cancelled
         let email = resend.emails.get(&email.id).await?;
         assert_eq!(email.last_event, "canceled".to_string());
+
+        Ok(())
+    }
+
+    #[tokio_shared_rt::test(shared = true)]
+    #[cfg(not(feature = "blocking"))]
+    async fn list_emails() -> DebugResult<()> {
+        let resend = &*CLIENT;
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
+        let list_opts = ListEmailOptions::default()
+            .with_limit(3)
+            .list_before("71f170f3-826e-47e3-9128-a5958e3b375e");
+
+        let list = resend.emails.list(list_opts).await?;
+
+        // There now should be more
+        assert!(list.has_more);
+        // There should be 3 emails due to the limit we set
+        assert!(list.data.len() == 3);
 
         Ok(())
     }
