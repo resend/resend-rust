@@ -440,6 +440,7 @@ mod test {
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
+    #[ignore = "Flaky backend"]
     async fn all() -> DebugResult<()> {
         use crate::domains::types::DeleteDomainResponse;
 
@@ -466,6 +467,7 @@ mod test {
             .with_click_tracking(true)
             .with_tls(Tls::Enforced);
 
+        std::thread::sleep(std::time::Duration::from_secs(4));
         let domain = resend.domains.update(&domain.id, updates).await?;
         std::thread::sleep(std::time::Duration::from_secs(4));
 
