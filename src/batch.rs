@@ -51,7 +51,7 @@ impl BatchSvc {
 
         let mut request = self.0.build(Method::POST, "/emails/batch");
 
-        request = request.header("x-resend-batch-validation", batch_validation.to_string());
+        request = request.header("x-batch-validation", batch_validation.to_string());
 
         let response = self.0.send(request.json(&emails)).await?;
         let content = response.json::<SendEmailBatchPermissiveResponse>().await?;

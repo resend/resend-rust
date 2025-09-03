@@ -8,7 +8,13 @@ and this project adheres to
 
 <!-- ## [Unreleased] -->
 
-## [0.17.0] (Not published yet)
+## [0.17.1] - 2025-09-03
+
+### Fixed
+
+- The resend backend renamed the header used by the `batch::send_with_batch_validation` method
+
+## [0.17.0] - 2025-09-02
 
 ### Added
 
@@ -17,14 +23,14 @@ and this project adheres to
   (and `SendEmailBatchResponse`).
 - New endpoint: `emails::list`
 
-## [0.16.1]
+## [0.16.1] - 2025-08-08
 
 ### Added
 
 - `Attachment::with_content_id`, will replace `Attachment::with_inline_content_id` in the next
   major release.
 
-## [0.16.0]
+## [0.16.0] - 2025-08-08
 
 ### Added
 
@@ -331,7 +337,8 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
-[0.17.0]: https://crates.io/crates/resend-rs/0.16.2
+[0.17.0]: https://crates.io/crates/resend-rs/0.17.1
+[0.17.0]: https://crates.io/crates/resend-rs/0.17.0
 [0.16.1]: https://crates.io/crates/resend-rs/0.16.1
 [0.16.0]: https://crates.io/crates/resend-rs/0.16.0
 [0.15.0]: https://crates.io/crates/resend-rs/0.15.0
