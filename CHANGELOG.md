@@ -337,7 +337,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
-[0.17.0]: https://crates.io/crates/resend-rs/0.17.1
+[0.17.1]: https://crates.io/crates/resend-rs/0.17.1
 [0.17.0]: https://crates.io/crates/resend-rs/0.17.0
 [0.16.1]: https://crates.io/crates/resend-rs/0.16.1
 [0.16.0]: https://crates.io/crates/resend-rs/0.16.0
