@@ -3,8 +3,11 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
-use crate::types::{Contact, ContactChanges, ContactData, ContactId};
-use crate::{Config, Result};
+use crate::{Config, Result, list_opts::ListOptions};
+use crate::{
+    list_opts::ListResponse,
+    types::{Contact, ContactChanges, ContactData, ContactId},
+};
 
 use self::types::UpdateContactResponse;
 
@@ -128,18 +131,25 @@ impl ContactsSvc {
         self.delete_by_email(audience_id, contact_id.as_ref()).await
     }
 
-    /// Retrieves all contacts from an audience.
+    /// Retrieves a list contacts from an audience.
+    ///
+    /// - Default limit: no limit (return everything)
     ///
     /// <https://resend.com/docs/api-reference/contacts/list-contacts>
     #[maybe_async::maybe_async]
-    pub async fn list(&self, audience: &str) -> Result<Vec<Contact>> {
+    #[allow(clippy::needless_pass_by_value)]
+    pub async fn list<T>(
+        &self,
+        audience: &str,
+        list_opts: ListOptions<T>,
+    ) -> Result<ListResponse<Contact>> {
         let path = format!("/audiences/{audience}/contacts");
 
-        let request = self.0.build(Method::GET, &path);
+        let request = self.0.build(Method::GET, &path).query(&list_opts);
         let response = self.0.send(request).await?;
-        let content = response.json::<types::ListContactResponse>().await?;
+        let content = response.json::<ListResponse<Contact>>().await?;
 
-        Ok(content.data)
+        Ok(content)
     }
 }
 
@@ -248,13 +258,6 @@ pub mod types {
         pub id: ContactId,
     }
 
-    #[must_use]
-    #[derive(Debug, Clone, Deserialize)]
-    pub struct ListContactResponse {
-        /// Array containing contact information.
-        pub data: Vec<Contact>,
-    }
-
     /// Details of an existing contact.
     #[must_use]
     #[derive(Debug, Clone, Deserialize)]
@@ -336,6 +339,7 @@ pub mod types {
 #[cfg(test)]
 #[allow(clippy::needless_return)]
 mod test {
+    use crate::list_opts::ListOptions;
     use crate::test::DebugResult;
     use crate::tests::CLIENT;
     use crate::types::{ContactChanges, ContactData};
@@ -379,7 +383,10 @@ mod test {
         assert!(contact.unsubscribed);
 
         // List.
-        let contacts = resend.contacts.list(&audience_id).await?;
+        let contacts = resend
+            .contacts
+            .list(&audience_id, ListOptions::default())
+            .await?;
         assert_eq!(contacts.len(), 1);
 
         // Delete.
@@ -393,7 +400,10 @@ mod test {
         std::thread::sleep(std::time::Duration::from_secs(1));
 
         // List.
-        let contacts = resend.contacts.list(&audience_id).await?;
+        let contacts = resend
+            .contacts
+            .list(&audience_id, ListOptions::default())
+            .await?;
         assert!(contacts.is_empty());
 
         Ok(())

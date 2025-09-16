@@ -4,8 +4,11 @@ use std::sync::Arc;
 use reqwest::Method;
 use types::DeleteDomainResponse;
 
-use crate::types::{CreateDomainOptions, Domain, DomainChanges};
 use crate::{Config, Result};
+use crate::{
+    list_opts::{ListOptions, ListResponse},
+    types::{CreateDomainOptions, Domain, DomainChanges},
+};
 
 use self::types::UpdateDomainResponse;
 
@@ -76,14 +79,17 @@ impl DomainsSvc {
 
     /// Retrieves a list of domains for the authenticated user.
     ///
+    /// - Default limit: no limit (return everything)
+    ///
     /// <https://resend.com/docs/api-reference/domains/list-domains>
     #[maybe_async::maybe_async]
-    pub async fn list(&self) -> Result<Vec<Domain>> {
-        let request = self.0.build(Method::GET, "/domains");
+    #[allow(clippy::needless_pass_by_value)]
+    pub async fn list<T>(&self, list_opts: ListOptions<T>) -> Result<ListResponse<Domain>> {
+        let request = self.0.build(Method::GET, "/domains").query(&list_opts);
         let response = self.0.send(request).await?;
-        let content = response.json::<types::ListDomainResponse>().await?;
+        let content = response.json::<ListResponse<Domain>>().await?;
 
-        Ok(content.data)
+        Ok(content)
     }
 
     /// Removes an existing domain.
@@ -393,12 +399,6 @@ pub mod types {
         pub id: DomainId,
     }
 
-    #[must_use]
-    #[derive(Debug, Clone, Deserialize)]
-    pub struct ListDomainResponse {
-        pub data: Vec<Domain>,
-    }
-
     #[derive(Debug, Clone, Deserialize)]
     pub struct DeleteDomainResponse {
         /// The ID of the domain.
@@ -411,6 +411,8 @@ pub mod types {
 #[cfg(test)]
 #[allow(clippy::needless_return)]
 mod test {
+    use crate::domains::types::DeleteDomainResponse;
+    use crate::list_opts::ListOptions;
     use crate::{
         domains::types::{CreateDomainOptions, DomainChanges, Tls},
         test::DebugResult,
@@ -442,8 +444,6 @@ mod test {
     #[cfg(not(feature = "blocking"))]
     #[ignore = "Flaky backend"]
     async fn all() -> DebugResult<()> {
-        use crate::domains::types::DeleteDomainResponse;
-
         let resend = &*CLIENT;
 
         // Create
@@ -455,7 +455,7 @@ mod test {
         std::thread::sleep(std::time::Duration::from_secs(4));
 
         // List.
-        let list = resend.domains.list().await?;
+        let list = resend.domains.list(ListOptions::default()).await?;
         assert!(list.len() == 1);
 
         // Get
@@ -478,7 +478,7 @@ mod test {
         assert!(resp.deleted);
 
         // List.
-        let list = resend.domains.list().await?;
+        let list = resend.domains.list(ListOptions::default()).await?;
         assert!(list.is_empty());
 
         Ok(())

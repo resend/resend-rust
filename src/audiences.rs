@@ -3,8 +3,8 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
-use crate::types::Audience;
-use crate::{Config, Result};
+use crate::{Config, Result, list_opts::ListOptions};
+use crate::{list_opts::ListResponse, types::Audience};
 
 use self::types::CreateAudienceResponse;
 
@@ -62,14 +62,17 @@ impl AudiencesSvc {
 
     /// Retrieves a list of audiences.
     ///
+    /// - Default limit: no limit (return everything)
+    ///
     /// <https://resend.com/docs/api-reference/audiences/list-audiences>
     #[maybe_async::maybe_async]
-    pub async fn list(&self) -> Result<Vec<Audience>> {
-        let request = self.0.build(Method::GET, "/audiences");
+    #[allow(clippy::needless_pass_by_value)]
+    pub async fn list<T>(&self, list_opts: ListOptions<T>) -> Result<ListResponse<Audience>> {
+        let request = self.0.build(Method::GET, "/audiences").query(&list_opts);
         let response = self.0.send(request).await?;
-        let content = response.json::<types::ListAudienceResponse>().await?;
+        let content = response.json::<ListResponse<Audience>>().await?;
 
-        Ok(content.data)
+        Ok(content)
     }
 }
 
@@ -158,18 +161,12 @@ pub mod types {
         /// The deleted attribute indicates that the corresponding audience has been deleted.
         pub deleted: bool,
     }
-
-    #[must_use]
-    #[derive(Debug, Clone, Deserialize)]
-    pub struct ListAudienceResponse {
-        /// Array containing audience information.
-        pub data: Vec<Audience>,
-    }
 }
 
 #[cfg(test)]
 #[allow(clippy::needless_return)]
 mod test {
+    use crate::list_opts::ListOptions;
     use crate::test::DebugResult;
     use crate::tests::CLIENT;
 
@@ -189,7 +186,7 @@ mod test {
         assert_eq!(data.name.as_str(), audience);
 
         // List.
-        let audiences = resend.audiences.list().await?;
+        let audiences = resend.audiences.list(ListOptions::default()).await?;
         let audiences_before = audiences.len();
         assert!(audiences_before > 1);
 

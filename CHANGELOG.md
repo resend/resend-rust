@@ -6,7 +6,39 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-<!-- ## [Unreleased] -->
+## [Unreleased]
+
+This is unfortunately going to break all `endpoint::list` calls due to backend changes. The good
+news is that you can get more or less the old behavior by adding:
+
+```diff
++use resend_rs::list_opts::ListOptions;
+
+let _emails = resend
+  .emails
+  .list(
++    ListOptions::default()
+  ).await?;
+```
+
+### Changed
+
+- Generalized `types::ListEmailOpts` to `list_opts::ListOpts` so it can be used in other endpoints
+- Generalized `types::ListEmailResponse` to `list_opts::ListResponse`, same as above^
+- The following endpoints now take a `ListOptions` argument and return `ListResponse<T>`
+  - `api_keys::list`
+  - `audiences::list`
+  - `broadcasts::list`
+  - `contacts::list`
+  - `domains::list`
+
+### Removed
+
+- `ListApiKeyResponse`
+- `ListAudienceResponse`
+- `ListBroadcastResponse`
+- `ListContactResponse`
+- `ListDomainResponse`
 
 ## [0.17.1] - 2025-09-03
 

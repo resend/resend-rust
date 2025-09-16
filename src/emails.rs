@@ -5,7 +5,7 @@ use serde::{Deserialize, Deserializer};
 
 use crate::{
     Config, Result,
-    types::{ListEmailOptions, ListEmailResponse},
+    list_opts::{ListOptions, ListResponse},
 };
 use crate::{
     idempotent::Idempotent,
@@ -94,14 +94,16 @@ impl EmailsSvc {
 
     /// Retrieve a list of emails.
     ///
+    /// - Default limit: 20
+    ///
     /// <https://resend.com/docs/api-reference/emails/list-emails>
     #[maybe_async::maybe_async]
     // Reasoning for allow: https://github.com/resend/resend-rust/pull/1#issuecomment-2081646115
     #[allow(clippy::needless_pass_by_value)]
-    pub async fn list<T>(&self, list_opts: ListEmailOptions<T>) -> Result<ListEmailResponse> {
+    pub async fn list<T>(&self, list_opts: ListOptions<T>) -> Result<ListResponse<Email>> {
         let request = self.0.build(Method::GET, "/emails").query(&list_opts);
         let response = self.0.send(request).await?;
-        let content = response.json::<ListEmailResponse>().await?;
+        let content = response.json::<ListResponse<Email>>().await?;
 
         Ok(content)
     }
@@ -531,88 +533,6 @@ pub mod types {
         #[serde(skip_serializing_if = "Option::is_none")]
         pub scheduled_at: Option<String>,
     }
-
-    #[derive(Debug, Clone, Copy)]
-    pub struct ListBefore {}
-
-    #[derive(Debug, Clone, Copy)]
-    pub struct ListAfter {}
-
-    #[derive(Debug, Clone, Copy)]
-    pub struct TimeNotSpecified {}
-
-    /// Query parameters for retrieving a list of [`Email`]s.
-    ///
-    /// Note that [`ListEmailOptions::default()`] applies no filters.
-    ///
-    /// ## Example
-    ///
-    /// ```
-    /// # use resend_rs::types::ListEmailOptions;
-    /// let list_opts = ListEmailOptions::default()
-    ///   .with_limit(3)
-    ///   .list_before("71f170f3-826e-47e3-9128-a5958e3b375e");
-    /// ```
-    #[must_use]
-    #[derive(Debug, Clone, Serialize)]
-    pub struct ListEmailOptions<List = TimeNotSpecified> {
-        #[serde(skip)]
-        list: std::marker::PhantomData<List>,
-        /// Number of emails to retrieve. Default is 20, maximum is 100.
-        #[serde(skip_serializing_if = "Option::is_none")]
-        limit: Option<u8>,
-        #[serde(rename = "before")]
-        before_id: Option<String>,
-        #[serde(rename = "after")]
-        after_id: Option<String>,
-    }
-
-    impl Default for ListEmailOptions {
-        fn default() -> Self {
-            Self {
-                list: std::marker::PhantomData::<TimeNotSpecified>,
-                limit: None,
-                before_id: None,
-                after_id: None,
-            }
-        }
-    }
-
-    impl<T> ListEmailOptions<T> {
-        #[inline]
-        pub const fn with_limit(mut self, limit: u8) -> Self {
-            self.limit = Some(limit);
-            self
-        }
-    }
-
-    impl ListEmailOptions<TimeNotSpecified> {
-        #[inline]
-        pub fn list_before(self, email_id: &str) -> ListEmailOptions<ListBefore> {
-            ListEmailOptions::<ListBefore> {
-                list: std::marker::PhantomData,
-                limit: self.limit,
-                before_id: Some(email_id.to_string()),
-                after_id: None,
-            }
-        }
-
-        #[inline]
-        pub fn list_after(self, email_id: &str) -> ListEmailOptions<ListAfter> {
-            ListEmailOptions::<ListAfter> {
-                list: std::marker::PhantomData,
-                limit: self.limit,
-                before_id: None,
-                after_id: Some(email_id.to_string()),
-            }
-        }
-    }
-
-    #[derive(Debug, Clone, Deserialize)]
-    pub struct ListEmailResponse {
-        pub has_more: bool,
-        pub data: Vec<Email>,
-    }
 }
 
 /// Turns:
@@ -630,8 +550,8 @@ where
 #[allow(clippy::unwrap_used)]
 #[allow(clippy::needless_return)]
 mod test {
-    use crate::types::{CreateEmailBaseOptions, Email, ListEmailOptions, Tag, UpdateEmailOptions};
-    use crate::{test::DebugResult, tests::CLIENT};
+    use crate::types::{CreateEmailBaseOptions, Email, Tag, UpdateEmailOptions};
+    use crate::{list_opts::ListOptions, test::DebugResult, tests::CLIENT};
     use jiff::{Span, Timestamp, Zoned};
 
     #[tokio_shared_rt::test(shared = true)]
@@ -812,7 +732,7 @@ mod test {
         let resend = &*CLIENT;
         std::thread::sleep(std::time::Duration::from_secs(1));
 
-        let list_opts = ListEmailOptions::default()
+        let list_opts = ListOptions::default()
             .with_limit(3)
             .list_before("71f170f3-826e-47e3-9128-a5958e3b375e");
 

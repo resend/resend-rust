@@ -41,15 +41,15 @@ impl Default for RetryOptions {
 /// use resend_rs::{
 ///  rate_limit::{send_with_retry, send_with_retry_opts, RetryOptions},
 ///  types::CreateEmailBaseOptions,
+///  Resend, Result, list_opts::ListOptions
 ///};
-///use resend_rs::{Resend, Result};
 ///
 ///#[tokio::main]
 ///async fn main() -> Result<()> {
 ///  let resend = Resend::default();
 ///
 ///  let retry_opts = RetryOptions::default();
-///  let response = send_with_retry_opts(|| resend.api_keys.list(), &retry_opts).await;
+///  let response = send_with_retry_opts(|| resend.api_keys.list(ListOptions::default()), &retry_opts).await;
 ///  assert!(response.is_ok());
 ///
 ///  Ok(())
@@ -157,14 +157,14 @@ pub async fn send_with_retry<A: Future<Output = Result<B>> + Send, B: Send>(
 /// use resend_rs::{
 ///   rate_limit::{send_with_retry_opts, RetryOptions},
 ///   retry,
+///   Resend, Result, list_opts::ListOptions
 /// };
-/// use resend_rs::{Resend, Result};
 ///
 /// #[tokio::main]
 /// async fn main() -> Result<()> {
 ///   let resend = Resend::default();
 ///
-///   let response = retry!(resend.api_keys.list());
+///   let response = retry!(resend.api_keys.list(ListOptions::default()));
 ///   assert!(response.is_ok());
 ///
 ///   Ok(())
@@ -186,15 +186,15 @@ macro_rules! retry {
 /// use resend_rs::{
 ///   rate_limit::{send_with_retry_opts, RetryOptions},
 ///   retry_opts,
+///   Resend, Result, list_opts::ListOptions
 /// };
-/// use resend_rs::{Resend, Result};
 ///
 /// #[tokio::main]
 /// async fn main() -> Result<()> {
 ///   let resend = Resend::default();
 ///
 ///   let retry_opts = RetryOptions::default();
-///   let response = retry_opts!(resend.api_keys.list(), retry_opts);
+///   let response = retry_opts!(resend.api_keys.list(ListOptions::default()), retry_opts);
 ///   assert!(response.is_ok());
 ///
 ///   Ok(())

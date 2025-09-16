@@ -65,6 +65,7 @@ mod emails;
 mod error;
 pub mod events;
 pub mod idempotent;
+pub mod list_opts;
 pub mod rate_limit;
 
 pub mod services {
@@ -103,8 +104,7 @@ pub mod types {
     };
     pub use super::emails::types::{
         Attachment, CancelScheduleResponse, ContentOrPath, CreateEmailBaseOptions,
-        CreateEmailResponse, Email, EmailId, ListEmailOptions, ListEmailResponse, Tag,
-        UpdateEmailOptions, UpdateEmailResponse,
+        CreateEmailResponse, Email, EmailId, Tag, UpdateEmailOptions, UpdateEmailResponse,
     };
     pub use super::error::types::{ErrorKind, ErrorResponse};
 }

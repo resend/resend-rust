@@ -3,8 +3,11 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
-use crate::types::{ApiKey, ApiKeyToken, CreateApiKeyOptions};
 use crate::{Config, Result};
+use crate::{
+    list_opts::{ListOptions, ListResponse},
+    types::{ApiKey, ApiKeyToken, CreateApiKeyOptions},
+};
 
 /// `Resend` APIs for `/api-keys` endpoints.
 #[derive(Clone)]
@@ -27,14 +30,17 @@ impl ApiKeysSvc {
 
     /// Retrieve a list of API keys for the authenticated user.
     ///
+    /// - Default limit: no limit (return everything)
+    ///
     /// <https://resend.com/docs/api-reference/api-keys/list-api-keys>
     #[maybe_async::maybe_async]
-    pub async fn list(&self) -> Result<Vec<ApiKey>> {
-        let request = self.0.build(Method::GET, "/api-keys");
+    #[allow(clippy::needless_pass_by_value)]
+    pub async fn list<T>(&self, list_opts: ListOptions<T>) -> Result<ListResponse<ApiKey>> {
+        let request = self.0.build(Method::GET, "/api-keys").query(&list_opts);
         let response = self.0.send(request).await?;
-        let content = response.json::<types::ListApiKeyResponse>().await?;
+        let content = response.json::<ListResponse<ApiKey>>().await?;
 
-        Ok(content.data)
+        Ok(content)
     }
 
     /// Remove an existing API key.
@@ -179,13 +185,6 @@ pub mod types {
         pub token: String,
     }
 
-    #[must_use]
-    #[derive(Debug, Clone, Deserialize)]
-    pub struct ListApiKeyResponse {
-        /// Array containing api key information.
-        pub data: Vec<ApiKey>,
-    }
-
     /// Name and ID of an existing API key.
     #[must_use]
     #[derive(Debug, Clone, Deserialize)]
@@ -202,6 +201,7 @@ pub mod types {
 #[cfg(test)]
 #[allow(clippy::needless_return)]
 mod test {
+    use crate::list_opts::ListOptions;
     use crate::test::DebugResult;
     use crate::tests::CLIENT;
     use crate::types::CreateApiKeyOptions;
@@ -219,14 +219,14 @@ mod test {
         let id = response.id;
 
         // List.
-        let api_keys = resend.api_keys.list().await?;
+        let api_keys = resend.api_keys.list(ListOptions::default()).await?;
         let api_keys_amt = api_keys.len();
 
         // Delete.
         resend.api_keys.delete(&id).await?;
 
         // List.
-        let api_keys = resend.api_keys.list().await?;
+        let api_keys = resend.api_keys.list(ListOptions::default()).await?;
         assert!(api_keys_amt == api_keys.len() + 1);
 
         Ok(())

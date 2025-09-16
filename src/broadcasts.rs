@@ -3,11 +3,14 @@ use std::sync::Arc;
 use reqwest::Method;
 use types::{UpdateBroadcastOptions, UpdateBroadcastResponse};
 
-use crate::types::{
-    Broadcast, CreateBroadcastOptions, CreateBroadcastResponse, RemoveBroadcastResponse,
-    SendBroadcastOptions, SendBroadcastResponse,
+use crate::{Config, Result, list_opts::ListResponse};
+use crate::{
+    list_opts::ListOptions,
+    types::{
+        Broadcast, CreateBroadcastOptions, CreateBroadcastResponse, RemoveBroadcastResponse,
+        SendBroadcastOptions, SendBroadcastResponse,
+    },
 };
-use crate::{Config, Result};
 
 /// `Resend` APIs for `/broadcasts` endpoints.
 #[derive(Clone, Debug)]
@@ -46,14 +49,18 @@ impl BroadcastsSvc {
     }
 
     /// Retrieve a list of broadcasts.
+    ///
+    /// - Default limit: no limit (return everything)
+    ///
+    /// <https://resend.com/docs/api-reference/broadcasts/list-broadcasts>
     #[maybe_async::maybe_async]
     #[allow(clippy::needless_pass_by_value)]
-    pub async fn list(&self) -> Result<Vec<Broadcast>> {
-        let request = self.0.build(Method::GET, "/broadcasts");
+    pub async fn list<T>(&self, list_opts: ListOptions<T>) -> Result<ListResponse<Broadcast>> {
+        let request = self.0.build(Method::GET, "/broadcasts").query(&list_opts);
         let response = self.0.send(request).await?;
-        let content = response.json::<types::ListBroadcastResponse>().await?;
+        let content = response.json::<ListResponse<Broadcast>>().await?;
 
-        Ok(content.data)
+        Ok(content)
     }
 
     /// Retrieve a single broadcast.
@@ -355,12 +362,6 @@ pub mod types {
         pub preview_text: Option<String>,
     }
 
-    #[must_use]
-    #[derive(Debug, Clone, Deserialize)]
-    pub struct ListBroadcastResponse {
-        pub data: Vec<Broadcast>,
-    }
-
     #[derive(Debug, Clone, Deserialize)]
     pub struct RemoveBroadcastResponse {
         /// The ID of the broadcast.
@@ -374,6 +375,7 @@ pub mod types {
 #[cfg(test)]
 #[allow(clippy::needless_return, clippy::indexing_slicing)]
 mod test {
+    use crate::list_opts::ListOptions;
     use crate::{
         test::DebugResult,
         tests::CLIENT,
@@ -433,8 +435,8 @@ mod test {
         let resend = &*CLIENT;
         std::thread::sleep(std::time::Duration::from_secs(1));
 
-        let broadcasts = resend.broadcasts.list().await?;
-        assert!(!broadcasts.is_empty(), "No broadcasts found");
+        let broadcasts = resend.broadcasts.list(ListOptions::default()).await?;
+        assert!(!broadcasts.data.is_empty(), "No broadcasts found");
         let broadcast = broadcasts[0].clone();
 
         let _res = resend.broadcasts.get(&broadcast.id.clone()).await?;
