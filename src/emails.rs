@@ -526,12 +526,44 @@ pub mod types {
         /// The email addresses to which replies should be sent.
         pub reply_to: Option<Vec<String>>,
         /// The status of the email.
-        pub last_event: String,
+        pub last_event: EmailEvent,
 
         /// Schedule email to be sent later. The date should be in ISO 8601 format
         /// (e.g: `2024-08-05T11:52:01.858Z`).
         #[serde(skip_serializing_if = "Option::is_none")]
         pub scheduled_at: Option<String>,
+    }
+
+    /// Strongly typed `last_event`.
+    ///
+    /// <https://resend.com/docs/dashboard/emails/introduction#understand-email-events>
+    #[derive(Debug, Clone, Copy, Deserialize, Eq, PartialEq)]
+    #[serde(rename_all = "snake_case")]
+    pub enum EmailEvent {
+        /// The recipient's mail server rejected the email.
+        ///
+        /// <https://resend.com/docs/dashboard/emails/email-bounces>
+        Bounced,
+        /// The scheduled email was canceled (by user).
+        Canceled,
+        /// The recipient clicked on a link in the email.
+        Clicked,
+        /// The email was successfully delivered to the recipient’s mail server, but the recipient marked it as spam.
+        Complained,
+        /// Resend successfully delivered the email to the recipient’s mail server.
+        Delivered,
+        /// The email couldn’t be delivered to the recipient’s mail server because a temporary issue occurred. Delivery delays can occur, for example, when the recipient’s inbox is full, or when the receiving email server experiences a transient issue.
+        DeliveryDelayed,
+        /// The email failed to be sent.
+        Failed,
+        /// The recipient opened the email.
+        Opened,
+        /// The email created from Broadcasts or Batches is queued for delivery.
+        Queued,
+        /// The email is scheduled for delivery.
+        Scheduled,
+        /// The email was sent successfully.
+        Sent,
     }
 }
 
@@ -594,7 +626,7 @@ mod test {
             "bcc": null,
             "cc": null,
             "reply_to": null,
-            "last_event": "delivered",
+            "last_event": "delivery_delayed",
             "html": "<div></div>",
             "text": null,
             "scheduled_at": null
@@ -655,6 +687,8 @@ mod test {
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
     async fn schedule_email() -> DebugResult<()> {
+        use crate::emails::types::EmailEvent;
+
         let now_plus_1h = Zoned::now()
             .checked_add(Span::new().hours(1))
             .expect("Valid date")
@@ -682,7 +716,7 @@ mod test {
 
         // Get
         let email = resend.emails.get(&email.id).await?;
-        assert_eq!(email.last_event, "scheduled".to_string());
+        assert_eq!(email.last_event, EmailEvent::Scheduled);
         assert!(email.scheduled_at.is_some());
         let time = email
             .scheduled_at
@@ -702,7 +736,7 @@ mod test {
 
         // Get
         let email = resend.emails.get(&email.id).await?;
-        assert_eq!(email.last_event, "scheduled".to_string());
+        assert_eq!(email.last_event, EmailEvent::Scheduled);
         assert!(email.scheduled_at.is_some());
         let time = email
             .scheduled_at
@@ -721,7 +755,7 @@ mod test {
 
         // Get again, make sure it was cancelled
         let email = resend.emails.get(&email.id).await?;
-        assert_eq!(email.last_event, "canceled".to_string());
+        assert_eq!(email.last_event, EmailEvent::Canceled);
 
         Ok(())
     }

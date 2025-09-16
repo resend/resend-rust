@@ -119,7 +119,7 @@ pub mod types {
 
 #[cfg(test)]
 mod test {
-    use crate::types::{BatchValidation, CreateEmailBaseOptions};
+    use crate::types::{BatchValidation, CreateEmailBaseOptions, EmailEvent};
     use crate::{test::DebugResult, tests::CLIENT};
 
     #[tokio_shared_rt::test(shared = true)]
@@ -191,7 +191,7 @@ mod test {
         std::thread::sleep(std::time::Duration::from_secs(2));
         let failed_id = &emails.data[1].id;
         let status = resend.emails.get(failed_id).await?;
-        assert_eq!(status.last_event, "failed");
+        assert_eq!(status.last_event, EmailEvent::Failed);
 
         Ok(())
     }

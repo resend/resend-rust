@@ -23,6 +23,7 @@ let _emails = resend
 
 ### Changed
 
+- `Email.last_event` is now a strongly typed `EmailEvent` enum instead of a string.
 - Generalized `types::ListEmailOpts` to `list_opts::ListOpts` so it can be used in other endpoints
 - Generalized `types::ListEmailResponse` to `list_opts::ListResponse`, same as above^
 - The following endpoints now take a `ListOptions` argument and return `ListResponse<T>`
