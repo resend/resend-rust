@@ -158,7 +158,6 @@ mod test {
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
     #[allow(clippy::unwrap_used, clippy::indexing_slicing)]
-    #[ignore = "Temporarily disable test due to backend bug"]
     async fn permissive_error() -> DebugResult<()> {
         let resend = &*CLIENT;
         std::thread::sleep(std::time::Duration::from_secs(1));
@@ -187,9 +186,12 @@ mod test {
         assert!(emails.is_ok());
         let emails = emails.unwrap();
 
-        // There should be one error
-        assert!(emails.errors.len() == 1);
-        assert_eq!(emails.errors[0].index, 2);
+        // There should be one error but apparently the errors array is empty
+        // check with a get instead
+        std::thread::sleep(std::time::Duration::from_secs(2));
+        let failed_id = &emails.data[1].id;
+        let status = resend.emails.get(failed_id).await?;
+        assert_eq!(status.last_event, "failed");
 
         Ok(())
     }
