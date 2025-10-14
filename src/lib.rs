@@ -67,6 +67,7 @@ pub mod events;
 pub mod idempotent;
 pub mod list_opts;
 pub mod rate_limit;
+mod templates;
 
 pub mod services {
     //! `Resend` API services.
@@ -78,6 +79,7 @@ pub mod services {
     pub use super::contacts::ContactsSvc;
     pub use super::domains::DomainsSvc;
     pub use super::emails::EmailsSvc;
+    pub use super::templates::TemplateSvc;
 }
 
 pub mod types {
@@ -108,6 +110,11 @@ pub mod types {
         UpdateEmailResponse,
     };
     pub use super::error::types::{ErrorKind, ErrorResponse};
+    pub use super::templates::types::{
+        CreateTemplateOptions, CreateTemplateResponse, DeleteTemplateResponse,
+        DuplicateTemplateResponse, PublishTemplateResponse, Template, TemplateEvent,
+        UpdateTemplateOptions, UpdateTemplateResponse, Variable, VariableType,
+    };
 }
 
 /// Error type for operations of a [`Resend`] client.

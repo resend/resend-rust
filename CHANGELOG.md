@@ -17,6 +17,7 @@ resend-rs = "0.19.0-beta"
 ### Added
 
 - optional `text`, `html` fields in `Broadcast`.
+- 7 new [Templates](https://resend.com/docs/api-reference/templates/) endpoints
 
 ## [0.18.0] - 2025-09-16
 
