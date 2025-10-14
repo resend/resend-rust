@@ -360,6 +360,8 @@ pub mod types {
         pub subject: Option<String>,
         pub reply_to: Option<Vec<String>>,
         pub preview_text: Option<String>,
+        pub text: Option<String>,
+        pub html: Option<String>,
     }
 
     #[derive(Debug, Clone, Deserialize)]
