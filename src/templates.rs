@@ -612,5 +612,27 @@ mod test {
 
         let res = res.unwrap();
         assert!(!res.variables.is_empty());
+
+        let template = r#"{
+  "object": "template",
+  "id": "34a080c9-b17d-4187-ad80-5af20266e535",
+  "alias": "reset-password",
+  "name": "reset-password",
+  "created_at": "2023-10-06T23:47:56.678Z",
+  "updated_at": "2023-10-06T23:47:56.678Z",
+  "status": "published",
+  "published_at": "2023-10-06T23:47:56.678Z",
+  "from": "John Doe <john.doe@example.com>",
+  "subject": "Hello, world!",
+  "reply_to": null,
+  "html": "<h1>Hello, world!</h1>",
+  "text": "Hello, world!"
+}"#;
+
+        let res = serde_json::from_str::<Template>(template);
+        assert!(res.is_ok());
+
+        let res = res.unwrap();
+        assert!(res.variables.is_empty());
     }
 }
