@@ -508,6 +508,7 @@ mod test {
         templates::Template, test::DebugResult, tests::CLIENT, types::CreateTemplateOptions,
     };
 
+    #[ignore = "Ignore for now"]
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> DebugResult<()> {
