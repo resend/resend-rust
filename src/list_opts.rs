@@ -69,23 +69,23 @@ impl<T> ListOptions<T> {
 impl ListOptions<TimeNotSpecified> {
     /// The id before which we'll retrieve the items. This id will *not* be included in the list.
     #[inline]
-    pub fn list_before(self, email_id: &str) -> ListOptions<ListBefore> {
+    pub fn list_before(self, id: &str) -> ListOptions<ListBefore> {
         ListOptions::<ListBefore> {
             list: std::marker::PhantomData,
             limit: self.limit,
-            before_id: Some(email_id.to_string()),
+            before_id: Some(id.to_string()),
             after_id: None,
         }
     }
 
     /// The id after which we'll retrieve the items. This id will *not* be included in the list.
     #[inline]
-    pub fn list_after(self, email_id: &str) -> ListOptions<ListAfter> {
+    pub fn list_after(self, id: &str) -> ListOptions<ListAfter> {
         ListOptions::<ListAfter> {
             list: std::marker::PhantomData,
             limit: self.limit,
             before_id: None,
-            after_id: Some(email_id.to_string()),
+            after_id: Some(id.to_string()),
         }
     }
 }
