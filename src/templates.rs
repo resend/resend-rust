@@ -359,9 +359,10 @@ pub mod types {
         pub from: Option<String>,
         pub subject: Option<String>,
         pub reply_to: Option<Vec<String>>,
-        pub html: String,
+        pub html: Option<String>,
         pub text: Option<String>,
         #[serde(deserialize_with = "parse_nullable_vec")]
+        #[serde(default)]
         pub variables: Vec<Variable>,
     }
 
@@ -508,17 +509,18 @@ mod test {
         templates::Template, test::DebugResult, tests::CLIENT, types::CreateTemplateOptions,
     };
 
-    // TODO: Unremove before leaving beta
-    #[ignore = "Ignore for now"]
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> DebugResult<()> {
+        use crate::{list_opts::ListOptions, types::UpdateTemplateOptions};
+
         let resend = &*CLIENT;
 
         let name = "my template";
         let html = "<p>hello</p>";
         let alias = "alias";
 
+        // Create
         let template = CreateTemplateOptions::new(name, html).with_alias(alias);
 
         let template = resend.templates.create(template).await?;
@@ -530,11 +532,49 @@ mod test {
         let get_id = resend.templates.get(&id).await?;
         assert_eq!(get_alias, get_id);
 
-        // TODO: update
-        // TODO: publish
-        // TODO: duplicate
-        // TODO: delete
-        // TODO: list
+        // Update
+        let alias = "alias updated";
+        let template = resend.templates.get(alias).await;
+        assert!(template.is_err());
+
+        let update = UpdateTemplateOptions::new(name, html).with_alias(alias);
+        let _update = resend.templates.update("alias", update).await?;
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
+        // Get
+        let template = resend.templates.get(alias).await;
+        assert!(template.is_ok());
+
+        // Publish
+        let template = resend.templates.get(alias).await?;
+        assert!(template.published_at.is_none());
+
+        let template = resend.templates.publish(alias).await?;
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
+        let template = resend.templates.get(&template.id).await?;
+        assert!(template.published_at.is_some());
+
+        // List
+        let templates = resend.templates.list(ListOptions::default()).await?;
+        assert!(templates.len() == 1);
+
+        // Duplicate
+        let duplicate = resend.templates.duplicate(alias).await?;
+        assert!(duplicate.id != template.id);
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        let templates = resend.templates.list(ListOptions::default()).await?;
+        assert!(templates.len() == 2);
+
+        // Delete
+        let deleted = resend.templates.delete(alias).await?;
+        assert!(deleted.deleted);
+        let deleted = resend.templates.delete(&duplicate.id).await;
+        assert!(deleted.is_ok());
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
+        let deleted = resend.templates.delete(&duplicate.id).await;
+        assert!(deleted.is_err());
 
         Ok(())
     }
