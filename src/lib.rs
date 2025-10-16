@@ -68,6 +68,7 @@ pub mod idempotent;
 pub mod list_opts;
 pub mod rate_limit;
 mod templates;
+mod topics;
 
 pub mod services {
     //! `Resend` API services.
@@ -80,6 +81,7 @@ pub mod services {
     pub use super::domains::DomainsSvc;
     pub use super::emails::EmailsSvc;
     pub use super::templates::TemplateSvc;
+    pub use super::topics::TopicsSvc;
 }
 
 pub mod types {
@@ -98,7 +100,10 @@ pub mod types {
         RemoveBroadcastResponse, SendBroadcastOptions, SendBroadcastResponse,
         UpdateBroadcastOptions, UpdateBroadcastResponse,
     };
-    pub use super::contacts::types::{Contact, ContactChanges, ContactData, ContactId};
+    pub use super::contacts::types::{
+        Contact, ContactChanges, ContactData, ContactId, ContactTopicsResponse,
+        UpdateContactTopicOptions,
+    };
     pub use super::domains::types::{
         CreateDomainOptions, DkimRecordType, Domain, DomainChanges, DomainDkimRecord, DomainId,
         DomainRecord, DomainSpfRecord, DomainStatus, ProxyStatus, Region, SpfRecordType, Tls,
@@ -114,6 +119,10 @@ pub mod types {
         CreateTemplateOptions, CreateTemplateResponse, DeleteTemplateResponse,
         DuplicateTemplateResponse, PublishTemplateResponse, Template, TemplateEvent,
         UpdateTemplateOptions, UpdateTemplateResponse, Variable, VariableType,
+    };
+    pub use super::topics::types::{
+        CreateTopicOptions, CreateTopicResponse, DeleteTopicResponse, SubscriptionType, Topic,
+        UpdateTopicOptions, UpdateTopicResponse,
     };
 }
 

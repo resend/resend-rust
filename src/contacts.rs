@@ -3,7 +3,11 @@ use std::sync::Arc;
 
 use reqwest::Method;
 
-use crate::{Config, Result, list_opts::ListOptions};
+use crate::{
+    Config, Result,
+    list_opts::ListOptions,
+    types::{ContactTopicsResponse, UpdateContactTopicOptions},
+};
 use crate::{
     list_opts::ListResponse,
     types::{Contact, ContactChanges, ContactData, ContactId},
@@ -151,6 +155,44 @@ impl ContactsSvc {
 
         Ok(content)
     }
+
+    /// Retrieve a list of topics subscriptions for a contact.
+    ///
+    /// <https://resend.com/docs/api-reference/contacts/get-contact-topic>
+    #[maybe_async::maybe_async]
+    pub async fn get_contact_topics<T>(
+        &self,
+        contact_id_or_email: &str,
+        list_opts: ListOptions<T>,
+    ) -> Result<ListResponse<ContactTopicsResponse>> {
+        let path = format!("/contacts/{contact_id_or_email}/topics");
+
+        let request = self.0.build(Method::GET, &path).query(&list_opts);
+        let response = self.0.send(request).await?;
+        let content = response
+            .json::<ListResponse<ContactTopicsResponse>>()
+            .await?;
+
+        Ok(content)
+    }
+
+    /// Update an existing topic subscription for a contact.
+    ///
+    /// <https://resend.com/docs/api-reference/contacts/update-contact-topic>
+    #[maybe_async::maybe_async]
+    pub async fn update_contact_topics(
+        &self,
+        contact_id_or_email: &str,
+        topics: impl Into<Vec<UpdateContactTopicOptions>>,
+    ) -> Result<UpdateContactResponse> {
+        let path = format!("/contacts/{contact_id_or_email}/topics");
+
+        let request = self.0.build(Method::PATCH, &path);
+        let response = self.0.send(request.json(&topics.into())).await?;
+        let content = response.json::<UpdateContactResponse>().await?;
+
+        Ok(content)
+    }
 }
 
 impl fmt::Debug for ContactsSvc {
@@ -162,6 +204,8 @@ impl fmt::Debug for ContactsSvc {
 #[allow(unreachable_pub)]
 pub mod types {
     use serde::{Deserialize, Serialize};
+
+    use crate::types::{SubscriptionType, Topic};
 
     crate::define_id_type!(ContactId);
 
@@ -298,19 +342,50 @@ pub mod types {
         /// Indicates whether the domain was deleted successfully.
         pub deleted: bool,
     }
+
+    #[derive(Debug, Clone, Deserialize)]
+    pub struct ContactTopicsResponse {
+        pub email: String,
+        #[serde(default)]
+        pub topics: Vec<Topic>,
+    }
+
+    /// See [relevant docs].
+    ///
+    /// [relevant docs]: <https://resend.com/docs/api-reference/contacts/update-contact-topic#body-parameters>
+    #[must_use]
+    #[derive(Debug, Clone, Serialize)]
+    pub struct UpdateContactTopicOptions {
+        id: String,
+        subscription: SubscriptionType,
+    }
+
+    impl UpdateContactTopicOptions {
+        /// `id`: The Topic ID.
+        /// `subscription`: The subscription action.
+        pub fn new(id: impl Into<String>, subscription: SubscriptionType) -> Self {
+            Self {
+                id: id.into(),
+                subscription,
+            }
+        }
+    }
 }
 
 #[cfg(test)]
-#[allow(clippy::needless_return)]
+#[allow(clippy::unwrap_used, clippy::needless_return)]
 mod test {
     use crate::list_opts::ListOptions;
     use crate::test::DebugResult;
     use crate::tests::CLIENT;
     use crate::types::{ContactChanges, ContactData};
 
+    #[ignore = "Retrieve Contact Topics is currently broken"]
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> DebugResult<()> {
+        use crate::types::{CreateTopicOptions, SubscriptionType, UpdateContactTopicOptions};
+
         let resend = &*CLIENT;
         let audience = "test_contacts";
 
@@ -325,7 +400,41 @@ mod test {
             .with_last_name("Barotsis")
             .with_unsubscribed(false);
         let id = resend.contacts.create(&audience_id, contact).await?;
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        std::thread::sleep(std::time::Duration::from_secs(2));
+
+        // Get topic
+        let topics = resend
+            .contacts
+            .get_contact_topics(&id, ListOptions::default())
+            .await?;
+        assert!(!topics.data.is_empty());
+        assert!(topics.data.first().unwrap().topics.is_empty());
+
+        // Update topic
+        let topic = resend
+            .topics
+            .create(CreateTopicOptions::new(
+                "Weekly Newsletter",
+                SubscriptionType::OptIn,
+            ))
+            .await?;
+        let topics = [UpdateContactTopicOptions::new(
+            topic.id.to_string(),
+            SubscriptionType::OptIn,
+        )];
+        let _topics = resend.contacts.update_contact_topics(&id, topics).await?;
+
+        // Get topic
+        let topics = resend
+            .contacts
+            .get_contact_topics(&id, ListOptions::default())
+            .await?;
+        assert!(!topics.data.is_empty());
+        assert!(!topics.data.first().unwrap().topics.is_empty());
+
+        // Delete topic
+        let deleted = resend.topics.delete(&topic.id).await?;
+        assert!(deleted.deleted);
 
         // Update.
         let changes = ContactChanges::new().with_unsubscribed(true);

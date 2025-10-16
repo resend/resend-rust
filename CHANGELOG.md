@@ -18,6 +18,9 @@ resend-rs = "0.19.0-beta"
 
 - optional `text`, `html` fields in `Broadcast`.
 - 7 new [Templates](https://resend.com/docs/api-reference/templates/) endpoints
+- 5 new [Topics](https://resend.com/docs/api-reference/topics/) endpoints
+  - and 2 new contact-topic endpoints
+<!-- TODO: Remember to re-enable the topic test -->
 
 ## [0.18.0] - 2025-09-16
 
