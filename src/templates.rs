@@ -91,9 +91,9 @@ impl TemplateSvc {
         Ok(content)
     }
 
-    /// Duplicate a template.
+    /// Delete a template.
     ///
-    /// <https://resend.com/docs/api-reference/templates/duplicate-template>
+    /// <https://resend.com/docs/api-reference/templates/delete-template>
     #[maybe_async::maybe_async]
     pub async fn delete(&self, id_or_alias: &str) -> Result<DeleteTemplateResponse> {
         let path = format!("/templates/{id_or_alias}");
