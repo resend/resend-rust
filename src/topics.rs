@@ -161,15 +161,13 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Default, Clone, Serialize)]
     pub struct UpdateTopicOptions {
-        topic_id: String,
         name: Option<String>,
         description: Option<String>,
     }
 
     impl UpdateTopicOptions {
-        pub fn new(topic_id: impl Into<String>) -> Self {
+        pub const fn new() -> Self {
             Self {
-                topic_id: topic_id.into(),
                 name: None,
                 description: None,
             }
@@ -228,7 +226,7 @@ mod test {
         let topic = resend.topics.get(&topic.id).await?;
 
         // Update
-        let update = UpdateTopicOptions::new(topic.id.to_string())
+        let update = UpdateTopicOptions::new()
             .with_name("Weekly Newsletter")
             .with_description("Weekly newsletter for our subscribers");
         let topic = resend.topics.update(&topic.id, update).await?;
