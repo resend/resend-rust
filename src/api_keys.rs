@@ -66,47 +66,11 @@ impl fmt::Debug for ApiKeysSvc {
 
 #[allow(unreachable_pub)]
 pub mod types {
-    use std::{fmt, ops::Deref};
-
-    use ecow::EcoString;
     use serde::{Deserialize, Serialize};
 
     use crate::types::DomainId;
 
-    /// Unique [`ApiKey`] identifier.
-    #[derive(Debug, Clone, Deserialize)]
-    pub struct ApiKeyId(EcoString);
-
-    impl ApiKeyId {
-        /// Creates a new [`ApiKeyId`].
-        #[inline]
-        #[must_use]
-        pub fn new(id: &str) -> Self {
-            Self(EcoString::from(id))
-        }
-    }
-
-    impl Deref for ApiKeyId {
-        type Target = str;
-
-        #[inline]
-        fn deref(&self) -> &Self::Target {
-            self.as_ref()
-        }
-    }
-
-    impl AsRef<str> for ApiKeyId {
-        #[inline]
-        fn as_ref(&self) -> &str {
-            self.0.as_str()
-        }
-    }
-
-    impl fmt::Display for ApiKeyId {
-        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            fmt::Display::fmt(&self.0, f)
-        }
-    }
+    crate::define_id_type!(ApiKeyId);
 
     /// Name and permissions of the new [`ApiKey`].
     #[must_use]

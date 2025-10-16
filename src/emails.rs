@@ -111,48 +111,13 @@ impl EmailsSvc {
 
 #[allow(unreachable_pub)]
 pub mod types {
-    use std::fmt;
-    use std::{collections::HashMap, ops::Deref};
+    use std::collections::HashMap;
 
-    use ecow::EcoString;
     use serde::{Deserialize, Serialize};
 
     use crate::{emails::parse_nullable_vec, idempotent::Idempotent};
 
-    /// Unique [`Email`] identifier.
-    #[derive(Debug, Clone, Deserialize)]
-    pub struct EmailId(EcoString);
-
-    impl EmailId {
-        /// Creates a new [`EmailId`].
-        #[inline]
-        #[must_use]
-        pub fn new(id: &str) -> Self {
-            Self(EcoString::from(id))
-        }
-    }
-
-    impl Deref for EmailId {
-        type Target = str;
-
-        #[inline]
-        fn deref(&self) -> &Self::Target {
-            self.as_ref()
-        }
-    }
-
-    impl AsRef<str> for EmailId {
-        #[inline]
-        fn as_ref(&self) -> &str {
-            self.0.as_str()
-        }
-    }
-
-    impl fmt::Display for EmailId {
-        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            fmt::Display::fmt(&self.0, f)
-        }
-    }
+    crate::define_id_type!(EmailId);
 
     /// All requisite components and associated data to send an email.
     ///

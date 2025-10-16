@@ -118,9 +118,6 @@ impl fmt::Debug for DomainsSvc {
 
 #[allow(unreachable_pub)]
 pub mod types {
-    use std::{fmt, ops::Deref};
-
-    use ecow::EcoString;
     use serde::{Deserialize, Serialize};
 
     #[derive(Debug, Copy, Clone, Serialize)]
@@ -135,40 +132,7 @@ pub mod types {
         Opportunistic,
     }
 
-    /// Unique [`Domain`] identifier.
-    #[derive(Debug, Clone, Deserialize, Serialize)]
-    pub struct DomainId(EcoString);
-
-    impl DomainId {
-        /// Creates a new [`DomainId`].
-        #[inline]
-        #[must_use]
-        pub fn new(id: &str) -> Self {
-            Self(EcoString::from(id))
-        }
-    }
-
-    impl Deref for DomainId {
-        type Target = str;
-
-        #[inline]
-        fn deref(&self) -> &Self::Target {
-            self.as_ref()
-        }
-    }
-
-    impl AsRef<str> for DomainId {
-        #[inline]
-        fn as_ref(&self) -> &str {
-            self.0.as_str()
-        }
-    }
-
-    impl fmt::Display for DomainId {
-        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            fmt::Display::fmt(&self.0, f)
-        }
-    }
+    crate::define_id_type!(DomainId);
 
     /// Details of a new [`Domain`].
     #[must_use]

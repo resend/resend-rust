@@ -123,48 +123,8 @@ impl TemplateSvc {
 
 #[allow(unreachable_pub)]
 pub mod types {
-    use std::{
-        fmt::{self, Display},
-        ops::Deref,
-    };
-
-    use ecow::EcoString;
     use serde::{Deserialize, Deserializer, Serialize};
-
-    /// Unique Template identifier.
-    #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
-    pub struct TemplateId(EcoString);
-
-    impl TemplateId {
-        /// Creates a new [`TemplateId`].
-        #[inline]
-        #[must_use]
-        pub fn new(id: &str) -> Self {
-            Self(EcoString::from(id))
-        }
-    }
-
-    impl Deref for TemplateId {
-        type Target = str;
-
-        #[inline]
-        fn deref(&self) -> &Self::Target {
-            self.as_ref()
-        }
-    }
-
-    impl AsRef<str> for TemplateId {
-        #[inline]
-        fn as_ref(&self) -> &str {
-            self.0.as_str()
-        }
-    }
-
-    impl Display for TemplateId {
-        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            Display::fmt(&self.0, f)
-        }
-    }
+    crate::define_id_type!(TemplateId);
 
     /// See [relevant docs].
     ///

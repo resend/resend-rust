@@ -144,6 +144,47 @@ pub enum Error {
     },
 }
 
+macro_rules! define_id_type {
+    ($name:ident) => {
+        /// Unique identifier.
+        #[derive(Debug, Clone, serde::Deserialize, serde::Serialize, PartialEq, Eq)]
+        pub struct $name(ecow::EcoString);
+
+        impl $name {
+            /// Creates a new [`$name`].
+            #[inline]
+            #[must_use]
+            pub fn new(id: &str) -> Self {
+                Self(ecow::EcoString::from(id))
+            }
+        }
+
+        impl std::ops::Deref for $name {
+            type Target = str;
+
+            #[inline]
+            fn deref(&self) -> &Self::Target {
+                self.as_ref()
+            }
+        }
+
+        impl AsRef<str> for $name {
+            #[inline]
+            fn as_ref(&self) -> &str {
+                self.0.as_str()
+            }
+        }
+
+        impl std::fmt::Display for $name {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                std::fmt::Display::fmt(&self.0, f)
+            }
+        }
+    };
+}
+
+pub(crate) use define_id_type;
+
 #[cfg(test)]
 mod test {
     use crate::Error;

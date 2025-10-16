@@ -161,45 +161,9 @@ impl fmt::Debug for ContactsSvc {
 
 #[allow(unreachable_pub)]
 pub mod types {
-    use std::{fmt, ops::Deref};
-
-    use ecow::EcoString;
     use serde::{Deserialize, Serialize};
 
-    /// Unique [`Contact`] identifier.
-    #[derive(Debug, Clone, Deserialize)]
-    pub struct ContactId(EcoString);
-
-    impl ContactId {
-        /// Creates a new [`ContactId`].
-        #[inline]
-        #[must_use]
-        pub fn new(id: &str) -> Self {
-            Self(EcoString::from(id))
-        }
-    }
-
-    impl Deref for ContactId {
-        type Target = str;
-
-        #[inline]
-        fn deref(&self) -> &Self::Target {
-            self.as_ref()
-        }
-    }
-
-    impl AsRef<str> for ContactId {
-        #[inline]
-        fn as_ref(&self) -> &str {
-            self.0.as_str()
-        }
-    }
-
-    impl fmt::Display for ContactId {
-        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            fmt::Display::fmt(&self.0, f)
-        }
-    }
+    crate::define_id_type!(ContactId);
 
     /// Details of a new [`Contact`].
     #[must_use]
