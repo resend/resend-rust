@@ -451,7 +451,7 @@ mod test {
         let broadcast = resend.broadcasts.get(&broadcast_id).await?;
         assert_eq!(Some(subject.to_string()), broadcast.subject);
 
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        std::thread::sleep(std::time::Duration::from_secs(2));
 
         // Update subject
         let subject = "updated";
