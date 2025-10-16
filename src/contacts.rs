@@ -160,6 +160,7 @@ impl ContactsSvc {
     ///
     /// <https://resend.com/docs/api-reference/contacts/get-contact-topic>
     #[maybe_async::maybe_async]
+    #[allow(clippy::needless_pass_by_value)]
     pub async fn get_contact_topics<T>(
         &self,
         contact_id_or_email: &str,
