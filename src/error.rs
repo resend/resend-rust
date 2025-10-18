@@ -187,6 +187,15 @@ pub mod types {
 
         /// 429 Too Many Requests.
         ///
+        /// - `monthly_quota_exceeded`
+        ///
+        /// You have reached your monthly email sending quota.
+        ///
+        ///  Upgrade your plan to remove the increase the monthly sending limit.
+        MonthlyQuotaExceeded,
+
+        /// 429 Too Many Requests.
+        ///
         /// - `daily_quota_exceeded`
         ///
         /// You have reached your daily email sending quota.
@@ -278,6 +287,7 @@ pub mod types {
                 "invalid_parameter" => Self::InvalidParameter,
                 "invalid_region" => Self::InvalidRegion,
                 "missing_required_field" => Self::MissingRequiredField,
+                "monthly_quota_exceeded" => Self::MonthlyQuotaExceeded,
                 "daily_quota_exceeded" => Self::DailyQuotaExceeded,
                 "rate_limit_exceeded" => Self::RateLimitExceeded,
                 "security_error" => Self::SecurityError,
@@ -344,7 +354,10 @@ mod tests {
             };
 
             let error_kind = ErrorKind::from(error_response);
-            assert!(!matches!(error_kind, ErrorKind::Unrecognized));
+            assert!(
+                !matches!(error_kind, ErrorKind::Unrecognized),
+                "Could not parse {error_name}"
+            );
         }
 
         // Expected is actually one less than what we have because of the `Unrecognized` variant.
