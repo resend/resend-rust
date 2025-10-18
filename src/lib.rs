@@ -67,6 +67,7 @@ pub mod events;
 pub mod idempotent;
 pub mod list_opts;
 pub mod rate_limit;
+mod receiving;
 mod templates;
 mod topics;
 
@@ -80,6 +81,7 @@ pub mod services {
     pub use super::contacts::ContactsSvc;
     pub use super::domains::DomainsSvc;
     pub use super::emails::EmailsSvc;
+    pub use super::receiving::ReceivingSvc;
     pub use super::templates::TemplateSvc;
     pub use super::topics::TopicsSvc;
 }
@@ -115,6 +117,9 @@ pub mod types {
         UpdateEmailResponse,
     };
     pub use super::error::types::{ErrorKind, ErrorResponse};
+    pub use super::receiving::types::{
+        InboundAttachment, InboundAttatchmentId, InboundEmail, InboundEmailId,
+    };
     pub use super::templates::types::{
         CreateTemplateOptions, CreateTemplateResponse, DeleteTemplateResponse,
         DuplicateTemplateResponse, PublishTemplateResponse, Template, TemplateEvent,

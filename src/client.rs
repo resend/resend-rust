@@ -6,7 +6,7 @@ use reqwest::Client as ReqwestClient;
 #[cfg(feature = "blocking")]
 use reqwest::blocking::Client as ReqwestClient;
 
-use crate::{batch::BatchSvc, config::Config};
+use crate::{batch::BatchSvc, config::Config, services::ReceivingSvc};
 use crate::{
     services::{
         ApiKeysSvc, AudiencesSvc, BroadcastsSvc, ContactsSvc, DomainsSvc, EmailsSvc, TemplateSvc,
@@ -39,6 +39,8 @@ pub struct Resend {
     pub templates: TemplateSvc,
     /// `Resend` APIs for `/topics` endpoints.
     pub topics: TopicsSvc,
+    /// `Resend` APIs for `/emails/receiving` endpoints.
+    pub receiving: ReceivingSvc,
 }
 
 impl Resend {
@@ -88,7 +90,8 @@ impl Resend {
             batch: BatchSvc(Arc::clone(&inner)),
             broadcasts: BroadcastsSvc(Arc::clone(&inner)),
             templates: TemplateSvc(Arc::clone(&inner)),
-            topics: TopicsSvc(inner),
+            topics: TopicsSvc(Arc::clone(&inner)),
+            receiving: ReceivingSvc(inner),
         }
     }
 

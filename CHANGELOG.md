@@ -20,6 +20,7 @@ resend-rs = "0.19.0-beta"
 - 7 new [Templates](https://resend.com/docs/api-reference/templates/) endpoints
 - 5 new [Topics](https://resend.com/docs/api-reference/topics/) endpoints
   - and 2 new contact-topic endpoints
+- 4 new [Inbound](https://resend.com/docs/dashboard/inbound/introduction#inbound-emails) endpoints
 <!-- TODO: Remember to re-enable the topic test -->
 
 ## [0.18.0] - 2025-09-16
