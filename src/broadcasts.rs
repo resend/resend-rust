@@ -378,7 +378,7 @@ mod test {
         let broadcast = CreateBroadcastOptions::new(&audience_id, from, subject).with_html(html);
         let res = resend.broadcasts.create(broadcast).await?;
 
-        std::thread::sleep(std::time::Duration::from_secs(2));
+        std::thread::sleep(std::time::Duration::from_secs(4));
 
         // Send
         let opts = SendBroadcastOptions::new(&res.id);
