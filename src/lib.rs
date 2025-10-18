@@ -196,7 +196,9 @@ pub(crate) use define_id_type;
 
 #[cfg(test)]
 mod test {
-    use crate::Error;
+    use std::sync::LazyLock;
+
+    use crate::{Error, Resend};
 
     #[allow(dead_code, clippy::redundant_pub_crate)]
     pub(crate) struct LocatedError<E: std::error::Error + 'static> {
@@ -229,18 +231,6 @@ mod test {
 
     #[allow(clippy::redundant_pub_crate)]
     pub(crate) type DebugResult<T, E = LocatedError<Error>> = Result<T, E>;
-}
-
-/// Specialized [`Result`] type for an [`Error`].
-///
-/// [`Result`]: std::result::Result
-pub type Result<T, E = Error> = std::result::Result<T, E>;
-
-#[cfg(test)]
-pub(crate) mod tests {
-    use std::sync::LazyLock;
-
-    use crate::Resend;
 
     #[allow(clippy::redundant_pub_crate)]
     /// Use this client in all tests to ensure rate limits are respected.
@@ -251,3 +241,8 @@ pub(crate) mod tests {
     /// ```
     pub(crate) static CLIENT: LazyLock<Resend> = LazyLock::new(Resend::default);
 }
+
+/// Specialized [`Result`] type for an [`Error`].
+///
+/// [`Result`]: std::result::Result
+pub type Result<T, E = Error> = std::result::Result<T, E>;

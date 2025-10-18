@@ -344,8 +344,7 @@ pub mod types {
 mod test {
     use crate::list_opts::ListOptions;
     use crate::{
-        test::DebugResult,
-        tests::CLIENT,
+        test::{CLIENT, DebugResult},
         types::{
             ContactData, CreateBroadcastOptions, SendBroadcastOptions, UpdateBroadcastOptions,
         },

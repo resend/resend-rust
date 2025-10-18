@@ -466,7 +466,9 @@ pub mod types {
 #[allow(clippy::needless_return)]
 mod test {
     use crate::{
-        templates::Template, test::DebugResult, tests::CLIENT, types::CreateTemplateOptions,
+        templates::Template,
+        test::{CLIENT, DebugResult},
+        types::CreateTemplateOptions,
     };
 
     #[tokio_shared_rt::test(shared = true)]

@@ -379,8 +379,7 @@ mod test {
     use crate::list_opts::ListOptions;
     use crate::{
         domains::types::{CreateDomainOptions, DomainChanges, Tls},
-        test::DebugResult,
-        tests::CLIENT,
+        test::{CLIENT, DebugResult},
     };
 
     // <https://stackoverflow.com/a/77859502/12756474>

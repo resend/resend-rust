@@ -208,8 +208,7 @@ pub mod types {
 #[allow(clippy::needless_return)]
 mod test {
     use crate::list_opts::ListOptions;
-    use crate::test::DebugResult;
-    use crate::tests::CLIENT;
+    use crate::test::{CLIENT, DebugResult};
     use crate::types::{CreateTopicOptions, SubscriptionType, Topic, UpdateTopicOptions};
 
     #[tokio_shared_rt::test(shared = true)]

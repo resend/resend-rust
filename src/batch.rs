@@ -119,8 +119,8 @@ pub mod types {
 
 #[cfg(test)]
 mod test {
+    use crate::test::{CLIENT, DebugResult};
     use crate::types::{BatchValidation, CreateEmailBaseOptions, EmailEvent};
-    use crate::{test::DebugResult, tests::CLIENT};
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]

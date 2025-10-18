@@ -548,7 +548,10 @@ where
 #[allow(clippy::needless_return)]
 mod test {
     use crate::types::{CreateEmailBaseOptions, Email, Tag, UpdateEmailOptions};
-    use crate::{list_opts::ListOptions, test::DebugResult, tests::CLIENT};
+    use crate::{
+        list_opts::ListOptions,
+        test::{CLIENT, DebugResult},
+    };
     use jiff::{Span, Timestamp, Zoned};
 
     #[tokio_shared_rt::test(shared = true)]
