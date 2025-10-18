@@ -194,6 +194,11 @@ macro_rules! define_id_type {
 
 pub(crate) use define_id_type;
 
+/// Specialized [`Result`] type for an [`Error`].
+///
+/// [`Result`]: std::result::Result
+pub type Result<T, E = Error> = std::result::Result<T, E>;
+
 #[cfg(test)]
 mod test {
     use std::sync::LazyLock;
@@ -241,8 +246,3 @@ mod test {
     /// ```
     pub(crate) static CLIENT: LazyLock<Resend> = LazyLock::new(Resend::default);
 }
-
-/// Specialized [`Result`] type for an [`Error`].
-///
-/// [`Result`]: std::result::Result
-pub type Result<T, E = Error> = std::result::Result<T, E>;
