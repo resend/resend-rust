@@ -108,6 +108,7 @@ pub mod types {
         pub text: Option<String>,
         #[serde(default)]
         pub headers: HashMap<String, String>,
+        pub message_id: String,
         #[serde(default)]
         pub attachments: Vec<InboundAttachment>,
     }
@@ -120,6 +121,7 @@ pub mod types {
         pub content_type: String,
         pub content_id: Option<String>,
         pub content_disposition: String,
+        pub size: u32,
     }
 }
 
@@ -127,8 +129,11 @@ pub mod types {
 #[allow(clippy::unwrap_used)]
 #[allow(clippy::needless_return)]
 mod test {
-    use crate::test::{CLIENT, DebugResult};
     use crate::{list_opts::ListOptions, types::InboundEmail};
+    use crate::{
+        list_opts::ListResponse,
+        test::{CLIENT, DebugResult},
+    };
 
     #[ignore = "At the moment, we can't programmatically send inbound emails and since said inbound emails are only retained for 2 weeks, this cannot be automatically tested."]
     #[tokio_shared_rt::test(shared = true)]
@@ -161,31 +166,35 @@ mod test {
 
     #[test]
     fn deserialize_test() {
-        let email = r#"{
-  "object": "email",
-  "id": "4ef9a417-02e9-4d39-ad75-9611e0fcc33c",
-  "to": ["delivered@resend.dev"],
-  "from": "Acme <onboarding@resend.dev>",
-  "created_at": "2023-04-03T22:13:42.674981+00:00",
-  "subject": "Hello World",
-  "html": "Congrats on sending your <strong>first email</strong>!",
-  "text": null,
-  "bcc": [],
-  "cc": [],
-  "reply_to": [],
-  "message_id": "<example+123>",
-  "attachments": [
+        let emails = r#"{
+  "object": "list",
+  "has_more": true,
+  "data": [
     {
-      "id": "2a0c9ce0-3112-4728-976e-47ddcd16a318",
-      "filename": "avatar.png",
-      "content_type": "image/png",
-      "content_disposition": "inline",
-      "content_id": "img001"
+      "id": "a39999a6-88e3-48b1-888b-beaabcde1b33",
+      "to": ["recipient@example.com"],
+      "from": "sender@example.com",
+      "created_at": "2025-10-09 14:37:40.951732+00",
+      "subject": "Hello World",
+      "bcc": [],
+      "cc": [],
+      "reply_to": [],
+      "message_id": "<111-222-333@email.provider.example.com>",
+      "attachments": [
+        {
+          "filename": "example.txt",
+          "content_type": "text/plain",
+          "content_id": null,
+          "content_disposition": "attachment",
+          "id": "47e999c7-c89c-4999-bf32-aaaaa1c3ff21",
+          "size": 13
+        }
+      ]
     }
   ]
 }"#;
 
-        let res = serde_json::from_str::<InboundEmail>(email);
+        let res = serde_json::from_str::<ListResponse<InboundEmail>>(emails);
         assert!(res.is_ok());
     }
 }
