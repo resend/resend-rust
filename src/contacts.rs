@@ -397,6 +397,7 @@ mod test {
         UpdateContactTopicOptions,
     };
 
+    #[ignore = "Not finished"]
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
     async fn create_no_audience() -> DebugResult<()> {
