@@ -10,7 +10,7 @@ use crate::{
 };
 use crate::{
     list_opts::ListResponse,
-    types::{Contact, ContactChanges, ContactData, ContactId},
+    types::{Contact, ContactChanges, ContactId, CreateContactOptions},
 };
 
 use self::types::UpdateContactResponse;
@@ -211,9 +211,12 @@ pub mod types {
     /// Details of a new [`Contact`].
     #[must_use]
     #[derive(Debug, Clone, Serialize)]
-    pub struct ContactData {
+    pub struct CreateContactOptions {
         /// Email address of the contact.
         email: String,
+
+        /// The Audience ID.
+        pub(crate) audience_id: Option<String>,
 
         /// First name of the contact.
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -226,15 +229,23 @@ pub mod types {
         unsubscribed: Option<bool>,
     }
 
-    impl ContactData {
+    impl CreateContactOptions {
         /// Creates a new [`ContactData`].
         pub fn new(email: &str) -> Self {
             Self {
                 email: email.to_owned(),
+                audience_id: None,
                 first_name: None,
                 last_name: None,
                 unsubscribed: None,
             }
+        }
+
+        /// Adds the audience id to the contact.
+        #[inline]
+        pub fn with_audience_id(mut self, audience_id: &str) -> Self {
+            self.audience_id = Some(audience_id.to_owned());
+            self
         }
 
         /// Adds the first name to the contact.
@@ -378,13 +389,30 @@ pub mod types {
 mod test {
     use crate::list_opts::ListOptions;
     use crate::test::{CLIENT, DebugResult};
-    use crate::types::{ContactChanges, ContactData};
+    use crate::types::{
+        ContactChanges, CreateContactOptions, CreateTopicOptions, SubscriptionType,
+        UpdateContactTopicOptions,
+    };
+
+    #[tokio_shared_rt::test(shared = true)]
+    #[cfg(not(feature = "blocking"))]
+    async fn create_no_audience() -> DebugResult<()> {
+        let resend = &*CLIENT;
+
+        let contact = CreateContactOptions::new("steve.wozniak@gmail.com")
+            .with_first_name("Steve")
+            .with_last_name("Wozniak")
+            .with_unsubscribed(false);
+        let id = resend.contacts.create(contact).await?;
+
+        // TODO: Delete
+
+        Ok(())
+    }
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> DebugResult<()> {
-        use crate::types::{CreateTopicOptions, SubscriptionType, UpdateContactTopicOptions};
-
         let resend = &*CLIENT;
         let audience = "test_contacts";
 
@@ -394,11 +422,12 @@ mod test {
         std::thread::sleep(std::time::Duration::from_secs(1));
 
         // Create.
-        let contact = ContactData::new("antonios.barotsis@pm.me")
+        let contact = CreateContactOptions::new("antonios.barotsis@pm.me")
             .with_first_name("Antonios")
             .with_last_name("Barotsis")
-            .with_unsubscribed(false);
-        let id = resend.contacts.create(&audience_id, contact).await?;
+            .with_unsubscribed(false)
+            .with_audience_id(&audience_id);
+        let id = resend.contacts.create(contact).await?;
         std::thread::sleep(std::time::Duration::from_secs(2));
 
         // Get topic

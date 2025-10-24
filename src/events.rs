@@ -5,7 +5,7 @@
 
 #![allow(dead_code)]
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::{Result, types::Domain};
 
@@ -34,13 +34,40 @@ pub fn try_parse_event(data: &str) -> Result<Event> {
     serde_json::from_str::<Event>(data).map_err(|e| crate::Error::Parse(e.to_string()))
 }
 
-/// Represents any [Resend Event Type](https://resend.com/docs/dashboard/webhooks/event-types).
+/// Represents any [Resend Event](https://resend.com/docs/dashboard/webhooks/event-types).
 #[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
 pub enum Event {
     EmailEvent(EmailEvent),
     ContactEvent(ContactEvent),
     DomainEvent(DomainEvent),
+}
+
+/// Represents any [Resend Event Type](https://resend.com/docs/dashboard/webhooks/event-types).
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum EventType {
+    EmailEventType(EmailEventType),
+    ContactEventType(ContactEventType),
+    DomainEventType(DomainEventType),
+}
+
+impl From<EmailEventType> for EventType {
+    fn from(value: EmailEventType) -> Self {
+        Self::EmailEventType(value)
+    }
+}
+
+impl From<ContactEventType> for EventType {
+    fn from(value: ContactEventType) -> Self {
+        Self::ContactEventType(value)
+    }
+}
+
+impl From<DomainEventType> for EventType {
+    fn from(value: DomainEventType) -> Self {
+        Self::DomainEventType(value)
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -76,7 +103,7 @@ pub struct DomainEvent {
     body: Domain,
 }
 
-#[derive(Debug, Copy, Clone, Deserialize)]
+#[derive(Debug, Copy, Clone, Deserialize, Serialize)]
 pub enum EmailEventType {
     #[serde(rename = "email.sent")]
     EmailSent,
@@ -92,9 +119,13 @@ pub enum EmailEventType {
     EmailOpened,
     #[serde(rename = "email.clicked")]
     EmailClicked,
+    #[serde(rename = "email.received")]
+    EmailReceived,
+    #[serde(rename = "email.failed")]
+    EmailFailed,
 }
 
-#[derive(Debug, Copy, Clone, Deserialize)]
+#[derive(Debug, Copy, Clone, Deserialize, Serialize)]
 pub enum ContactEventType {
     #[serde(rename = "contact.created")]
     ContactCreated,
@@ -104,7 +135,7 @@ pub enum ContactEventType {
     ContactDeleted,
 }
 
-#[derive(Debug, Copy, Clone, Deserialize)]
+#[derive(Debug, Copy, Clone, Deserialize, Serialize)]
 pub enum DomainEventType {
     #[serde(rename = "domain.created")]
     DomainCreated,

@@ -70,6 +70,7 @@ pub mod rate_limit;
 mod receiving;
 mod templates;
 mod topics;
+mod webhooks;
 
 pub mod services {
     //! `Resend` API services.
@@ -103,7 +104,8 @@ pub mod types {
         UpdateBroadcastOptions, UpdateBroadcastResponse,
     };
     pub use super::contacts::types::{
-        Contact, ContactChanges, ContactData, ContactId, ContactTopic, UpdateContactTopicOptions,
+        Contact, ContactChanges, ContactId, ContactTopic, CreateContactOptions,
+        UpdateContactTopicOptions,
     };
     pub use super::domains::types::{
         CreateDomainOptions, DkimRecordType, Domain, DomainChanges, DomainDkimRecord, DomainId,
@@ -121,12 +123,16 @@ pub mod types {
     };
     pub use super::templates::types::{
         CreateTemplateOptions, CreateTemplateResponse, DeleteTemplateResponse,
-        DuplicateTemplateResponse, PublishTemplateResponse, Template, TemplateEvent,
+        DuplicateTemplateResponse, PublishTemplateResponse, Template, TemplateEvent, TemplateId,
         UpdateTemplateOptions, UpdateTemplateResponse, Variable, VariableType,
     };
     pub use super::topics::types::{
         CreateTopicOptions, CreateTopicResponse, DeleteTopicResponse, SubscriptionType, Topic,
-        UpdateTopicOptions, UpdateTopicResponse,
+        TopicId, UpdateTopicOptions, UpdateTopicResponse,
+    };
+    pub use super::webhooks::types::{
+        CreateWebhookOptions, CreateWebhookResponse, DeleteWebhookResponse, UpdateWebhookOptions,
+        UpdateWebhookResponse, Webhook, WebhookId, WebhookStatus,
     };
 }
 

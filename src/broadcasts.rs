@@ -79,6 +79,8 @@ impl BroadcastsSvc {
     }
 
     /// Remove an existing broadcast.
+    ///
+    /// <https://resend.com/docs/api-reference/broadcasts/delete-broadcast>
     #[maybe_async::maybe_async]
     #[allow(clippy::needless_pass_by_value)]
     pub async fn delete(&self, broadcast_id: &str) -> Result<bool> {
@@ -346,7 +348,8 @@ mod test {
     use crate::{
         test::{CLIENT, DebugResult},
         types::{
-            ContactData, CreateBroadcastOptions, SendBroadcastOptions, UpdateBroadcastOptions,
+            CreateBroadcastOptions, CreateContactOptions, SendBroadcastOptions,
+            UpdateBroadcastOptions,
         },
     };
 
@@ -360,12 +363,13 @@ mod test {
 
         let audience_id = resend.audiences.create("audience").await?.id;
 
-        let contact = ContactData::new("steve.wozniak@gmail.com")
+        let contact = CreateContactOptions::new("steve.wozniak@gmail.com")
             .with_first_name("Steve")
             .with_last_name("Wozniak")
-            .with_unsubscribed(false);
+            .with_unsubscribed(false)
+            .with_audience_id(&audience_id);
 
-        let _contact_id = resend.contacts.create(&audience_id, contact).await?;
+        let _contact_id = resend.contacts.create(contact).await?;
 
         let from = "Acme <onboarding@resend.dev>";
         let subject = "hello world";

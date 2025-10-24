@@ -22,7 +22,12 @@ resend-rs = "0.19.0-beta"
 - 5 new [Topics](https://resend.com/docs/api-reference/topics/) endpoints
   - and 2 new contact-topic endpoints
 - 4 new [Inbound](https://resend.com/docs/dashboard/inbound/introduction#inbound-emails) endpoints
+- 5 new [Webhook](https://resend.com/docs/api-reference/webhooks/list-webhooks) endpoints 
+- Added `email.received` and `email.failed` webhook event types
 
+### Changed
+
+- renamed `ContactData` -> `CreateContactOptions`
 ## [0.18.0] - 2025-09-16
 
 This is unfortunately going to break all `endpoint::list` calls due to backend changes. The good
