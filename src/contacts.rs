@@ -20,7 +20,7 @@ use self::types::UpdateContactResponse;
 pub struct ContactsSvc(pub(crate) Arc<Config>);
 
 impl ContactsSvc {
-    /// Creates a contact inside an audience.
+    /// Create a contact.
     ///
     /// Returns a contact id.
     ///
@@ -28,8 +28,11 @@ impl ContactsSvc {
     #[maybe_async::maybe_async]
     // Reasoning for allow: https://github.com/resend/resend-rust/pull/1#issuecomment-2081646115
     #[allow(clippy::needless_pass_by_value)]
-    pub async fn create(&self, audience_id: &str, contact: ContactData) -> Result<ContactId> {
-        let path = format!("/audiences/{audience_id}/contacts");
+    pub async fn create(&self, contact: CreateContactOptions) -> Result<ContactId> {
+        let path = contact.audience_id.as_ref().map_or_else(
+            || "/contacts".to_string(),
+            |audience_id| format!("/audiences/{audience_id}/contacts"),
+        );
 
         let request = self.0.build(Method::POST, &path);
         let response = self.0.send(request.json(&contact)).await?;
@@ -38,7 +41,7 @@ impl ContactsSvc {
         Ok(content.id)
     }
 
-    /// Retrieves a single contact from an audience by its id.
+    /// Retrieve a single contact.
     ///
     /// <https://resend.com/docs/api-reference/contacts/get-contact>
     #[maybe_async::maybe_async]

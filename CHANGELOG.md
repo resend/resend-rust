@@ -28,6 +28,17 @@ resend-rs = "0.19.0-beta"
 ### Changed
 
 - renamed `ContactData` -> `CreateContactOptions`
+- Contact methods no longer require an `audience_id`
+  ```diff
+  let contact = CreateContactOptions::new("steve.wozniak@gmail.com")
+      .with_first_name("Steve")
+      .with_last_name("Wozniak")
+  +   .with_audience_id(&audience_id);
+      .with_unsubscribed(false);
+  -let _contact_id = resend.contacts.create(&audience_id, contact).await?;
+  +let _contact_id = resend.contacts.create(contact).await?;
+  ```
+
 ## [0.18.0] - 2025-09-16
 
 This is unfortunately going to break all `endpoint::list` calls due to backend changes. The good
