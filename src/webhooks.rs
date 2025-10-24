@@ -20,6 +20,7 @@ impl WebhookSvc {
     ///
     /// <https://resend.com/docs/api-reference/webhooks/create-webhook>
     #[maybe_async::maybe_async]
+    #[allow(clippy::needless_pass_by_value)]
     pub async fn create(&self, webhook: CreateWebhookOptions) -> Result<CreateWebhookResponse> {
         let request = self.0.build(Method::POST, "/webhooks");
         let response = self.0.send(request.json(&webhook)).await?;
