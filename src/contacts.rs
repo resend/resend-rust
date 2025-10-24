@@ -6,7 +6,7 @@ use reqwest::Method;
 use crate::{
     Config, Result,
     list_opts::ListOptions,
-    types::{ContactTopicsResponse, UpdateContactTopicOptions},
+    types::{ContactTopic, UpdateContactTopicOptions},
 };
 use crate::{
     list_opts::ListResponse,
@@ -165,14 +165,12 @@ impl ContactsSvc {
         &self,
         contact_id_or_email: &str,
         list_opts: ListOptions<T>,
-    ) -> Result<ListResponse<ContactTopicsResponse>> {
+    ) -> Result<ListResponse<ContactTopic>> {
         let path = format!("/contacts/{contact_id_or_email}/topics");
 
         let request = self.0.build(Method::GET, &path).query(&list_opts);
         let response = self.0.send(request).await?;
-        let content = response
-            .json::<ListResponse<ContactTopicsResponse>>()
-            .await?;
+        let content = response.json::<ListResponse<ContactTopic>>().await?;
 
         Ok(content)
     }
@@ -206,7 +204,7 @@ impl fmt::Debug for ContactsSvc {
 pub mod types {
     use serde::{Deserialize, Serialize};
 
-    use crate::types::{SubscriptionType, Topic};
+    use crate::{topics::types::TopicId, types::SubscriptionType};
 
     crate::define_id_type!(ContactId);
 
@@ -344,11 +342,13 @@ pub mod types {
         pub deleted: bool,
     }
 
-    #[derive(Debug, Clone, Deserialize)]
-    pub struct ContactTopicsResponse {
-        pub email: String,
-        #[serde(default)]
-        pub topics: Vec<Topic>,
+    #[derive(Deserialize, Debug, Clone)]
+    pub struct ContactTopic {
+        pub id: TopicId,
+        pub name: String,
+        pub description: Option<String>,
+        pub subscription: SubscriptionType,
+        pub created_at: String,
     }
 
     /// See [relevant docs].
@@ -380,7 +380,6 @@ mod test {
     use crate::test::{CLIENT, DebugResult};
     use crate::types::{ContactChanges, ContactData};
 
-    #[ignore = "Retrieve Contact Topics is currently broken"]
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> DebugResult<()> {
@@ -407,8 +406,7 @@ mod test {
             .contacts
             .get_contact_topics(&id, ListOptions::default())
             .await?;
-        assert!(!topics.data.is_empty());
-        assert!(topics.data.first().unwrap().topics.is_empty());
+        assert!(topics.data.is_empty());
 
         // Update topic
         let topic = resend
@@ -423,6 +421,7 @@ mod test {
             SubscriptionType::OptIn,
         )];
         let _topics = resend.contacts.update_contact_topics(&id, topics).await?;
+        std::thread::sleep(std::time::Duration::from_secs(4));
 
         // Get topic
         let topics = resend
@@ -430,7 +429,6 @@ mod test {
             .get_contact_topics(&id, ListOptions::default())
             .await?;
         assert!(!topics.data.is_empty());
-        assert!(!topics.data.first().unwrap().topics.is_empty());
 
         // Delete topic
         let deleted = resend.topics.delete(&topic.id).await?;
@@ -463,13 +461,15 @@ mod test {
         assert_eq!(contacts.len(), 1);
 
         // Delete.
-        let _ = resend
+        let deleted = resend
             .contacts
             .delete_by_contact_id(&audience_id, &id)
             .await?;
+        assert!(deleted);
 
         // Delete audience.
-        let _ = resend.audiences.delete(&audience_id.clone()).await?;
+        let deleted = resend.audiences.delete(&audience_id.clone()).await?;
+        assert!(deleted);
         std::thread::sleep(std::time::Duration::from_secs(1));
 
         // List.

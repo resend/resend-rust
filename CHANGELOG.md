@@ -8,6 +8,7 @@ and this project adheres to
 
 ## Unreleased
 
+<!-- TODO: Remove this segment when leaving beta -->
 These changes are currently in beta, access with
 
 ```toml
@@ -21,7 +22,6 @@ resend-rs = "0.19.0-beta"
 - 5 new [Topics](https://resend.com/docs/api-reference/topics/) endpoints
   - and 2 new contact-topic endpoints
 - 4 new [Inbound](https://resend.com/docs/dashboard/inbound/introduction#inbound-emails) endpoints
-<!-- TODO: Remember to re-enable the topic test -->
 
 ## [0.18.0] - 2025-09-16
 
