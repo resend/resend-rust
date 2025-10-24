@@ -423,7 +423,7 @@ mod test {
         // Create audience.
         let audience = resend.audiences.create(audience).await?;
         let audience_id = audience.id;
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        std::thread::sleep(std::time::Duration::from_secs(4));
 
         // Create.
         let contact = CreateContactOptions::new("antonios.barotsis@pm.me")
@@ -432,7 +432,7 @@ mod test {
             .with_unsubscribed(false)
             .with_audience_id(&audience_id);
         let id = resend.contacts.create(contact).await?;
-        std::thread::sleep(std::time::Duration::from_secs(2));
+        std::thread::sleep(std::time::Duration::from_secs(4));
 
         // Get topic
         let topics = resend
