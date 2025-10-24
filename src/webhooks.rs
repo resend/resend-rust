@@ -194,7 +194,7 @@ pub mod types {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use crate::types::{
         CreateWebhookOptions, CreateWebhookResponse, UpdateWebhookOptions, WebhookStatus,
     };

@@ -300,7 +300,7 @@ pub mod types {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     /// This test parses [all Resend errors] and makes sure [`crate::types::ErrorKind`] models
     /// them correctly, namely:
     ///

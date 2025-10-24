@@ -180,7 +180,7 @@ pub struct ContactBody {
 
 #[allow(clippy::unwrap_used)]
 #[cfg(test)]
-mod tests {
+mod test {
     use crate::events::{
         ContactEventType, DomainEventType, EmailEventType, Event, try_parse_event,
     };
