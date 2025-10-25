@@ -38,6 +38,8 @@ resend-rs = "0.19.0-beta"
   -let _contact_id = resend.contacts.create(&audience_id, contact).await?;
   +let _contact_id = resend.contacts.create(contact).await?;
   ```
+- Contact `get_*`, `update_*` and `delete_*` methods have been merged into `get`, `update` and  
+  `delete`
 
 ## [0.18.0] - 2025-09-16
 

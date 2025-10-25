@@ -22,8 +22,6 @@ pub struct ContactsSvc(pub(crate) Arc<Config>);
 impl ContactsSvc {
     /// Create a contact.
     ///
-    /// Returns a contact id.
-    ///
     /// <https://resend.com/docs/api-reference/contacts/create-contact>
     #[maybe_async::maybe_async]
     // Reasoning for allow: https://github.com/resend/resend-rust/pull/1#issuecomment-2081646115
@@ -45,8 +43,8 @@ impl ContactsSvc {
     ///
     /// <https://resend.com/docs/api-reference/contacts/get-contact>
     #[maybe_async::maybe_async]
-    pub async fn get_by_id(&self, contact_id: &str, audience_id: &str) -> Result<Contact> {
-        let path = format!("/audiences/{audience_id}/contacts/{contact_id}");
+    pub async fn get(&self, contact_id_or_email: &str) -> Result<Contact> {
+        let path = format!("/contacts/{contact_id_or_email}");
 
         let request = self.0.build(Method::GET, &path);
         let response = self.0.send(request).await?;
@@ -55,33 +53,18 @@ impl ContactsSvc {
         Ok(content)
     }
 
-    /// Retrieves a single contact from an audience by its email.
-    ///
-    /// <https://resend.com/docs/api-reference/contacts/get-contact>
-    #[maybe_async::maybe_async]
-    pub async fn get_by_email(&self, contact_email: &str, audience_id: &str) -> Result<Contact> {
-        let path = format!("/audiences/{audience_id}/contacts/{contact_email}");
-
-        let request = self.0.build(Method::GET, &path);
-        let response = self.0.send(request).await?;
-        let content = response.json::<Contact>().await?;
-
-        Ok(content)
-    }
-
-    /// Updates an existing contact identified by its id.
+    /// Update an existing contact.
     ///
     /// <https://resend.com/docs/api-reference/contacts/update-contact>
     #[maybe_async::maybe_async]
     // Reasoning for allow: https://github.com/resend/resend-rust/pull/1#issuecomment-2081646115
     #[allow(clippy::needless_pass_by_value)]
-    pub async fn update_by_id(
+    pub async fn update(
         &self,
-        contact_id: &str,
-        audience_id: &str,
+        contact_id_or_email: &str,
         update: ContactChanges,
     ) -> Result<UpdateContactResponse> {
-        let path = format!("/audiences/{audience_id}/contacts/{contact_id}");
+        let path = format!("/contacts/{contact_id_or_email}");
 
         let request = self.0.build(Method::PATCH, &path);
         let response = self.0.send(request.json(&update)).await?;
@@ -90,52 +73,18 @@ impl ContactsSvc {
         Ok(content)
     }
 
-    /// Updates an existing contact identified by its email.
-    ///
-    /// <https://resend.com/docs/api-reference/contacts/update-contact>
-    #[maybe_async::maybe_async]
-    // Reasoning for allow: https://github.com/resend/resend-rust/pull/1#issuecomment-2081646115
-    #[allow(clippy::needless_pass_by_value)]
-    pub async fn update_by_email(
-        &self,
-        contact_email: &str,
-        audience_id: &str,
-        update: ContactChanges,
-    ) -> Result<UpdateContactResponse> {
-        let path = format!("/audiences/{audience_id}/contacts/{contact_email}");
-
-        let request = self.0.build(Method::PATCH, &path);
-        let response = self.0.send(request.json(&update)).await?;
-        let content = response.json::<UpdateContactResponse>().await?;
-
-        Ok(content)
-    }
-
-    /// Removes an existing contact from an audience by their email.
-    ///
-    /// Returns whether the contact was deleted successfully.
+    /// Remove an existing contact.
     ///
     /// <https://resend.com/docs/api-reference/contacts/delete-contact>
     #[maybe_async::maybe_async]
-    pub async fn delete_by_email(&self, audience_id: &str, contact_email: &str) -> Result<bool> {
-        let path = format!("/audiences/{audience_id}/contacts/{contact_email}");
+    pub async fn delete(&self, contact_id_or_email: &str) -> Result<bool> {
+        let path = format!("/contacts/{contact_id_or_email}");
 
         let request = self.0.build(Method::DELETE, &path);
         let response = self.0.send(request).await?;
         let content = response.json::<types::DeleteContactResponse>().await?;
 
         Ok(content.deleted)
-    }
-
-    /// Removes an existing contact from an audience by their ID.
-    ///
-    /// Returns whether the contact was deleted successfully.
-    ///
-    /// <https://resend.com/docs/api-reference/contacts/delete-contact>
-    #[maybe_async::maybe_async]
-    pub async fn delete_by_contact_id(&self, audience_id: &str, contact_id: &str) -> Result<bool> {
-        // Yeah, that's correct: `/audiences/{audience}/contacts/{id}`.
-        self.delete_by_email(audience_id, contact_id.as_ref()).await
     }
 
     /// Retrieves a list contacts from an audience.
@@ -397,10 +346,9 @@ mod test {
         UpdateContactTopicOptions,
     };
 
-    #[ignore = "Not finished"]
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
-    async fn create_no_audience() -> DebugResult<()> {
+    async fn no_audience() -> DebugResult<()> {
         let resend = &*CLIENT;
 
         let contact = CreateContactOptions::new("steve.wozniak@gmail.com")
@@ -408,9 +356,10 @@ mod test {
             .with_last_name("Wozniak")
             .with_unsubscribed(false);
         let id = resend.contacts.create(contact).await?;
+        std::thread::sleep(std::time::Duration::from_secs(4));
 
-        // TODO: Delete
-
+        let deleted = resend.contacts.delete(&id).await?;
+        assert!(deleted);
         Ok(())
     }
 
@@ -469,21 +418,15 @@ mod test {
 
         // Update.
         let changes = ContactChanges::new().with_unsubscribed(true);
-        let _res = resend
-            .contacts
-            .update_by_id(&id, &audience_id, changes)
-            .await?;
+        let _res = resend.contacts.update(&id, changes).await?;
         std::thread::sleep(std::time::Duration::from_secs(1));
 
         // Retrieve.
-        let contact = resend.contacts.get_by_id(&id, &audience_id).await?;
+        let contact = resend.contacts.get(&id).await?;
         assert!(contact.unsubscribed);
 
         // Retrieve by email.
-        let contact = resend
-            .contacts
-            .get_by_email("antonios.barotsis@pm.me", &audience_id)
-            .await?;
+        let contact = resend.contacts.get("antonios.barotsis@pm.me").await?;
         assert!(contact.unsubscribed);
 
         // List.
@@ -494,10 +437,7 @@ mod test {
         assert_eq!(contacts.len(), 1);
 
         // Delete.
-        let deleted = resend
-            .contacts
-            .delete_by_contact_id(&audience_id, &id)
-            .await?;
+        let deleted = resend.contacts.delete(&id).await?;
         assert!(deleted);
 
         // Delete audience.
