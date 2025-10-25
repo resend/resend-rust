@@ -104,6 +104,7 @@ pub struct DomainEvent {
 }
 
 #[derive(Debug, Copy, Clone, Deserialize, Serialize)]
+#[cfg_attr(test, derive(strum::EnumCount))]
 pub enum EmailEventType {
     #[serde(rename = "email.sent")]
     EmailSent,
@@ -126,6 +127,7 @@ pub enum EmailEventType {
 }
 
 #[derive(Debug, Copy, Clone, Deserialize, Serialize)]
+#[cfg_attr(test, derive(strum::EnumCount))]
 pub enum ContactEventType {
     #[serde(rename = "contact.created")]
     ContactCreated,
@@ -136,6 +138,7 @@ pub enum ContactEventType {
 }
 
 #[derive(Debug, Copy, Clone, Deserialize, Serialize)]
+#[cfg_attr(test, derive(strum::EnumCount))]
 pub enum DomainEventType {
     #[serde(rename = "domain.created")]
     DomainCreated,
@@ -183,8 +186,12 @@ pub struct ContactBody {
 mod test {
     use crate::events::{
         ContactEventType, DomainEventType, EmailEventType, Event, try_parse_event,
+        try_parse_event_type,
     };
+    use crate::test::DebugResult;
+    use strum::EnumCount;
 
+    #[cfg(not(feature = "blocking"))]
     #[test]
     fn email_sent() {
         let data = r#"
@@ -633,5 +640,36 @@ mod test {
         } else {
             panic!("Wrong parsing");
         }
+    }
+
+    /// Similar to the test in `error.rs`
+    #[allow(clippy::unwrap_used)]
+    #[tokio_shared_rt::test(shared = true)]
+    #[cfg(not(feature = "blocking"))]
+    async fn events_up_to_date() -> DebugResult<()> {
+        let response = reqwest::get("https://resend.com/docs/dashboard/webhooks/event-types")
+            .await
+            .unwrap();
+
+        let html = response.text().await.unwrap();
+
+        let fragment = scraper::Html::parse_document(&html);
+        let selector = scraper::Selector::parse("#table-of-contents-content > li > a").unwrap();
+
+        let expected = EmailEventType::COUNT + ContactEventType::COUNT + DomainEventType::COUNT;
+        let actual = fragment
+            .select(&selector)
+            .map(|el| el.inner_html())
+            .collect::<Vec<_>>();
+
+        for el in &actual {
+            // Add quotes around it
+            let parsed = try_parse_event_type(&format!("\"{el}\""));
+            assert!(parsed.is_ok(), "Could not parse: {el}");
+        }
+
+        assert!(expected == actual.len());
+
+        Ok(())
     }
 }
