@@ -34,6 +34,20 @@ pub fn try_parse_event(data: &str) -> Result<Event> {
     serde_json::from_str::<Event>(data).map_err(|e| crate::Error::Parse(e.to_string()))
 }
 
+/// Parses an event type string into an [`EventType`].
+/// ## Example
+///
+/// ```
+/// use resend_rs::events::{EventType, try_parse_event_type};
+///
+/// let data = "\"email.sent\"";
+///
+///  let parsed: Result<EventType, resend_rs::Error> = try_parse_event_type(data);
+/// ```
+pub fn try_parse_event_type(data: &str) -> Result<EventType> {
+    serde_json::from_str::<EventType>(data).map_err(|e| crate::Error::Parse(e.to_string()))
+}
+
 /// Represents any [Resend Event](https://resend.com/docs/dashboard/webhooks/event-types).
 #[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
