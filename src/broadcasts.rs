@@ -449,6 +449,7 @@ mod test {
         let create_broadcast =
             CreateBroadcastOptions::new(&audience_id, from, subject).with_text("text");
         let broadcast_id = resend.broadcasts.create(create_broadcast).await?.id;
+        std::thread::sleep(std::time::Duration::from_secs(2));
 
         // Assert subject == initial subject
         let broadcast = resend.broadcasts.get(&broadcast_id).await?;
