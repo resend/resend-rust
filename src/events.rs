@@ -504,6 +504,7 @@ mod test {
         "id": "d91cd9bd-1176-453e-8fc1-35364d380206",
         "name": "example.com",
         "status": "not_started",
+        "capability": "send",
         "created_at": "2024-04-26T20:21:26.347412+00:00",
         "region": "us-east-1",
         "records": [
@@ -558,6 +559,7 @@ mod test {
         "id": "d91cd9bd-1176-453e-8fc1-35364d380206",
         "name": "example.com",
         "status": "not_started",
+        "capability": "send",
         "created_at": "2024-04-26T20:21:26.347412+00:00",
         "region": "us-east-1",
         "records": [
@@ -612,6 +614,7 @@ mod test {
         "id": "d91cd9bd-1176-453e-8fc1-35364d380206",
         "name": "example.com",
         "status": "not_started",
+        "capability": "send",
         "created_at": "2024-04-26T20:21:26.347412+00:00",
         "region": "us-east-1",
         "records": [
