@@ -29,6 +29,7 @@ resend-rs = "0.19.0-beta"
 
 ### Changed
 
+- renamed `Audiences` -> `Segments`
 - renamed `Email.Attachment` -> `Email.CreateAttachment`
 - renamed `ContactData` -> `CreateContactOptions`
 - Contact methods no longer require an `audience_id`
