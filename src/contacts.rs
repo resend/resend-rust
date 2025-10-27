@@ -493,7 +493,7 @@ mod test {
         // Update.
         let changes = ContactChanges::new().with_unsubscribed(true);
         let _res = resend.contacts.update(&id, changes).await?;
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        std::thread::sleep(std::time::Duration::from_secs(2));
 
         // Retrieve.
         let contact = resend.contacts.get(&id).await?;
@@ -562,7 +562,7 @@ mod test {
             .delete_contact_segment(&contact_id, &segment.id)
             .await?;
         assert!(deleted.deleted);
-        std::thread::sleep(std::time::Duration::from_secs(4));
+        std::thread::sleep(std::time::Duration::from_secs(5));
 
         let list = resend
             .contacts
