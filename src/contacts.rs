@@ -549,7 +549,7 @@ mod test {
             .contacts
             .add_contact_segment(&contact_id, &segment.id)
             .await?;
-        std::thread::sleep(std::time::Duration::from_secs(2));
+        std::thread::sleep(std::time::Duration::from_secs(4));
 
         let list = resend
             .contacts
@@ -562,7 +562,7 @@ mod test {
             .delete_contact_segment(&contact_id, &segment.id)
             .await?;
         assert!(deleted.deleted);
-        std::thread::sleep(std::time::Duration::from_secs(2));
+        std::thread::sleep(std::time::Duration::from_secs(4));
 
         let list = resend
             .contacts
