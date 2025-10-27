@@ -565,9 +565,9 @@ mod test {
         std::thread::sleep(std::time::Duration::from_secs(2));
 
         // Delete
-        let deleted = resend.segments.delete(&segment.id).await?;
-        assert!(deleted);
         let deleted = resend.contacts.delete(&contact_id).await?;
+        assert!(deleted);
+        let deleted = resend.segments.delete(&segment.id).await?;
         assert!(deleted);
         Ok(())
     }
