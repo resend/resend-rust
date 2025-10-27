@@ -188,6 +188,7 @@ impl ContactsSvc {
     ///
     /// <https://resend.com/docs/api-reference/contacts/list-contact-segments>
     #[maybe_async::maybe_async]
+    #[allow(clippy::needless_pass_by_value)]
     pub async fn list_contact_segment<T>(
         &self,
         contact_id_or_email: &str,
