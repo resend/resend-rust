@@ -9,7 +9,7 @@ use reqwest::blocking::Client as ReqwestClient;
 use crate::{batch::BatchSvc, config::Config, services::ReceivingSvc, webhooks::WebhookSvc};
 use crate::{
     services::{
-        ApiKeysSvc, AudiencesSvc, BroadcastsSvc, ContactsSvc, DomainsSvc, EmailsSvc, TemplateSvc,
+        ApiKeysSvc, BroadcastsSvc, ContactsSvc, DomainsSvc, EmailsSvc, SegmentsSvc, TemplateSvc,
     },
     topics::TopicsSvc,
 };
@@ -28,7 +28,7 @@ pub struct Resend {
     /// `Resend` APIs for `/api-keys` endpoints.
     pub api_keys: ApiKeysSvc,
     /// `Resend` APIs for `/audiences` endpoints.
-    pub audiences: AudiencesSvc,
+    pub segments: SegmentsSvc,
     /// `Resend` APIs for `/audiences/:id/contacts` endpoints.
     pub contacts: ContactsSvc,
     /// `Resend` APIs for `/domains` endpoints.
@@ -85,7 +85,7 @@ impl Resend {
         let inner = Arc::new(config);
         Self {
             api_keys: ApiKeysSvc(Arc::clone(&inner)),
-            audiences: AudiencesSvc(Arc::clone(&inner)),
+            segments: SegmentsSvc(Arc::clone(&inner)),
             contacts: ContactsSvc(Arc::clone(&inner)),
             domains: DomainsSvc(Arc::clone(&inner)),
             emails: EmailsSvc(Arc::clone(&inner)),

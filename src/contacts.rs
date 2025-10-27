@@ -370,7 +370,7 @@ mod test {
         let audience = "test_contacts";
 
         // Create audience.
-        let audience = resend.audiences.create(audience).await?;
+        let audience = resend.segments.create(audience).await?;
         let audience_id = audience.id;
         std::thread::sleep(std::time::Duration::from_secs(4));
 
@@ -441,7 +441,7 @@ mod test {
         assert!(deleted);
 
         // Delete audience.
-        let deleted = resend.audiences.delete(&audience_id.clone()).await?;
+        let deleted = resend.segments.delete(&audience_id.clone()).await?;
         assert!(deleted);
         std::thread::sleep(std::time::Duration::from_secs(1));
 

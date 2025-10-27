@@ -55,7 +55,6 @@ pub use config::{Config, ConfigBuilder};
 pub use serde_json::{Value, json};
 
 mod api_keys;
-mod audiences;
 mod batch;
 mod broadcasts;
 mod client;
@@ -69,6 +68,7 @@ pub mod idempotent;
 pub mod list_opts;
 pub mod rate_limit;
 mod receiving;
+mod segments;
 mod templates;
 mod topics;
 mod webhooks;
@@ -77,13 +77,13 @@ pub mod services {
     //! `Resend` API services.
 
     pub use super::api_keys::ApiKeysSvc;
-    pub use super::audiences::AudiencesSvc;
     pub use super::batch::BatchSvc;
     pub use super::broadcasts::BroadcastsSvc;
     pub use super::contacts::ContactsSvc;
     pub use super::domains::DomainsSvc;
     pub use super::emails::EmailsSvc;
     pub use super::receiving::ReceivingSvc;
+    pub use super::segments::SegmentsSvc;
     pub use super::templates::TemplateSvc;
     pub use super::topics::TopicsSvc;
 }
@@ -94,7 +94,6 @@ pub mod types {
     pub use super::api_keys::types::{
         ApiKey, ApiKeyId, ApiKeyToken, CreateApiKeyOptions, Permission,
     };
-    pub use super::audiences::types::{Audience, AudienceId, CreateAudienceResponse};
     pub use super::batch::types::{
         BatchValidation, PermissiveBatchErrors, SendEmailBatchPermissiveResponse,
         SendEmailBatchResponse,
@@ -122,6 +121,7 @@ pub mod types {
     pub use super::receiving::types::{
         InboundAttachment, InboundAttatchmentId, InboundEmail, InboundEmailId,
     };
+    pub use super::segments::types::{CreateSegmentResponse, Segment, SegmentId};
     pub use super::templates::types::{
         CreateTemplateOptions, CreateTemplateResponse, DeleteTemplateResponse,
         DuplicateTemplateResponse, PublishTemplateResponse, Template, TemplateEvent, TemplateId,

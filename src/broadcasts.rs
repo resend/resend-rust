@@ -116,7 +116,7 @@ pub mod types {
     use ecow::EcoString;
     use serde::{Deserialize, Serialize};
 
-    use crate::types::AudienceId;
+    use crate::types::SegmentId;
 
     /// Details of a new `Broadcast`.
     #[must_use]
@@ -318,7 +318,7 @@ pub mod types {
     pub struct Broadcast {
         pub id: BroadcastId,
         pub name: String,
-        pub audience_id: AudienceId,
+        pub audience_id: SegmentId,
         pub status: String,
         pub created_at: String,
         pub scheduled_at: Option<String>,
@@ -361,7 +361,7 @@ mod test {
         let resend = &*CLIENT;
         std::thread::sleep(std::time::Duration::from_secs(1));
 
-        let audience_id = resend.audiences.create("audience").await?.id;
+        let audience_id = resend.segments.create("audience").await?.id;
 
         let contact = CreateContactOptions::new("steve.wozniak@gmail.com")
             .with_first_name("Steve")
@@ -391,7 +391,7 @@ mod test {
         // Cleanup
         std::thread::sleep(std::time::Duration::from_secs(2));
 
-        let deleted = resend.audiences.delete(&audience_id).await?;
+        let deleted = resend.segments.delete(&audience_id).await?;
         std::thread::sleep(std::time::Duration::from_secs(1));
 
         assert!(deleted);
@@ -416,7 +416,7 @@ mod test {
         // assert!(deleted.is_err());
 
         // Create fresh broadcast and delete that instead
-        let audience_id = resend.audiences.create("audience").await?.id;
+        let audience_id = resend.segments.create("audience").await?.id;
         let from = "Acme <onboarding@resend.dev>";
         let subject = "hello world";
         let text = "text";
@@ -425,7 +425,7 @@ mod test {
         let res = resend.broadcasts.create(broadcast).await?;
         std::thread::sleep(std::time::Duration::from_secs(2));
         let deleted_broadcast = resend.broadcasts.delete(&res.id).await;
-        let deleted_audience = resend.audiences.delete(&audience_id).await;
+        let deleted_audience = resend.segments.delete(&audience_id).await;
         std::thread::sleep(std::time::Duration::from_secs(1));
 
         assert!(deleted_broadcast.is_ok());
@@ -442,7 +442,7 @@ mod test {
         std::thread::sleep(std::time::Duration::from_secs(1));
 
         // Create audience & broadcast
-        let audience_id = resend.audiences.create("audience").await?.id;
+        let audience_id = resend.segments.create("audience").await?.id;
         let from = "Acme <onboarding@resend.dev>";
         let subject = "hello world";
 
