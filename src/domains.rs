@@ -152,6 +152,9 @@ pub mod types {
         /// that could undermine credibility (e.g. `testing`), as they may be exposed to recipients.
         #[serde(skip_serializing_if = "Option::is_none")]
         custom_return_path: Option<String>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        capability: Option<DomainCapability>,
     }
 
     impl CreateDomainOptions {
@@ -164,6 +167,7 @@ pub mod types {
                 name: name.to_owned(),
                 region: None,
                 custom_return_path: None,
+                capability: None,
             }
         }
 
@@ -181,6 +185,12 @@ pub mod types {
         #[inline]
         pub fn with_custom_return_path(mut self, custom_return_path: impl Into<String>) -> Self {
             self.custom_return_path = Some(custom_return_path.into());
+            self
+        }
+
+        #[inline]
+        pub const fn with_capability(mut self, capability: DomainCapability) -> Self {
+            self.capability = Some(capability);
             self
         }
     }
@@ -245,6 +255,29 @@ pub mod types {
         pub proxy_status: Option<ProxyStatus>,
     }
 
+    #[derive(Debug, Clone, Deserialize)]
+    pub struct ReceivingRecord {
+        /// The name of the record.
+        pub name: String,
+        /// The value of the record.
+        pub value: String,
+        /// The type of record.
+        #[serde(rename = "type")]
+        pub d_type: ReceivingRecordType,
+        /// The time to live for the record.
+        pub ttl: String,
+        /// The status of the record.
+        pub status: DomainStatus,
+
+        pub priority: i32,
+    }
+
+    #[derive(Debug, Copy, Clone, Deserialize)]
+    pub enum ReceivingRecordType {
+        #[allow(clippy::upper_case_acronyms)]
+        MX,
+    }
+
     #[derive(Debug, Copy, Clone, Deserialize)]
     pub enum ProxyStatus {
         Enable,
@@ -285,6 +318,8 @@ pub mod types {
         DomainSpfRecord(DomainSpfRecord),
         #[serde(rename = "DKIM")]
         DomainDkimRecord(DomainDkimRecord),
+        #[serde(rename = "Receiving")]
+        ReceivingRecord(ReceivingRecord),
     }
 
     /// Details of an existing domain.
@@ -305,6 +340,17 @@ pub mod types {
         pub region: Region,
         /// The records of the domain.
         pub records: Option<Vec<DomainRecord>>,
+
+        pub capability: DomainCapability,
+    }
+
+    #[must_use]
+    #[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
+    #[serde(rename_all = "kebab-case")]
+    pub enum DomainCapability {
+        Send,
+        Receive,
+        SendAndReceive,
     }
 
     #[derive(Debug, Clone, Deserialize)]
@@ -378,7 +424,7 @@ mod test {
     use crate::domains::types::DeleteDomainResponse;
     use crate::list_opts::ListOptions;
     use crate::{
-        domains::types::{CreateDomainOptions, DomainChanges, Tls},
+        domains::types::{CreateDomainOptions, DomainCapability, DomainChanges, Tls},
         test::{CLIENT, DebugResult},
     };
 
@@ -405,14 +451,16 @@ mod test {
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
-    #[ignore = "Flaky backend"]
     async fn all() -> DebugResult<()> {
         let resend = &*CLIENT;
 
         // Create
         let domain = resend
             .domains
-            .add(CreateDomainOptions::new("example.com"))
+            .add(
+                CreateDomainOptions::new("example.com")
+                    .with_capability(DomainCapability::SendAndReceive),
+            )
             .await?;
 
         std::thread::sleep(std::time::Duration::from_secs(4));
@@ -423,6 +471,7 @@ mod test {
 
         // Get
         let domain = resend.domains.get(&domain.id).await?;
+        assert!(domain.capability == DomainCapability::SendAndReceive);
 
         // Update
         let updates = DomainChanges::new()

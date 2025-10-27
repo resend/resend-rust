@@ -25,6 +25,7 @@ resend-rs = "0.19.0-beta"
 - 2 new [Email](https://resend.com/docs/api-reference/attachments/) endpoints
 - 5 new [Webhook](https://resend.com/docs/api-reference/webhooks/list-webhooks) endpoints 
 - Added `email.received` and `email.failed` webhook event types
+- Domain capability
 
 ### Changed
 

@@ -108,9 +108,9 @@ pub mod types {
         UpdateContactTopicOptions,
     };
     pub use super::domains::types::{
-        CreateDomainOptions, DkimRecordType, Domain, DomainChanges, DomainDkimRecord, DomainId,
-        DomainRecord, DomainSpfRecord, DomainStatus, ProxyStatus, Region, SpfRecordType, Tls,
-        UpdateDomainResponse,
+        CreateDomainOptions, DkimRecordType, Domain, DomainCapability, DomainChanges,
+        DomainDkimRecord, DomainId, DomainRecord, DomainSpfRecord, DomainStatus, ProxyStatus,
+        ReceivingRecord, ReceivingRecordType, Region, SpfRecordType, Tls, UpdateDomainResponse,
     };
     pub use super::emails::types::{
         Attachment, CancelScheduleResponse, ContentOrPath, CreateAttachment,
