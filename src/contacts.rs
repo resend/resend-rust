@@ -6,7 +6,10 @@ use reqwest::Method;
 use crate::{
     Config, Result,
     list_opts::ListOptions,
-    types::{ContactTopic, UpdateContactTopicOptions},
+    types::{
+        AddContactSegmentResponse, ContactTopic, RemoveContactSegmentResponse, Segment,
+        UpdateContactTopicOptions,
+    },
 };
 use crate::{
     list_opts::ListResponse,
@@ -144,6 +147,60 @@ impl ContactsSvc {
 
         Ok(content)
     }
+
+    /// Add an existing contact to a segment.
+    ///
+    /// <https://resend.com/docs/api-reference/contacts/add-contact-to-segment>
+    #[maybe_async::maybe_async]
+    pub async fn add_contact_segment(
+        &self,
+        contact_id_or_email: &str,
+        segment_id: &str,
+    ) -> Result<AddContactSegmentResponse> {
+        let path = format!("/contacts/{contact_id_or_email}/segments/{segment_id}");
+
+        let request = self.0.build(Method::POST, &path);
+        let response = self.0.send(request).await?;
+        let content = response.json::<AddContactSegmentResponse>().await?;
+
+        Ok(content)
+    }
+
+    /// Remove an existing contact from a segment.
+    ///
+    /// <https://resend.com/docs/api-reference/contacts/delete-contact-segment>
+    #[maybe_async::maybe_async]
+    pub async fn delete_contact_segment(
+        &self,
+        contact_id_or_email: &str,
+        segment_id: &str,
+    ) -> Result<RemoveContactSegmentResponse> {
+        let path = format!("/contacts/{contact_id_or_email}/segments/{segment_id}");
+
+        let request = self.0.build(Method::DELETE, &path);
+        let response = self.0.send(request).await?;
+        let content = response.json::<RemoveContactSegmentResponse>().await?;
+
+        Ok(content)
+    }
+
+    /// Retrieve a list of segments that a contact is part of.
+    ///
+    /// <https://resend.com/docs/api-reference/contacts/list-contact-segments>
+    #[maybe_async::maybe_async]
+    pub async fn list_contact_segment<T>(
+        &self,
+        contact_id_or_email: &str,
+        list_opts: ListOptions<T>,
+    ) -> Result<ListResponse<Segment>> {
+        let path = format!("/contacts/{contact_id_or_email}/segments/");
+
+        let request = self.0.build(Method::GET, &path).query(&list_opts);
+        let response = self.0.send(request).await?;
+        let content = response.json::<ListResponse<Segment>>().await?;
+
+        Ok(content)
+    }
 }
 
 impl fmt::Debug for ContactsSvc {
@@ -156,7 +213,10 @@ impl fmt::Debug for ContactsSvc {
 pub mod types {
     use serde::{Deserialize, Serialize};
 
-    use crate::{topics::types::TopicId, types::SubscriptionType};
+    use crate::{
+        topics::types::TopicId,
+        types::{SegmentId, SubscriptionType},
+    };
 
     crate::define_id_type!(ContactId);
 
@@ -334,6 +394,19 @@ pub mod types {
             }
         }
     }
+
+    #[must_use]
+    #[derive(Debug, Clone, Deserialize)]
+    pub struct AddContactSegmentResponse {
+        pub id: SegmentId,
+    }
+
+    #[must_use]
+    #[derive(Debug, Clone, Deserialize)]
+    pub struct RemoveContactSegmentResponse {
+        pub id: SegmentId,
+        pub deleted: bool,
+    }
 }
 
 #[cfg(test)]
@@ -452,6 +525,54 @@ mod test {
             .await?;
         assert!(contacts.is_empty());
 
+        Ok(())
+    }
+
+    #[tokio_shared_rt::test(shared = true)]
+    #[cfg(not(feature = "blocking"))]
+    async fn segments() -> DebugResult<()> {
+        let resend = &*CLIENT;
+
+        // Create segment
+        let segment = resend.segments.create("registered users").await?;
+        std::thread::sleep(std::time::Duration::from_secs(2));
+
+        // Create contact
+        let contact = CreateContactOptions::new("antonios.barotsis@pm.me")
+            .with_first_name("Antonios")
+            .with_last_name("Barotsis");
+        let contact_id = resend.contacts.create(contact).await?;
+        std::thread::sleep(std::time::Duration::from_secs(2));
+
+        let _added = resend
+            .contacts
+            .add_contact_segment(&contact_id, &segment.id)
+            .await?;
+        std::thread::sleep(std::time::Duration::from_secs(2));
+
+        let list = resend
+            .contacts
+            .list_contact_segment(&contact_id, ListOptions::default())
+            .await?;
+        assert!(!list.data.is_empty());
+
+        let deleted = resend
+            .contacts
+            .delete_contact_segment(&contact_id, &segment.id)
+            .await?;
+        assert!(deleted.deleted);
+
+        let list = resend
+            .contacts
+            .list_contact_segment(&contact_id, ListOptions::default())
+            .await?;
+        assert!(list.data.is_empty());
+
+        // Delete
+        let deleted = resend.segments.delete(&segment.id).await?;
+        assert!(deleted);
+        let deleted = resend.contacts.delete(&contact_id).await?;
+        assert!(deleted);
         Ok(())
     }
 }

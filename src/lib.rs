@@ -104,8 +104,8 @@ pub mod types {
         UpdateBroadcastOptions, UpdateBroadcastResponse,
     };
     pub use super::contacts::types::{
-        Contact, ContactChanges, ContactId, ContactTopic, CreateContactOptions,
-        UpdateContactTopicOptions,
+        AddContactSegmentResponse, Contact, ContactChanges, ContactId, ContactTopic,
+        CreateContactOptions, RemoveContactSegmentResponse, UpdateContactTopicOptions,
     };
     pub use super::domains::types::{
         CreateDomainOptions, DkimRecordType, Domain, DomainCapability, DomainChanges,
