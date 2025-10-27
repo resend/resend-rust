@@ -113,9 +113,9 @@ pub mod types {
         UpdateDomainResponse,
     };
     pub use super::emails::types::{
-        Attachment, CancelScheduleResponse, ContentOrPath, CreateEmailBaseOptions,
-        CreateEmailResponse, Email, EmailEvent, EmailId, Tag, UpdateEmailOptions,
-        UpdateEmailResponse,
+        Attachment, CancelScheduleResponse, ContentOrPath, CreateAttachment,
+        CreateEmailBaseOptions, CreateEmailResponse, Email, EmailEvent, EmailId, Tag,
+        UpdateEmailOptions, UpdateEmailResponse,
     };
     pub use super::error::types::{ErrorKind, ErrorResponse};
     pub use super::receiving::types::{

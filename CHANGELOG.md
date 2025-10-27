@@ -22,11 +22,13 @@ resend-rs = "0.19.0-beta"
 - 5 new [Topics](https://resend.com/docs/api-reference/topics/) endpoints
   - and 2 new contact-topic endpoints
 - 4 new [Inbound](https://resend.com/docs/dashboard/inbound/introduction#inbound-emails) endpoints
+- 2 new [Email](https://resend.com/docs/api-reference/attachments/) endpoints
 - 5 new [Webhook](https://resend.com/docs/api-reference/webhooks/list-webhooks) endpoints 
 - Added `email.received` and `email.failed` webhook event types
 
 ### Changed
 
+- renamed `Email.Attachment` -> `Email.CreateAttachment`
 - renamed `ContactData` -> `CreateContactOptions`
 - Contact methods no longer require an `audience_id`
   ```diff

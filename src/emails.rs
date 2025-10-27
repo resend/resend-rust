@@ -6,6 +6,7 @@ use serde::{Deserialize, Deserializer};
 use crate::{
     Config, Result,
     list_opts::{ListOptions, ListResponse},
+    types::Attachment,
 };
 use crate::{
     idempotent::Idempotent,
@@ -107,6 +108,39 @@ impl EmailsSvc {
 
         Ok(content)
     }
+
+    /// Retrieve a single attachment from a sent email.
+    ///
+    /// <https://resend.com/docs/api-reference/attachments/retrieve-sent-email-attachment>
+    #[maybe_async::maybe_async]
+    pub async fn get_attachment(&self, email_id: &str, attachment_id: &str) -> Result<Attachment> {
+        let path = format!("/emails/sending/{email_id}/attachments/{attachment_id}");
+
+        let request = self.0.build(Method::GET, &path);
+        let response = self.0.send(request).await?;
+        let content = response.json::<Attachment>().await?;
+
+        Ok(content)
+    }
+
+    /// Retrieve a list of email attachments and their contents.
+    ///
+    /// <https://resend.com/docs/api-reference/attachments/list-sent-email-attachments>
+    #[maybe_async::maybe_async]
+    #[allow(clippy::needless_pass_by_value)]
+    pub async fn list_attachments<T>(
+        &self,
+        email_id: &str,
+        list_opts: ListOptions<T>,
+    ) -> Result<ListResponse<Attachment>> {
+        let path = format!("/emails/sending/{email_id}/attachments");
+
+        let request = self.0.build(Method::GET, &path).query(&list_opts);
+        let response = self.0.send(request).await?;
+        let content = response.json::<ListResponse<Attachment>>().await?;
+
+        Ok(content)
+    }
 }
 
 #[allow(unreachable_pub)]
@@ -118,6 +152,7 @@ pub mod types {
     use crate::{emails::parse_nullable_vec, idempotent::Idempotent};
 
     crate::define_id_type!(EmailId);
+    crate::define_id_type!(AttatchmentId);
 
     /// All requisite components and associated data to send an email.
     ///
@@ -159,7 +194,7 @@ pub mod types {
         headers: Option<HashMap<String, String>>,
         /// Filename and content of attachments (max 40mb per email).
         #[serde(skip_serializing_if = "Option::is_none")]
-        attachments: Option<Vec<Attachment>>,
+        attachments: Option<Vec<CreateAttachment>>,
         /// Email tags.
         #[serde(skip_serializing_if = "Option::is_none")]
         tags: Option<Vec<Tag>>,
@@ -260,7 +295,7 @@ pub mod types {
         ///
         /// Limited to max 40mb per email.
         #[inline]
-        pub fn with_attachment(mut self, file: impl Into<Attachment>) -> Self {
+        pub fn with_attachment(mut self, file: impl Into<CreateAttachment>) -> Self {
             let attachments = self.attachments.get_or_insert_with(Vec::new);
             attachments.push(file.into());
             self
@@ -362,7 +397,7 @@ pub mod types {
     /// Limited to max 40mb per email.
     #[must_use]
     #[derive(Debug, Clone, Serialize)]
-    pub struct Attachment {
+    pub struct CreateAttachment {
         /// Content or path of an attached file.
         #[serde(flatten)]
         content_or_path: ContentOrPath,
@@ -392,7 +427,7 @@ pub mod types {
         Path(String),
     }
 
-    impl Attachment {
+    impl CreateAttachment {
         /// Creates a new [`Attachment`] from the content of an attached file.
         #[inline]
         pub const fn from_content(content: Vec<u8>) -> Self {
@@ -447,14 +482,14 @@ pub mod types {
         }
     }
 
-    impl From<Vec<u8>> for Attachment {
+    impl From<Vec<u8>> for CreateAttachment {
         #[inline]
         fn from(value: Vec<u8>) -> Self {
             Self::from_content(value)
         }
     }
 
-    impl From<&[u8]> for Attachment {
+    impl From<&[u8]> for CreateAttachment {
         #[inline]
         fn from(value: &[u8]) -> Self {
             value.to_vec().into()
@@ -530,6 +565,19 @@ pub mod types {
         /// The email was sent successfully.
         Sent,
     }
+
+    #[must_use]
+    #[derive(Debug, Clone, Deserialize)]
+    pub struct Attachment {
+        pub id: AttatchmentId,
+        pub filename: Option<String>,
+        pub size: u32,
+        pub content_type: String,
+        pub content_id: Option<String>,
+        pub content_disposition: String,
+        pub download_url: String,
+        pub expires_at: String,
+    }
 }
 
 /// Turns:
@@ -547,7 +595,7 @@ where
 #[allow(clippy::unwrap_used)]
 #[allow(clippy::needless_return)]
 mod test {
-    use crate::types::{CreateEmailBaseOptions, Email, Tag, UpdateEmailOptions};
+    use crate::types::{CreateAttachment, CreateEmailBaseOptions, Email, Tag, UpdateEmailOptions};
     use crate::{
         list_opts::ListOptions,
         test::{CLIENT, DebugResult},
@@ -744,6 +792,42 @@ mod test {
         assert!(list.has_more);
         // There should be 3 emails due to the limit we set
         assert!(list.data.len() == 3);
+
+        Ok(())
+    }
+
+    #[tokio_shared_rt::test(shared = true)]
+    #[cfg(not(feature = "blocking"))]
+    async fn attachments() -> DebugResult<()> {
+        let resend = &*CLIENT;
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
+        let attachment = CreateAttachment::from_content(include_bytes!("../README.md").to_vec())
+            .with_filename("README.md");
+
+        let from = "Acme <onboarding@resend.dev>";
+        let to = ["delivered@resend.dev"];
+        let subject = "Hello World!";
+
+        let email = CreateEmailBaseOptions::new(from, to, subject)
+            .with_attachment(attachment)
+            .with_text("Hello World!");
+
+        let email = resend.emails.send(email).await?;
+        let email_id = &email.id;
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
+        let attachments = resend
+            .emails
+            .list_attachments(email_id, ListOptions::default())
+            .await?;
+        assert!(attachments.data.len() == 1);
+        let attachment_id = &attachments.data.first().unwrap().id;
+
+        let _attachment = resend
+            .emails
+            .get_attachment(email_id, attachment_id)
+            .await?;
 
         Ok(())
     }
