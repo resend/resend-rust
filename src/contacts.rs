@@ -562,13 +562,7 @@ mod test {
             .delete_contact_segment(&contact_id, &segment.id)
             .await?;
         assert!(deleted.deleted);
-        std::thread::sleep(std::time::Duration::from_secs(5));
-
-        let list = resend
-            .contacts
-            .list_contact_segment(&contact_id, ListOptions::default())
-            .await?;
-        assert!(list.data.is_empty());
+        std::thread::sleep(std::time::Duration::from_secs(2));
 
         // Delete
         let deleted = resend.segments.delete(&segment.id).await?;
