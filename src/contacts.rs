@@ -486,10 +486,6 @@ mod test {
             .await?;
         assert!(!topics.data.is_empty());
 
-        // Delete topic
-        let deleted = resend.topics.delete(&topic.id).await?;
-        assert!(deleted.deleted);
-
         // Update.
         let changes = ContactChanges::new().with_unsubscribed(true);
         let _res = resend.contacts.update(&id, changes).await?;
@@ -518,6 +514,10 @@ mod test {
         let deleted = resend.segments.delete(&audience_id.clone()).await?;
         assert!(deleted);
         std::thread::sleep(std::time::Duration::from_secs(1));
+
+        // Delete topic
+        let deleted = resend.topics.delete(&topic.id).await?;
+        assert!(deleted.deleted);
 
         // List.
         let contacts = resend
