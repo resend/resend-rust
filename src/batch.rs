@@ -120,7 +120,10 @@ pub mod types {
 #[cfg(test)]
 mod test {
     use crate::test::{CLIENT, DebugResult};
-    use crate::types::{BatchValidation, CreateEmailBaseOptions, EmailEvent};
+    use crate::types::{
+        BatchValidation, CreateEmailBaseOptions, CreateTemplateOptions, EmailEvent, EmailTemplate,
+        Variable, VariableType,
+    };
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
@@ -260,6 +263,63 @@ mod test {
         // This should be all ok
         assert!(emails.is_ok());
         let _emails = emails.unwrap();
+
+        Ok(())
+    }
+
+    #[tokio_shared_rt::test(shared = true)]
+    #[cfg(not(feature = "blocking"))]
+    async fn template() -> DebugResult<()> {
+        use std::collections::HashMap;
+
+        let resend = &*CLIENT;
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
+        // Create template
+        let name = "welcome-email";
+        let html = "<strong>Hey, {{{NAME}}}, you are {{{AGE}}} years old.</strong>";
+        let variables = [
+            Variable::new("NAME", VariableType::String).with_fallback("user".into()),
+            Variable::new("AGE", VariableType::Number).with_fallback(25.into()),
+            Variable::new("OPTIONAL_VARIABLE", VariableType::String)
+                .with_fallback(None::<String>.into()),
+        ];
+        let opts = CreateTemplateOptions::new(name, html).with_variables(&variables);
+        let template = resend.templates.create(opts).await?;
+        std::thread::sleep(std::time::Duration::from_secs(2));
+        let template = resend.templates.publish(&template.id).await?;
+        std::thread::sleep(std::time::Duration::from_secs(2));
+
+        let mut variables1 = HashMap::<String, serde_json::Value>::new();
+        let _added = variables1.insert("NAME".to_string(), serde_json::json!("Tony"));
+        let _added = variables1.insert("AGE".to_string(), serde_json::json!(25));
+
+        let template1 = EmailTemplate::new(&template.id).with_variables(variables1);
+        let template_id = &template1.id.clone();
+
+        let mut variables2 = HashMap::<String, serde_json::Value>::new();
+        let _added = variables2.insert("NAME".to_string(), serde_json::json!("Not Tony"));
+        let _added = variables2.insert("AGE".to_string(), serde_json::json!(42));
+
+        let template2 = EmailTemplate::new(&template.id).with_variables(variables2);
+        let _ = &template2.id.clone();
+
+        // Create email
+        let from = "Acme <onboarding@resend.dev>";
+        let to = ["delivered@resend.dev"];
+        let subject = "hello world";
+
+        let emails = vec![
+            CreateEmailBaseOptions::new(from, to, subject).with_template(template1),
+            CreateEmailBaseOptions::new(from, to, subject).with_template(template2),
+        ];
+
+        let _email = resend.batch.send(emails).await?;
+        std::thread::sleep(std::time::Duration::from_secs(2));
+
+        // Delete template
+        let deleted = resend.templates.delete(template_id).await?;
+        assert!(deleted.deleted);
 
         Ok(())
     }

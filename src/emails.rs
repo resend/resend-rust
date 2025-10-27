@@ -114,7 +114,7 @@ impl EmailsSvc {
     /// <https://resend.com/docs/api-reference/attachments/retrieve-sent-email-attachment>
     #[maybe_async::maybe_async]
     pub async fn get_attachment(&self, email_id: &str, attachment_id: &str) -> Result<Attachment> {
-        let path = format!("/emails/sending/{email_id}/attachments/{attachment_id}");
+        let path = format!("/emails/{email_id}/attachments/{attachment_id}");
 
         let request = self.0.build(Method::GET, &path);
         let response = self.0.send(request).await?;
@@ -133,7 +133,7 @@ impl EmailsSvc {
         email_id: &str,
         list_opts: ListOptions<T>,
     ) -> Result<ListResponse<Attachment>> {
-        let path = format!("/emails/sending/{email_id}/attachments");
+        let path = format!("/emails/{email_id}/attachments");
 
         let request = self.0.build(Method::GET, &path).query(&list_opts);
         let response = self.0.send(request).await?;
@@ -149,7 +149,7 @@ pub mod types {
 
     use serde::{Deserialize, Serialize};
 
-    use crate::{emails::parse_nullable_vec, idempotent::Idempotent};
+    use crate::{emails::parse_nullable_vec, idempotent::Idempotent, types::TemplateId};
 
     crate::define_id_type!(EmailId);
     crate::define_id_type!(AttatchmentId);
@@ -198,6 +198,8 @@ pub mod types {
         /// Email tags.
         #[serde(skip_serializing_if = "Option::is_none")]
         tags: Option<Vec<Tag>>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        template: Option<EmailTemplate>,
 
         /// Schedule email to be sent later. The date should be in ISO 8601 format
         /// (e.g: `2024-08-05T11:52:01.858Z`).
@@ -232,6 +234,7 @@ pub mod types {
                 headers: None,
                 attachments: None,
                 tags: None,
+                template: None,
                 scheduled_at: None,
             }
         }
@@ -306,6 +309,12 @@ pub mod types {
         pub fn with_tag(mut self, tag: impl Into<Tag>) -> Self {
             let tags = self.tags.get_or_insert_with(Vec::new);
             tags.push(tag.into());
+            self
+        }
+
+        #[inline]
+        pub fn with_template(mut self, template: impl Into<EmailTemplate>) -> Self {
+            self.template = Some(template.into());
             self
         }
 
@@ -578,6 +587,27 @@ pub mod types {
         pub download_url: String,
         pub expires_at: String,
     }
+
+    #[must_use]
+    #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+    pub struct EmailTemplate {
+        pub id: TemplateId,
+        pub variables: Option<HashMap<String, serde_json::Value>>,
+    }
+
+    impl EmailTemplate {
+        pub fn new(id: &str) -> Self {
+            Self {
+                id: TemplateId::new(id),
+                variables: None,
+            }
+        }
+
+        pub fn with_variables(mut self, variables: HashMap<String, serde_json::Value>) -> Self {
+            self.variables = Some(variables);
+            self
+        }
+    }
 }
 
 /// Turns:
@@ -595,7 +625,10 @@ where
 #[allow(clippy::unwrap_used)]
 #[allow(clippy::needless_return)]
 mod test {
-    use crate::types::{CreateAttachment, CreateEmailBaseOptions, Email, Tag, UpdateEmailOptions};
+    use crate::types::{
+        CreateAttachment, CreateEmailBaseOptions, CreateTemplateOptions, Email, EmailTemplate, Tag,
+        UpdateEmailOptions, Variable, VariableType,
+    };
     use crate::{
         list_opts::ListOptions,
         test::{CLIENT, DebugResult},
@@ -828,6 +861,52 @@ mod test {
             .emails
             .get_attachment(email_id, attachment_id)
             .await?;
+
+        Ok(())
+    }
+
+    #[tokio_shared_rt::test(shared = true)]
+    #[cfg(not(feature = "blocking"))]
+    async fn template() -> DebugResult<()> {
+        use std::collections::HashMap;
+
+        let resend = &*CLIENT;
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
+        // Create template
+        let name = "welcome-email";
+        let html = "<strong>Hey, {{{NAME}}}, you are {{{AGE}}} years old.</strong>";
+        let variables = [
+            Variable::new("NAME", VariableType::String).with_fallback("user".into()),
+            Variable::new("AGE", VariableType::Number).with_fallback(25.into()),
+            Variable::new("OPTIONAL_VARIABLE", VariableType::String)
+                .with_fallback(None::<String>.into()),
+        ];
+        let opts = CreateTemplateOptions::new(name, html).with_variables(&variables);
+        let template = resend.templates.create(opts).await?;
+        std::thread::sleep(std::time::Duration::from_secs(2));
+        let template = resend.templates.publish(&template.id).await?;
+        std::thread::sleep(std::time::Duration::from_secs(2));
+        let mut variables = HashMap::<String, serde_json::Value>::new();
+        let _added = variables.insert("NAME".to_string(), serde_json::json!("Tony"));
+        let _added = variables.insert("AGE".to_string(), serde_json::json!(25));
+
+        let template = EmailTemplate::new(&template.id).with_variables(variables);
+        let template_id = &template.id.clone();
+
+        // Create email
+        let from = "Acme <onboarding@resend.dev>";
+        let to = ["delivered@resend.dev"];
+        let subject = "hello world";
+
+        let email = CreateEmailBaseOptions::new(from, to, subject).with_template(template);
+
+        let _email = resend.emails.send(email).await?;
+        std::thread::sleep(std::time::Duration::from_secs(2));
+
+        // Delete template
+        let deleted = resend.templates.delete(template_id).await?;
+        assert!(deleted.deleted);
 
         Ok(())
     }

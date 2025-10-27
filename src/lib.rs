@@ -52,6 +52,7 @@
 
 pub use client::Resend;
 pub use config::{Config, ConfigBuilder};
+pub use serde_json::{Value, json};
 
 mod api_keys;
 mod audiences;
@@ -114,8 +115,8 @@ pub mod types {
     };
     pub use super::emails::types::{
         Attachment, CancelScheduleResponse, ContentOrPath, CreateAttachment,
-        CreateEmailBaseOptions, CreateEmailResponse, Email, EmailEvent, EmailId, Tag,
-        UpdateEmailOptions, UpdateEmailResponse,
+        CreateEmailBaseOptions, CreateEmailResponse, Email, EmailEvent, EmailId, EmailTemplate,
+        Tag, UpdateEmailOptions, UpdateEmailResponse,
     };
     pub use super::error::types::{ErrorKind, ErrorResponse};
     pub use super::receiving::types::{
