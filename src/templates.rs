@@ -290,8 +290,8 @@ pub mod types {
         /// If `object` type is provided, you must include a fallback.
         #[inline]
         #[allow(clippy::needless_pass_by_value)]
-        pub fn with_fallback(mut self, fallback: serde_json::Value) -> Self {
-            self.fallback_value = Some(fallback);
+        pub fn with_fallback(mut self, fallback: impl Into<serde_json::Value>) -> Self {
+            self.fallback_value = Some(fallback.into());
             self
         }
     }

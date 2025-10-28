@@ -877,10 +877,9 @@ mod test {
         let name = "welcome-email";
         let html = "<strong>Hey, {{{NAME}}}, you are {{{AGE}}} years old.</strong>";
         let variables = [
-            Variable::new("NAME", VariableType::String).with_fallback("user".into()),
-            Variable::new("AGE", VariableType::Number).with_fallback(25.into()),
-            Variable::new("OPTIONAL_VARIABLE", VariableType::String)
-                .with_fallback(None::<String>.into()),
+            Variable::new("NAME", VariableType::String).with_fallback("user"),
+            Variable::new("AGE", VariableType::Number).with_fallback(25),
+            Variable::new("OPTIONAL_VARIABLE", VariableType::String).with_fallback(None::<String>),
         ];
         let opts = CreateTemplateOptions::new(name, html).with_variables(&variables);
         let template = resend.templates.create(opts).await?;
