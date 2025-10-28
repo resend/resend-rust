@@ -152,9 +152,6 @@ pub mod types {
         /// that could undermine credibility (e.g. `testing`), as they may be exposed to recipients.
         #[serde(skip_serializing_if = "Option::is_none")]
         custom_return_path: Option<String>,
-
-        #[serde(skip_serializing_if = "Option::is_none")]
-        capability: Option<DomainCapability>,
     }
 
     impl CreateDomainOptions {
@@ -167,7 +164,6 @@ pub mod types {
                 name: name.to_owned(),
                 region: None,
                 custom_return_path: None,
-                capability: None,
             }
         }
 
@@ -185,12 +181,6 @@ pub mod types {
         #[inline]
         pub fn with_custom_return_path(mut self, custom_return_path: impl Into<String>) -> Self {
             self.custom_return_path = Some(custom_return_path.into());
-            self
-        }
-
-        #[inline]
-        pub const fn with_capability(mut self, capability: DomainCapability) -> Self {
-            self.capability = Some(capability);
             self
         }
     }
@@ -340,17 +330,6 @@ pub mod types {
         pub region: Region,
         /// The records of the domain.
         pub records: Option<Vec<DomainRecord>>,
-
-        pub capability: DomainCapability,
-    }
-
-    #[must_use]
-    #[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
-    #[serde(rename_all = "kebab-case")]
-    pub enum DomainCapability {
-        Send,
-        Receive,
-        SendAndReceive,
     }
 
     #[derive(Debug, Clone, Deserialize)]
@@ -424,7 +403,7 @@ mod test {
     use crate::domains::types::DeleteDomainResponse;
     use crate::list_opts::ListOptions;
     use crate::{
-        domains::types::{CreateDomainOptions, DomainCapability, DomainChanges, Tls},
+        domains::types::{CreateDomainOptions, DomainChanges, Tls},
         test::{CLIENT, DebugResult},
     };
 
@@ -457,10 +436,7 @@ mod test {
         // Create
         let domain = resend
             .domains
-            .add(
-                CreateDomainOptions::new("example.com")
-                    .with_capability(DomainCapability::SendAndReceive),
-            )
+            .add(CreateDomainOptions::new("example.com"))
             .await?;
 
         std::thread::sleep(std::time::Duration::from_secs(4));
@@ -471,7 +447,6 @@ mod test {
 
         // Get
         let domain = resend.domains.get(&domain.id).await?;
-        assert!(domain.capability == DomainCapability::SendAndReceive);
 
         // Update
         let updates = DomainChanges::new()
