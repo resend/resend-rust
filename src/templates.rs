@@ -166,9 +166,6 @@ pub mod types {
     pub enum VariableType {
         String,
         Number,
-        Boolean,
-        Object,
-        List,
     }
 
     impl CreateTemplateOptions {
