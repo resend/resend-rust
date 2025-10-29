@@ -684,7 +684,7 @@ mod test {
         assert_eq!(contacts.len(), 1);
 
         // Delete.
-        let deleted = resend.contacts.delete(&id).await?;
+        let deleted = resend.contacts.delete(&contact.id).await?;
         assert!(deleted);
 
         // Delete audience.
