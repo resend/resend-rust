@@ -404,29 +404,8 @@ mod test {
     use crate::list_opts::ListOptions;
     use crate::{
         domains::types::{CreateDomainOptions, DomainChanges, Tls},
-        test::{CLIENT, DebugResult},
+        test::{CLIENT, DebugResult, retry},
     };
-
-    // <https://stackoverflow.com/a/77859502/12756474>
-    async fn retry<O, E, F>(mut f: F, retries: i32, interval: std::time::Duration) -> Result<O, E>
-    where
-        F: AsyncFnMut() -> Result<O, E>,
-    {
-        let mut count = 0;
-        loop {
-            match f().await {
-                Ok(output) => break Ok(output),
-                Err(e) => {
-                    println!("try {count} failed");
-                    count += 1;
-                    if count == retries {
-                        return Err(e);
-                    }
-                    tokio::time::sleep(interval).await;
-                }
-            }
-        }
-    }
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]

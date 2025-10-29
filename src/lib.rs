@@ -259,4 +259,30 @@ mod test {
     /// let resend = &*CLIENT;
     /// ```
     pub(crate) static CLIENT: LazyLock<Resend> = LazyLock::new(Resend::default);
+
+    // <https://stackoverflow.com/a/77859502/12756474>
+    #[allow(clippy::redundant_pub_crate)]
+    pub(crate) async fn retry<O, E, F>(
+        mut f: F,
+        retries: i32,
+        interval: std::time::Duration,
+    ) -> Result<O, E>
+    where
+        F: AsyncFnMut() -> Result<O, E>,
+    {
+        let mut count = 0;
+        loop {
+            match f().await {
+                Ok(output) => break Ok(output),
+                Err(e) => {
+                    println!("try {count} failed");
+                    count += 1;
+                    if count == retries {
+                        return Err(e);
+                    }
+                    tokio::time::sleep(interval).await;
+                }
+            }
+        }
+    }
 }
