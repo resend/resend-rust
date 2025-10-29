@@ -266,6 +266,7 @@ mod test {
             .with_description("Weekly newsletter for our subscribers")
             .with_visibility(TopicVisibility::Private);
         let topic = resend.topics.update(&topic.id, update).await?;
+        std::thread::sleep(std::time::Duration::from_secs(4));
 
         // List
         let topics = resend.topics.list(ListOptions::default()).await?;

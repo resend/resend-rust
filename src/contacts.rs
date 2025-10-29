@@ -663,7 +663,7 @@ mod test {
         // Update.
         let changes = ContactChanges::new().with_unsubscribed(true);
         let contact = resend.contacts.update(&id, changes).await?;
-        std::thread::sleep(std::time::Duration::from_secs(2));
+        std::thread::sleep(std::time::Duration::from_secs(4));
 
         // Retrieve.
         let contact = resend.contacts.get(&contact.id).await?;
