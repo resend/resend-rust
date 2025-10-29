@@ -616,6 +616,7 @@ mod test {
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
+    #[ignore = "Flaky backend"]
     async fn all() -> DebugResult<()> {
         let resend = &*CLIENT;
         let audience = "test_contacts";
@@ -708,6 +709,7 @@ mod test {
         Ok(())
     }
 
+    #[ignore = "Flaky backend"]
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
     async fn segments() -> DebugResult<()> {
