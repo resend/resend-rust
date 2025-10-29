@@ -5,10 +5,12 @@ use reqwest::Method;
 
 use crate::{
     Config, Result,
+    contacts::types::ContactPropertyChanges,
     list_opts::ListOptions,
     types::{
-        AddContactSegmentResponse, ContactTopic, RemoveContactSegmentResponse, Segment,
-        UpdateContactTopicOptions,
+        AddContactSegmentResponse, ContactProperty, ContactTopic, CreateContactPropertyOptions,
+        CreateContactPropertyResponse, DeleteContactPropertyResponse, RemoveContactSegmentResponse,
+        Segment, UpdateContactPropertyResponse, UpdateContactTopicOptions,
     },
 };
 use crate::{
@@ -202,6 +204,94 @@ impl ContactsSvc {
 
         Ok(content)
     }
+
+    /// Create a custom property for your contacts.
+    ///
+    /// <https://resend.com/docs/api-reference/contact-properties/create-contact-property>
+    #[maybe_async::maybe_async]
+    #[allow(clippy::needless_pass_by_value)]
+    pub async fn create_property(
+        &self,
+        contact_property: CreateContactPropertyOptions,
+    ) -> Result<CreateContactPropertyResponse> {
+        let path = "/contact-properties";
+
+        let request = self.0.build(Method::POST, path);
+        let response = self.0.send(request.json(&contact_property)).await?;
+        let content = response.json::<CreateContactPropertyResponse>().await?;
+
+        Ok(content)
+    }
+
+    /// Retrieve a contact property by its ID.
+    ///
+    /// <https://resend.com/docs/api-reference/contact-properties/get-contact-property>
+    #[maybe_async::maybe_async]
+    pub async fn get_property(&self, contact_property_id: &str) -> Result<ContactProperty> {
+        let path = format!("/contact-properties/{contact_property_id}");
+
+        let request = self.0.build(Method::GET, &path);
+        let response = self.0.send(request).await?;
+        let content = response.json::<ContactProperty>().await?;
+
+        Ok(content)
+    }
+
+    /// Update an existing contact property.
+    ///
+    /// <https://resend.com/docs/api-reference/contact-properties/update-contact-property>
+    #[maybe_async::maybe_async]
+    #[allow(clippy::needless_pass_by_value)]
+    pub async fn update_property(
+        &self,
+        contact_property_id: &str,
+        update: ContactPropertyChanges,
+    ) -> Result<UpdateContactPropertyResponse> {
+        let path = format!("/contact-properties/{contact_property_id}");
+
+        let request = self.0.build(Method::PATCH, &path);
+        let response = self.0.send(request.json(&update)).await?;
+        let content = response.json::<UpdateContactPropertyResponse>().await?;
+
+        Ok(content)
+    }
+
+    /// Remove an existing contact property.
+    ///
+    /// <https://resend.com/docs/api-reference/contact-properties/delete-contact-property>
+    #[maybe_async::maybe_async]
+    pub async fn delete_property(
+        &self,
+        contact_property_id: &str,
+    ) -> Result<DeleteContactPropertyResponse> {
+        let path = format!("/contact-properties/{contact_property_id}");
+
+        let request = self.0.build(Method::DELETE, &path);
+        let response = self.0.send(request).await?;
+        let content = response.json::<DeleteContactPropertyResponse>().await?;
+
+        Ok(content)
+    }
+
+    /// Retrieve a list of contact properties.
+    ///
+    /// - Default limit: 20
+    ///
+    /// <https://resend.com/docs/api-reference/contact-properties/list-contact-properties>
+    #[maybe_async::maybe_async]
+    #[allow(clippy::needless_pass_by_value)]
+    pub async fn list_properties<T>(
+        &self,
+        list_opts: ListOptions<T>,
+    ) -> Result<ListResponse<ContactProperty>> {
+        let path = "/contact-properties";
+
+        let request = self.0.build(Method::GET, path).query(&list_opts);
+        let response = self.0.send(request).await?;
+        let content = response.json::<ListResponse<ContactProperty>>().await?;
+
+        Ok(content)
+    }
 }
 
 impl fmt::Debug for ContactsSvc {
@@ -220,6 +310,7 @@ pub mod types {
     };
 
     crate::define_id_type!(ContactId);
+    crate::define_id_type!(ContactPropertyId);
 
     /// Details of a new [`Contact`].
     #[must_use]
@@ -359,10 +450,10 @@ pub mod types {
 
     #[derive(Debug, Clone, Deserialize)]
     pub struct DeleteContactResponse {
-        /// The ID of the domain.
+        /// The ID of the contact.
         #[allow(dead_code)]
         pub contact: ContactId,
-        /// Indicates whether the domain was deleted successfully.
+        /// Indicates whether the contact was deleted successfully.
         pub deleted: bool,
     }
 
@@ -408,6 +499,105 @@ pub mod types {
         pub id: SegmentId,
         pub deleted: bool,
     }
+
+    #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone, Copy)]
+    #[must_use]
+    #[serde(rename_all = "snake_case")]
+    pub enum PropertyType {
+        String,
+        Number,
+    }
+
+    /// Details of a new [`ContactProperty`].
+    #[must_use]
+    #[derive(Debug, Clone, Serialize)]
+    pub struct CreateContactPropertyOptions {
+        key: String,
+        #[serde(rename = "type")]
+        ttype: PropertyType,
+        display_name: Option<String>,
+        fallback_value: Option<serde_json::Value>,
+    }
+
+    impl CreateContactPropertyOptions {
+        /// - `key`: The property key. Max length is `50` characters. Only alphanumeric characters
+        ///   and underscores are allowed.
+        /// - `ttype`: The property type.
+        pub fn new(key: impl Into<String>, ttype: PropertyType) -> Self {
+            Self {
+                key: key.into(),
+                ttype,
+                display_name: None,
+                fallback_value: None,
+            }
+        }
+
+        /// A human-readable name for the property.
+        pub fn with_display_name(mut self, display_name: impl Into<String>) -> Self {
+            self.display_name = Some(display_name.into());
+            self
+        }
+
+        /// The default value to use when the property is not set for a contact. Must match the
+        /// type specified in the `ttype` field.
+        pub fn with_fallback(mut self, fallback: impl Into<serde_json::Value>) -> Self {
+            self.fallback_value = Some(fallback.into());
+            self
+        }
+    }
+
+    #[derive(Debug, Clone, Deserialize)]
+    pub struct CreateContactPropertyResponse {
+        pub id: ContactPropertyId,
+    }
+
+    #[derive(Debug, Clone, Deserialize)]
+    pub struct ContactProperty {
+        pub id: ContactPropertyId,
+        pub created_at: String,
+        pub key: String,
+        #[serde(rename = "type")]
+        pub ttype: PropertyType,
+        pub fallback_value: Option<serde_json::Value>,
+    }
+
+    /// List of changes to apply to a [`ContactProperty`].
+    #[must_use]
+    #[derive(Debug, Default, Clone, Serialize)]
+    pub struct ContactPropertyChanges {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        display_name: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        fallback_value: Option<serde_json::Value>,
+    }
+
+    impl ContactPropertyChanges {
+        /// A human-readable name for the property.
+        pub fn with_display_name(mut self, display_name: impl Into<String>) -> Self {
+            self.display_name = Some(display_name.into());
+            self
+        }
+
+        /// The default value to use when the property is not set for a contact. Must match the
+        /// type of the property.
+        pub fn with_fallback(mut self, fallback: impl Into<serde_json::Value>) -> Self {
+            self.fallback_value = Some(fallback.into());
+            self
+        }
+    }
+
+    #[derive(Debug, Clone, Deserialize)]
+    pub struct UpdateContactPropertyResponse {
+        /// Unique identifier for the updated contact property.
+        pub id: ContactPropertyId,
+    }
+
+    #[derive(Debug, Clone, Deserialize)]
+    pub struct DeleteContactPropertyResponse {
+        #[allow(dead_code)]
+        pub id: ContactPropertyId,
+        pub deleted: bool,
+    }
 }
 
 #[cfg(test)]
@@ -416,8 +606,8 @@ mod test {
     use crate::list_opts::ListOptions;
     use crate::test::{CLIENT, DebugResult};
     use crate::types::{
-        ContactChanges, CreateContactOptions, CreateTopicOptions, SubscriptionType,
-        UpdateContactTopicOptions,
+        ContactChanges, ContactProperty, CreateContactOptions, CreateTopicOptions,
+        SubscriptionType, UpdateContactTopicOptions,
     };
 
     #[tokio_shared_rt::test(shared = true)]
@@ -571,5 +761,64 @@ mod test {
         let deleted = resend.segments.delete(&segment.id).await?;
         assert!(deleted);
         Ok(())
+    }
+
+    #[tokio_shared_rt::test(shared = true)]
+    #[cfg(not(feature = "blocking"))]
+    async fn properties() -> DebugResult<()> {
+        use crate::{
+            contacts::types::ContactPropertyChanges,
+            types::{CreateContactPropertyOptions, PropertyType},
+        };
+
+        let resend = &*CLIENT;
+
+        // Create
+        let contact_property =
+            CreateContactPropertyOptions::new("company_name", PropertyType::String)
+                .with_fallback("Acme Corp");
+        let contact_property = resend.contacts.create_property(contact_property).await?;
+        std::thread::sleep(std::time::Duration::from_secs(2));
+
+        // Get
+        let contact_property = resend.contacts.get_property(&contact_property.id).await?;
+
+        // Update
+        let update = ContactPropertyChanges::default().with_fallback("Example Company");
+        let contact_property = resend
+            .contacts
+            .update_property(&contact_property.id, update)
+            .await?;
+
+        // List
+        let contact_properties = resend
+            .contacts
+            .list_properties(ListOptions::default())
+            .await?;
+        assert!(!contact_properties.is_empty());
+
+        // Delete
+        let deleted = resend
+            .contacts
+            .delete_property(&contact_property.id)
+            .await?;
+        assert!(deleted.deleted);
+
+        Ok(())
+    }
+
+    #[test]
+    fn deserialize_test() {
+        let contact_property = r#"{
+  "object": "contact_property",
+  "id": "b6d24b8e-af0b-4c3c-be0c-359bbd97381e",
+  "key": "company_name",
+  "type": "string",
+  "fallback_value": "Acme Corp",
+  "created_at": "2023-04-08T00:11:13.110779+00:00"
+}"#;
+
+        let res = serde_json::from_str::<ContactProperty>(contact_property);
+        assert!(res.is_ok());
     }
 }
