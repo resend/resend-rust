@@ -665,11 +665,11 @@ mod test {
 
         // Update.
         let changes = ContactChanges::new().with_unsubscribed(true);
-        let contact = resend.contacts.update(&id, changes).await?;
+        let _contact = resend.contacts.update(&id, changes).await?;
         std::thread::sleep(std::time::Duration::from_secs(4));
 
         // Retrieve.
-        let contact = resend.contacts.get(&contact.id).await?;
+        let contact = resend.contacts.get(&id).await?;
         assert!(contact.unsubscribed);
 
         // Retrieve by email.
@@ -684,7 +684,7 @@ mod test {
         assert_eq!(contacts.len(), 1);
 
         // Delete.
-        let deleted = resend.contacts.delete(&contact.id).await?;
+        let deleted = resend.contacts.delete(&id).await?;
         assert!(deleted);
 
         // Delete audience.

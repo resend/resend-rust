@@ -270,7 +270,7 @@ mod test {
 
         // List
         let topics = resend.topics.list(ListOptions::default()).await?;
-        assert!(topics.len() == 1);
+        assert!(topics.len() == 1, "{}", format!("Was {}", topics.len()));
         assert_eq!(
             topics.data.first().unwrap().visibility,
             TopicVisibility::Private
