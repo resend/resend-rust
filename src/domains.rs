@@ -455,7 +455,8 @@ mod test {
             .with_tls(Tls::Enforced);
 
         std::thread::sleep(std::time::Duration::from_secs(4));
-        let domain = resend.domains.update(&domain.id, updates).await?;
+        let f = async || resend.domains.update(&domain.id, updates).await;
+        let domain = retry(f, 5, std::time::Duration::from_secs(2)).await?;
         std::thread::sleep(std::time::Duration::from_secs(4));
 
         // Delete
