@@ -515,7 +515,6 @@ pub mod types {
         key: String,
         #[serde(rename = "type")]
         ttype: PropertyType,
-        display_name: Option<String>,
         fallback_value: Option<serde_json::Value>,
     }
 
@@ -527,15 +526,8 @@ pub mod types {
             Self {
                 key: key.into(),
                 ttype,
-                display_name: None,
                 fallback_value: None,
             }
-        }
-
-        /// A human-readable name for the property.
-        pub fn with_display_name(mut self, display_name: impl Into<String>) -> Self {
-            self.display_name = Some(display_name.into());
-            self
         }
 
         /// The default value to use when the property is not set for a contact. Must match the
@@ -566,18 +558,10 @@ pub mod types {
     #[derive(Debug, Default, Clone, Serialize)]
     pub struct ContactPropertyChanges {
         #[serde(skip_serializing_if = "Option::is_none")]
-        display_name: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
         fallback_value: Option<serde_json::Value>,
     }
 
     impl ContactPropertyChanges {
-        /// A human-readable name for the property.
-        pub fn with_display_name(mut self, display_name: impl Into<String>) -> Self {
-            self.display_name = Some(display_name.into());
-            self
-        }
-
         /// The default value to use when the property is not set for a contact. Must match the
         /// type of the property.
         pub fn with_fallback(mut self, fallback: impl Into<serde_json::Value>) -> Self {
