@@ -132,7 +132,7 @@ pub mod types {
     };
     pub use super::topics::types::{
         CreateTopicOptions, CreateTopicResponse, DeleteTopicResponse, SubscriptionType, Topic,
-        TopicId, UpdateTopicOptions, UpdateTopicResponse,
+        TopicId, TopicVisibility, UpdateTopicOptions, UpdateTopicResponse,
     };
     pub use super::webhooks::types::{
         CreateWebhookOptions, CreateWebhookResponse, DeleteWebhookResponse, UpdateWebhookOptions,

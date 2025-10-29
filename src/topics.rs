@@ -108,6 +108,8 @@ pub mod types {
         default_subscription: SubscriptionType,
         #[serde(skip_serializing_if = "Option::is_none")]
         description: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        visibility: Option<TopicVisibility>,
     }
 
     #[must_use]
@@ -128,6 +130,7 @@ pub mod types {
                 name: name.into(),
                 default_subscription,
                 description: None,
+                visibility: None,
             }
         }
 
@@ -135,6 +138,13 @@ pub mod types {
         #[inline]
         pub fn with_description(mut self, description: String) -> Self {
             self.description = Some(description);
+            self
+        }
+
+        /// The visibility of the topic on the unsubscribe page.
+        #[inline]
+        pub const fn with_visibility(mut self, visibility: TopicVisibility) -> Self {
+            self.visibility = Some(visibility);
             self
         }
     }
@@ -154,7 +164,18 @@ pub mod types {
         pub name: String,
         pub description: Option<String>,
         pub default_subscription: SubscriptionType,
+        pub visibility: TopicVisibility,
         pub created_at: String,
+    }
+
+    #[must_use]
+    #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+    #[serde(rename_all = "kebab-case")]
+    pub enum TopicVisibility {
+        /// Only contacts who are opted in to the topic can see it on the unsubscribe page.
+        Public,
+        /// All contacts can see the topic on the unsubscribe page.
+        Private,
     }
 
     /// List of changes to apply to a [`Topic`].
@@ -162,7 +183,10 @@ pub mod types {
     #[derive(Debug, Default, Clone, Serialize)]
     pub struct UpdateTopicOptions {
         name: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
         description: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        visibility: Option<TopicVisibility>,
     }
 
     impl UpdateTopicOptions {
@@ -170,6 +194,7 @@ pub mod types {
             Self {
                 name: None,
                 description: None,
+                visibility: None,
             }
         }
 
@@ -184,6 +209,13 @@ pub mod types {
         #[inline]
         pub fn with_description(mut self, description: impl Into<String>) -> Self {
             self.description = Some(description.into());
+            self
+        }
+
+        /// The visibility of the topic on the unsubscribe page.
+        #[inline]
+        pub const fn with_visibility(mut self, visibility: TopicVisibility) -> Self {
+            self.visibility = Some(visibility);
             self
         }
     }
@@ -209,7 +241,9 @@ pub mod types {
 mod test {
     use crate::list_opts::ListOptions;
     use crate::test::{CLIENT, DebugResult};
-    use crate::types::{CreateTopicOptions, SubscriptionType, Topic, UpdateTopicOptions};
+    use crate::types::{
+        CreateTopicOptions, SubscriptionType, Topic, TopicVisibility, UpdateTopicOptions,
+    };
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
@@ -217,22 +251,29 @@ mod test {
         let resend = &*CLIENT;
 
         // Create
-        let topic = CreateTopicOptions::new("Weekly Newsletter", SubscriptionType::OptIn);
+        let topic = CreateTopicOptions::new("Weekly Newsletter", SubscriptionType::OptIn)
+            .with_visibility(TopicVisibility::Public);
         let topic = resend.topics.create(topic).await?;
         std::thread::sleep(std::time::Duration::from_secs(1));
 
         // Get
         let topic = resend.topics.get(&topic.id).await?;
+        assert_eq!(topic.visibility, TopicVisibility::Public);
 
         // Update
         let update = UpdateTopicOptions::new()
             .with_name("Weekly Newsletter")
-            .with_description("Weekly newsletter for our subscribers");
+            .with_description("Weekly newsletter for our subscribers")
+            .with_visibility(TopicVisibility::Private);
         let topic = resend.topics.update(&topic.id, update).await?;
 
         // List
         let topics = resend.topics.list(ListOptions::default()).await?;
         assert!(topics.len() == 1);
+        assert_eq!(
+            topics.data.first().unwrap().visibility,
+            TopicVisibility::Private
+        );
 
         // Delete
         let deleted = resend.topics.delete(&topic.id).await?;
