@@ -279,7 +279,8 @@ mod test {
         // Delete
         let deleted = resend.topics.delete(&topic.id).await?;
         assert!(deleted.deleted);
-        std::thread::sleep(std::time::Duration::from_secs(1));
+
+        std::thread::sleep(std::time::Duration::from_secs(4));
 
         let topics = resend.topics.list(ListOptions::default()).await?;
         assert!(topics.is_empty());

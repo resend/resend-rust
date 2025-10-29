@@ -608,6 +608,9 @@ mod test {
 
         let deleted = resend.contacts.delete(&id).await?;
         assert!(deleted);
+
+        std::thread::sleep(std::time::Duration::from_secs(4));
+
         Ok(())
     }
 
@@ -700,6 +703,8 @@ mod test {
             .await?;
         assert!(contacts.is_empty());
 
+        std::thread::sleep(std::time::Duration::from_secs(4));
+
         Ok(())
     }
 
@@ -743,6 +748,9 @@ mod test {
         assert!(deleted);
         let deleted = resend.segments.delete(&segment.id).await?;
         assert!(deleted);
+
+        std::thread::sleep(std::time::Duration::from_secs(4));
+
         Ok(())
     }
 
@@ -786,6 +794,8 @@ mod test {
             .delete_property(&contact_property.id)
             .await?;
         assert!(deleted.deleted);
+
+        std::thread::sleep(std::time::Duration::from_secs(4));
 
         Ok(())
     }
