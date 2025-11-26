@@ -112,13 +112,13 @@ impl<T> Index<usize> for ListResponse<T> {
 impl<T> ListResponse<T> {
     /// Equivalent to `self.data.is_empty()`.
     #[inline]
-    pub const fn is_empty(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         self.data.is_empty()
     }
 
     /// Equivalent to `self.data.len()`.
     #[inline]
-    pub const fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.data.len()
     }
 }
