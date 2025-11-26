@@ -66,22 +66,17 @@ pub mod types {
 
     /// Batch validation modes control how emails are validated in batch sending.
     #[must_use]
-    #[derive(Debug, Copy, Clone)]
+    #[derive(Default, Debug, Copy, Clone)]
     pub enum BatchValidation {
         /// Strict mode (default)
         ///
         /// Strict mode only sends the batch if all emails in the batch request are valid.
         /// - Atomic behavior: if any email in the batch fails validation, the entire batch is rejected
         /// - Error details: only the validation error causing the failure is returned
+        #[default]
         Strict,
         // Permissive mode processes all emails, allowing for partial success.
         Permissive,
-    }
-
-    impl Default for BatchValidation {
-        fn default() -> Self {
-            Self::Strict
-        }
     }
 
     impl std::fmt::Display for BatchValidation {
