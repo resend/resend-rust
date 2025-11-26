@@ -170,7 +170,6 @@ pub mod types {
         }
 
         #[inline]
-        #[allow(clippy::missing_const_for_fn)]
         pub fn with_status(mut self, status: WebhookStatus) -> Self {
             self.status = Some(status);
             self

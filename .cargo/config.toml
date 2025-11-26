@@ -160,4 +160,5 @@ rustflags = [
     "-Wunused-lifetimes",
     "-Wunused-qualifications",
     "-Wvariant-size-differences",
+    "-Aclippy::missing_const_for_fn",
 ]
