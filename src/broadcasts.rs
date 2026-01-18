@@ -133,6 +133,10 @@ pub mod types {
         text: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         name: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        send: Option<bool>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        scheduled_at: Option<String>,
     }
 
     impl CreateBroadcastOptions {
@@ -150,6 +154,8 @@ pub mod types {
                 html: None,
                 text: None,
                 name: None,
+                send: None,
+                scheduled_at: None,
             }
         }
 
@@ -187,6 +193,23 @@ pub mod types {
         #[inline]
         pub fn with_name(mut self, name: &str) -> Self {
             self.name = Some(name.to_owned());
+            self
+        }
+
+        /// When set to `true`, the broadcast will be sent or scheduled (if `scheduled_at` is
+        /// provided) without requiring a separate call to the
+        /// [`crate::broadcasts::BroadcastsSvc::send`] endpoint.
+        #[inline]
+        pub fn with_send(mut self, send: bool) -> Self {
+            self.send = Some(send);
+            self
+        }
+
+        /// Schedule email to be sent later. The date should be in language natural (e.g.: in 1 min)
+        /// or ISO 8601 format (e.g: 2024-08-05T11:52:01.858Z).
+        #[inline]
+        pub fn with_scheduled_at(mut self, scheduled_at: &str) -> Self {
+            self.scheduled_at = Some(scheduled_at.to_owned());
             self
         }
     }
