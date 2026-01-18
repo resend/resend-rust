@@ -122,6 +122,8 @@ pub struct DomainEvent {
 pub enum EmailEventType {
     #[serde(rename = "email.sent")]
     EmailSent,
+    #[serde(rename = "email.suppressed")]
+    EmailSuppressed,
     #[serde(rename = "email.delivered")]
     EmailDelivered,
     #[serde(rename = "email.delivery_delayed")]
@@ -136,6 +138,8 @@ pub enum EmailEventType {
     EmailClicked,
     #[serde(rename = "email.received")]
     EmailReceived,
+    #[serde(rename = "email.scheduled")]
+    EmailScheduled,
     #[serde(rename = "email.failed")]
     EmailFailed,
 }
@@ -671,7 +675,8 @@ mod test {
         let html = response.text().await.unwrap();
 
         let fragment = scraper::Html::parse_document(&html);
-        let selector = scraper::Selector::parse("#table-of-contents-content > li > a").unwrap();
+        let selector =
+            scraper::Selector::parse("#content > div > div > div > span > a > code").unwrap();
 
         let expected = EmailEventType::COUNT + ContactEventType::COUNT + DomainEventType::COUNT;
         let actual = fragment
