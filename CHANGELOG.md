@@ -8,8 +8,16 @@ and this project adheres to
 
 <!-- ## Unreleased -->
 
-<!-- TODO: Change this to a proper version later -->
-## [0.20.0-rc.1] - 2025-11-29
+## [0.20.0] - 2026-01-18
+
+### Changed
+
+- Renamed `ErrorKind::ValidationError403` -> `ErrorKind::ValidationError403Email`
+
+### Added
+
+- `ErrorKind::ValidationError403Domain`
+- `EmailEventType::EmailSuppressed`, `EmailEventType::EmailScheduled`
 
 ### Fixed
 
@@ -413,7 +421,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
-[0.20.0-rc.1]: https://crates.io/crates/resend-rs/0.20.0-rc.1
+[0.20.0]: https://crates.io/crates/resend-rs/0.20.0
 [0.19.0]: https://crates.io/crates/resend-rs/0.19.0
 [0.18.0]: https://crates.io/crates/resend-rs/0.18.0
 [0.17.1]: https://crates.io/crates/resend-rs/0.17.1
