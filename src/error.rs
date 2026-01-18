@@ -87,11 +87,26 @@ pub mod types {
         ///
         /// You can only send testing emails to your own email address (`youremail@domain.com`).
         ///
+        /// To send emails to other recipients, please verify a domain at resend.com/domains, and
+        /// change the from address to an email using this domain.
+        ///
         /// In [Resend's Domain page], add and verify a domain for
         /// which you have DNS access. This allows you to send emails to addresses beyond your own.
         ///
-        /// [Resend's Domain page]: https://resend.com/domains
-        ValidationError403,
+        /// [Learn more about resolving this error](https://resend.com/docs/knowledge-base/403-error-resend-dev-domain).
+        ValidationError403Email,
+
+        /// 403 Forbidden.
+        ///
+        /// - `validation_error`
+        ///
+        /// The `domain.com` domain is not verified. Please, add and verify your domain.
+        ///
+        /// Make sure the domain in your API request's `from` field matches a domain you've
+        /// verified in Resend. Update your API request to use your verified domain, or add and
+        /// verify the domain you're trying to use.
+        /// [Learn more about resolving this error](https://resend.com/docs/knowledge-base/403-error-domain-mismatch).
+        ValidationError403Domain,
 
         /// 404 Not Found.
         ///
@@ -260,7 +275,15 @@ pub mod types {
             if value.name == "validation_error" {
                 return match value.status_code {
                     400 => Self::ValidationError400,
-                    403 => Self::ValidationError403,
+                    // This is a bit silly, since we have 2 validation errors with the same error
+                    // code, we need to differentiate between them based on the message.
+                    403 => {
+                        if value.message.starts_with("You") {
+                            Self::ValidationError403Email
+                        } else {
+                            Self::ValidationError403Domain
+                        }
+                    }
                     _ => Self::Unrecognized,
                 };
             }
