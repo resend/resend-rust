@@ -120,8 +120,8 @@ pub mod types {
         pub filename: Option<String>,
         pub content_type: String,
         pub content_id: Option<String>,
-        pub content_disposition: String,
-        pub size: u32,
+        pub content_disposition: Option<String>,
+        pub size: Option<u32>,
     }
 }
 
