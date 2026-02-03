@@ -8,6 +8,15 @@ and this project adheres to
 
 <!-- ## Unreleased -->
 
+## [0.21.0] - 2026-02-03
+
+### Changed
+
+- The following fields from `InboundAttachment` are not `Option`s:
+  - `filename`
+  - `content_disposition`
+  - `size`
+
 ## [0.20.0] - 2026-01-18
 
 ### Changed
@@ -421,6 +430,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+[0.21.0]: https://crates.io/crates/resend-rs/0.21.0
 [0.20.0]: https://crates.io/crates/resend-rs/0.20.0
 [0.19.0]: https://crates.io/crates/resend-rs/0.19.0
 [0.18.0]: https://crates.io/crates/resend-rs/0.18.0
