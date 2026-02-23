@@ -87,34 +87,25 @@ impl From<DomainEventType> for EventType {
 #[derive(Debug, Clone, Deserialize)]
 pub struct EmailEvent {
     #[serde(rename = "type")]
-    #[allow(clippy::used_underscore_binding)]
-    _type: EmailEventType,
-    created_at: String,
-
-    #[serde(rename = "data")]
-    body: EmailBody,
+    pub r#type: EmailEventType,
+    pub created_at: String,
+    pub data: EmailBody,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct ContactEvent {
     #[serde(rename = "type")]
-    #[allow(clippy::used_underscore_binding)]
-    _type: ContactEventType,
-    created_at: String,
-
-    #[serde(rename = "data")]
-    body: ContactBody,
+    pub r#type: ContactEventType,
+    pub created_at: String,
+    pub data: ContactBody,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct DomainEvent {
     #[serde(rename = "type")]
-    #[allow(clippy::used_underscore_binding)]
-    _type: DomainEventType,
-    created_at: String,
-
-    #[serde(rename = "data")]
-    body: Domain,
+    pub r#type: DomainEventType,
+    pub created_at: String,
+    pub data: Domain,
 }
 
 #[derive(Debug, Copy, Clone, Deserialize, Serialize)]
@@ -168,35 +159,35 @@ pub enum DomainEventType {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct EmailBody {
-    created_at: String,
-    email_id: String,
-    from: String,
-    to: Vec<String>,
-    click: Option<Click>,
-    subject: String,
+    pub created_at: String,
+    pub email_id: String,
+    pub from: String,
+    pub to: Vec<String>,
+    pub click: Option<Click>,
+    pub subject: String,
 }
 
 /// Extra data only populated in [`EmailEventType::EmailClicked`] events.
 #[derive(Debug, Clone, Deserialize)]
 pub struct Click {
     #[serde(rename = "ipAddress")]
-    ip_address: String,
-    link: String,
-    timestamp: String,
+    pub ip_address: String,
+    pub link: String,
+    pub timestamp: String,
     #[serde(rename = "userAgent")]
-    user_agent: String,
+    pub user_agent: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct ContactBody {
-    id: String,
-    audience_id: String,
-    created_at: String,
-    updated_at: String,
-    email: String,
-    first_name: String,
-    last_name: String,
-    unsubscribed: bool,
+    pub id: String,
+    pub audience_id: String,
+    pub created_at: String,
+    pub updated_at: String,
+    pub email: String,
+    pub first_name: String,
+    pub last_name: String,
+    pub unsubscribed: bool,
 }
 
 #[allow(clippy::unwrap_used)]
@@ -230,7 +221,7 @@ mod test {
         let parsed = parsed.unwrap();
 
         if let Event::EmailEvent(email_event) = parsed {
-            assert!(matches!(email_event._type, EmailEventType::EmailSent));
+            assert!(matches!(email_event.r#type, EmailEventType::EmailSent));
         } else {
             panic!("Wrong parsing");
         }
@@ -256,7 +247,7 @@ mod test {
         let parsed = parsed.unwrap();
 
         if let Event::EmailEvent(email_event) = parsed {
-            assert!(matches!(email_event._type, EmailEventType::EmailDelivered));
+            assert!(matches!(email_event.r#type, EmailEventType::EmailDelivered));
         } else {
             panic!("Wrong parsing");
         }
@@ -283,7 +274,7 @@ mod test {
 
         if let Event::EmailEvent(email_event) = parsed {
             assert!(matches!(
-                email_event._type,
+                email_event.r#type,
                 EmailEventType::EmailDeliveryDelayed
             ));
         } else {
@@ -311,7 +302,10 @@ mod test {
         let parsed = parsed.unwrap();
 
         if let Event::EmailEvent(email_event) = parsed {
-            assert!(matches!(email_event._type, EmailEventType::EmailComplained));
+            assert!(matches!(
+                email_event.r#type,
+                EmailEventType::EmailComplained
+            ));
         } else {
             panic!("Wrong parsing");
         }
@@ -337,7 +331,7 @@ mod test {
         let parsed = parsed.unwrap();
 
         if let Event::EmailEvent(email_event) = parsed {
-            assert!(matches!(email_event._type, EmailEventType::EmailBounced));
+            assert!(matches!(email_event.r#type, EmailEventType::EmailBounced));
         } else {
             panic!("Wrong parsing");
         }
@@ -363,7 +357,7 @@ mod test {
         let parsed = parsed.unwrap();
 
         if let Event::EmailEvent(email_event) = parsed {
-            assert!(matches!(email_event._type, EmailEventType::EmailOpened));
+            assert!(matches!(email_event.r#type, EmailEventType::EmailOpened));
         } else {
             panic!("Wrong parsing");
         }
@@ -395,8 +389,8 @@ mod test {
         let parsed = parsed.unwrap();
 
         if let Event::EmailEvent(email_event) = parsed {
-            assert!(matches!(email_event._type, EmailEventType::EmailClicked));
-            assert!(email_event.body.click.is_some());
+            assert!(matches!(email_event.r#type, EmailEventType::EmailClicked));
+            assert!(email_event.data.click.is_some());
         } else {
             panic!("Wrong parsing");
         }
@@ -426,7 +420,7 @@ mod test {
 
         if let Event::ContactEvent(contact_event) = parsed {
             assert!(matches!(
-                contact_event._type,
+                contact_event.r#type,
                 ContactEventType::ContactCreated
             ));
         } else {
@@ -458,7 +452,7 @@ mod test {
 
         if let Event::ContactEvent(contact_event) = parsed {
             assert!(matches!(
-                contact_event._type,
+                contact_event.r#type,
                 ContactEventType::ContactUpdated
             ));
         } else {
@@ -490,7 +484,7 @@ mod test {
 
         if let Event::ContactEvent(contact_event) = parsed {
             assert!(matches!(
-                contact_event._type,
+                contact_event.r#type,
                 ContactEventType::ContactDeleted
             ));
         } else {
@@ -546,8 +540,11 @@ mod test {
         let parsed = parsed.unwrap();
 
         if let Event::DomainEvent(domain_event) = parsed {
-            assert!(matches!(domain_event._type, DomainEventType::DomainCreated));
-            assert!(domain_event.body.records.is_some_and(|r| r.len() == 3));
+            assert!(matches!(
+                domain_event.r#type,
+                DomainEventType::DomainCreated
+            ));
+            assert!(domain_event.data.records.is_some_and(|r| r.len() == 3));
         } else {
             panic!("Wrong parsing");
         }
@@ -601,8 +598,11 @@ mod test {
         let parsed = parsed.unwrap();
 
         if let Event::DomainEvent(domain_event) = parsed {
-            assert!(matches!(domain_event._type, DomainEventType::DomainUpdated));
-            assert!(domain_event.body.records.is_some_and(|r| r.len() == 3));
+            assert!(matches!(
+                domain_event.r#type,
+                DomainEventType::DomainUpdated
+            ));
+            assert!(domain_event.data.records.is_some_and(|r| r.len() == 3));
         } else {
             panic!("Wrong parsing");
         }
@@ -656,8 +656,11 @@ mod test {
         let parsed = parsed.unwrap();
 
         if let Event::DomainEvent(domain_event) = parsed {
-            assert!(matches!(domain_event._type, DomainEventType::DomainDeleted));
-            assert!(domain_event.body.records.is_some_and(|r| r.len() == 3));
+            assert!(matches!(
+                domain_event.r#type,
+                DomainEventType::DomainDeleted
+            ));
+            assert!(domain_event.data.records.is_some_and(|r| r.len() == 3));
         } else {
             panic!("Wrong parsing");
         }

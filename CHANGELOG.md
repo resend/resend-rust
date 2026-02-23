@@ -8,6 +8,13 @@ and this project adheres to
 
 <!-- ## Unreleased -->
 
+## [0.21.1] - 2026-02-23
+
+### Added
+
+- Many fields that were previously private in `events` are now public
+
+
 ## [0.21.0] - 2026-02-03
 
 ### Changed
@@ -430,6 +437,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+[0.21.1]: https://crates.io/crates/resend-rs/0.21.1
 [0.21.0]: https://crates.io/crates/resend-rs/0.21.0
 [0.20.0]: https://crates.io/crates/resend-rs/0.20.0
 [0.19.0]: https://crates.io/crates/resend-rs/0.19.0
