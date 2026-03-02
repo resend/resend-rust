@@ -116,7 +116,7 @@ pub mod types {
         ReceivingRecordType, Region, SpfRecordType, Tls, UpdateDomainResponse,
     };
     pub use super::emails::types::{
-        Attachment, CancelScheduleResponse, ContentOrPath, CreateAttachment,
+        Attachment, CancelScheduleResponse, ContentDisposition, ContentOrPath, CreateAttachment,
         CreateEmailBaseOptions, CreateEmailResponse, Email, EmailEvent, EmailId, EmailTemplate,
         Tag, UpdateEmailOptions, UpdateEmailResponse,
     };

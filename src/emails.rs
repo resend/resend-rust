@@ -595,10 +595,18 @@ pub mod types {
         pub filename: Option<String>,
         pub size: u32,
         pub content_type: String,
+        pub content_disposition: ContentDisposition,
         pub content_id: Option<String>,
-        pub content_disposition: String,
         pub download_url: String,
         pub expires_at: String,
+    }
+
+    #[must_use]
+    #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+    #[serde(rename_all = "snake_case")]
+    pub enum ContentDisposition {
+        Inline,
+        Attachment,
     }
 
     #[must_use]

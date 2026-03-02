@@ -23,6 +23,7 @@ and this project adheres to
   - `Attachment.AttatchmentId` -> `Attachment.AttachmentId`
   - `InboundAttatchmentId` -> `InboundAttachmentId`
   - `InboundAttachment.InboundAttatchmentId` -> `InboundAttachment.InboundAttachmentId`
+- `Attachment.content_disposition` is now a concrete type instead of a string
 
 ## [0.21.0] - 2026-02-03
 
