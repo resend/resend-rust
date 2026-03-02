@@ -197,7 +197,7 @@ pub mod types {
     use serde::{Deserialize, Serialize};
 
     crate::define_id_type!(InboundEmailId);
-    crate::define_id_type!(InboundAttatchmentId);
+    crate::define_id_type!(InboundAttachmentId);
 
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -233,7 +233,7 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct InboundAttachment {
-        pub id: InboundAttatchmentId,
+        pub id: InboundAttachmentId,
         pub filename: Option<String>,
         pub content_type: String,
         pub content_id: Option<String>,

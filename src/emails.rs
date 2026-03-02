@@ -152,7 +152,7 @@ pub mod types {
     use crate::{emails::parse_nullable_vec, idempotent::Idempotent, types::TemplateId};
 
     crate::define_id_type!(EmailId);
-    crate::define_id_type!(AttatchmentId);
+    crate::define_id_type!(AttachmentId);
 
     /// All requisite components and associated data to send an email.
     ///
@@ -591,7 +591,7 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct Attachment {
-        pub id: AttatchmentId,
+        pub id: AttachmentId,
         pub filename: Option<String>,
         pub size: u32,
         pub content_type: String,

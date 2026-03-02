@@ -122,8 +122,8 @@ pub mod types {
     };
     pub use super::error::types::{ErrorKind, ErrorResponse};
     pub use super::receiving::types::{
-        ForwardInboundEmailResponse, ForwardReceivingEmail, InboundAttachment,
-        InboundAttatchmentId, InboundEmail, InboundEmailId,
+        ForwardInboundEmailResponse, ForwardReceivingEmail, InboundAttachment, InboundAttachmentId,
+        InboundEmail, InboundEmailId,
     };
     pub use super::segments::types::{CreateSegmentResponse, Segment, SegmentId};
     pub use super::templates::types::{

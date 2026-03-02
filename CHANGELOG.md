@@ -16,6 +16,13 @@ and this project adheres to
 - Lots of structs that previously only implemented `Deserialize` now also implement `Serialize`
 - `CreateEmailBaseOptions::with_attachments`
 
+### Changed
+
+- Fixed some typos in typos in types
+  - `AttatchmentId` -> `AttachmentId`
+  - `Attachment.AttatchmentId` -> `Attachment.AttachmentId`
+  - `InboundAttatchmentId` -> `InboundAttachmentId`
+  - `InboundAttachment.InboundAttatchmentId` -> `InboundAttachment.InboundAttachmentId`
 
 ## [0.21.0] - 2026-02-03
 
