@@ -1,11 +1,17 @@
 use std::sync::Arc;
 
+use mailparse::{DispositionType, MailHeaderMap};
 use reqwest::Method;
 
 use crate::{
-    Config, Result,
+    Config, Error, Result,
+    emails::EmailsSvc,
     list_opts::{ListOptions, ListResponse},
-    types::{InboundAttachment, InboundEmail},
+    receiving::types::{ContentSpecified, ForwardReceivingEmail},
+    types::{
+        CreateAttachment, CreateEmailBaseOptions, ForwardInboundEmailResponse, InboundAttachment,
+        InboundEmail, InboundEmailId,
+    },
 };
 
 /// `Resend` APIs for `/emails/receiving` endpoints.
@@ -79,6 +85,109 @@ impl ReceivingSvc {
 
         Ok(content)
     }
+
+    pub async fn forward(
+        &self,
+        opts: ForwardReceivingEmail<ContentSpecified>,
+    ) -> Result<ForwardInboundEmailResponse> {
+        let email_response = self.get(&opts.email_id).await?;
+
+        let raw = email_response.raw.ok_or_else(|| {
+            Error::Resend(crate::types::ErrorResponse {
+                status_code: 400,
+                message: "Raw email content is not available for this email".to_owned(),
+                name: "validation_error".to_owned(),
+            })
+        })?;
+
+        let raw_response_content = reqwest::get(raw.download_url).await?.bytes().await?;
+
+        let email_svc = EmailsSvc(Arc::<Config>::clone(&self.0));
+
+        if opts.passthrough {
+            let parsed = mailparse::parse_mail(&raw_response_content)
+                .map_err(|_e| Error::Parse("Failed to parse raw email".to_owned()))?;
+
+            let attachments = parsed
+                .subparts
+                .iter()
+                .filter(|el| {
+                    el.get_content_disposition().disposition == DispositionType::Attachment
+                })
+                .map(|attachment| {
+                    let disposition = attachment.get_content_disposition();
+
+                    let filename = disposition
+                        .params
+                        .get("filename")
+                        .ok_or_else(|| Error::Parse("Could not parse filename".to_string()))?
+                        .to_owned();
+                    let content = attachment
+                        .get_body_raw()
+                        .map_err(|_e| Error::Parse("Could not get attachment body".to_string()))?;
+                    let content_type = attachment.ctype.mimetype.clone();
+
+                    if let Some(content_id) = attachment.headers.get_first_header("Content-ID") {
+                        let mut content_id = content_id.get_key();
+                        if content_id.starts_with('<') {
+                            content_id = content_id[1..content_id.len() - 1].to_string();
+                        }
+
+                        let attachment = CreateAttachment::from_content(content)
+                            .with_content_id(&content_id)
+                            .with_filename(&filename)
+                            .with_content_type(&content_type);
+                        Ok(attachment)
+                    } else {
+                        let attachment = CreateAttachment::from_content(content)
+                            .with_filename(&filename)
+                            .with_content_type(&content_type);
+                        Ok(attachment)
+                    }
+                })
+                .collect::<Result<Vec<_>>>()?;
+
+            let mut email = CreateEmailBaseOptions::new(opts.from, opts.to, email_response.subject)
+                .with_attachments(attachments);
+
+            if let Some(text) = &opts.text {
+                email = email.with_text(text);
+            } else if let Some(html) = &opts.html {
+                email = email.with_html(html);
+            }
+
+            let res = email_svc.send(email).await?;
+
+            Ok(ForwardInboundEmailResponse {
+                id: InboundEmailId::new(&res.id),
+            })
+        } else {
+            let subject = if email_response.subject.starts_with("Fwd:") {
+                email_response.subject
+            } else {
+                format!("Fwd: {}", email_response.subject)
+            };
+
+            let attachment = CreateAttachment::from_content(raw_response_content.to_vec())
+                .with_filename("forwarded_message.eml")
+                .with_content_type("message/rfc822");
+
+            let mut email = CreateEmailBaseOptions::new(opts.from, opts.to, subject)
+                .with_attachments(vec![attachment]);
+
+            if let Some(text) = &opts.text {
+                email = email.with_text(text);
+            } else if let Some(html) = &opts.html {
+                email = email.with_html(html);
+            }
+
+            let res = email_svc.send(email).await?;
+
+            Ok(ForwardInboundEmailResponse {
+                id: InboundEmailId::new(&res.id),
+            })
+        }
+    }
 }
 
 #[allow(unreachable_pub)]
@@ -130,6 +239,93 @@ pub mod types {
         pub content_id: Option<String>,
         pub content_disposition: Option<String>,
         pub size: Option<u32>,
+    }
+
+    #[derive(Debug, Clone, Copy)]
+    pub struct ContentNotSpecified {}
+
+    #[derive(Debug, Clone, Copy)]
+    pub struct ContentSpecified {}
+
+    #[must_use]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct ForwardReceivingEmail<Contents = ContentNotSpecified> {
+        #[serde(skip)]
+        pub(crate) contents: std::marker::PhantomData<Contents>,
+
+        pub(crate) passthrough: bool,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub(crate) text: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub(crate) html: Option<String>,
+
+        pub(crate) email_id: InboundEmailId,
+        pub(crate) to: Vec<String>,
+        pub(crate) from: String,
+    }
+
+    impl ForwardReceivingEmail {
+        pub fn new(
+            email_id: InboundEmailId,
+            from: impl Into<String>,
+            to: impl IntoIterator<Item = impl Into<String>>,
+        ) -> Self {
+            Self {
+                contents: std::marker::PhantomData,
+                passthrough: true,
+                text: None,
+                html: None,
+                email_id,
+                to: to.into_iter().map(Into::into).collect(),
+                from: from.into(),
+            }
+        }
+
+        #[inline]
+        pub fn with_passthrough(mut self, passthrough: bool) -> Self {
+            self.passthrough = passthrough;
+            self
+        }
+    }
+
+    impl ForwardReceivingEmail<ContentNotSpecified> {
+        #[inline]
+        pub fn with_text(self, text: &str) -> ForwardReceivingEmail<ContentSpecified> {
+            ForwardReceivingEmail::<ContentSpecified> {
+                contents: std::marker::PhantomData,
+
+                passthrough: self.passthrough,
+
+                text: Some(text.to_owned()),
+                html: None,
+
+                email_id: self.email_id,
+                to: self.to,
+                from: self.from,
+            }
+        }
+
+        #[inline]
+        pub fn with_html(self, html: &str) -> ForwardReceivingEmail<ContentSpecified> {
+            ForwardReceivingEmail::<ContentSpecified> {
+                contents: std::marker::PhantomData,
+
+                passthrough: self.passthrough,
+
+                text: None,
+                html: Some(html.to_owned()),
+
+                email_id: self.email_id,
+                to: self.to,
+                from: self.from,
+            }
+        }
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct ForwardInboundEmailResponse {
+        pub id: InboundEmailId,
     }
 }
 

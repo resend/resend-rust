@@ -14,6 +14,7 @@ and this project adheres to
 
 - Many fields that were previously private in `events` are now public
 - Lots of structs that previously only implemented `Deserialize` now also implement `Serialize`
+- `CreateEmailBaseOptions::with_attachments`
 
 
 ## [0.21.0] - 2026-02-03

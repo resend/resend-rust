@@ -304,6 +304,19 @@ pub mod types {
             self
         }
 
+        /// Adds multiple attachments.
+        ///
+        /// Limited to max 40mb per email.
+        #[inline]
+        pub fn with_attachments(
+            mut self,
+            new_attachments: impl IntoIterator<Item = impl Into<CreateAttachment>>,
+        ) -> Self {
+            let attachments = self.attachments.get_or_insert_with(Vec::new);
+            attachments.extend(new_attachments.into_iter().map(Into::into));
+            self
+        }
+
         /// Adds additional email tag.
         #[inline]
         pub fn with_tag(mut self, tag: impl Into<Tag>) -> Self {
