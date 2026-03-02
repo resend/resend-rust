@@ -242,6 +242,6 @@ mod test {
 
         let res = serde_json::from_str::<ListResponse<InboundEmail>>(emails);
         assert!(res.is_ok());
-        assert!(res.unwrap().data[0].raw.is_some());
+        assert!(res.unwrap().data.first().unwrap().raw.is_some());
     }
 }
