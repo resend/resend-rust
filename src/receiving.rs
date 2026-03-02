@@ -341,6 +341,8 @@ mod test {
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> DebugResult<()> {
+        use crate::types::ForwardReceivingEmail;
+
         let resend = &*CLIENT;
 
         // std::thread::sleep(std::time::Duration::from_secs(1));
@@ -350,6 +352,15 @@ mod test {
         let email_id = &emails.data.first().unwrap().id;
 
         let _email = resend.receiving.get(email_id).await?;
+
+        let fwd_opts = ForwardReceivingEmail::new(
+            email_id.clone(),
+            "test@resend.dev",
+            vec!["delivered@resend.dev"],
+        )
+        .with_text("text")
+        .with_passthrough(true);
+        let _fwd_res = resend.receiving.forward(fwd_opts).await?;
 
         let attachments = resend
             .receiving
