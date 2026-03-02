@@ -9,7 +9,7 @@ use crate::{
     list_opts::{ListOptions, ListResponse},
     receiving::types::{ContentSpecified, ForwardReceivingEmail},
     types::{
-        CreateAttachment, CreateEmailBaseOptions, ForwardInboundEmailResponse, InboundAttachment,
+        Attachment, CreateAttachment, CreateEmailBaseOptions, ForwardInboundEmailResponse,
         InboundEmail, InboundEmailId,
     },
 };
@@ -53,16 +53,12 @@ impl ReceivingSvc {
     ///
     /// <https://resend.com/docs/api-reference/emails/retrieve-received-email>
     #[maybe_async::maybe_async]
-    pub async fn get_attachment(
-        &self,
-        attachment_id: &str,
-        email_id: &str,
-    ) -> Result<InboundAttachment> {
+    pub async fn get_attachment(&self, attachment_id: &str, email_id: &str) -> Result<Attachment> {
         let path = format!("/emails/receiving/{email_id}/attachments/{attachment_id}");
 
         let request = self.0.build(Method::GET, &path);
         let response = self.0.send(request).await?;
-        let content = response.json::<InboundAttachment>().await?;
+        let content = response.json::<Attachment>().await?;
 
         Ok(content)
     }
@@ -76,12 +72,12 @@ impl ReceivingSvc {
         &self,
         email_id: &str,
         list_opts: ListOptions<T>,
-    ) -> Result<ListResponse<InboundAttachment>> {
+    ) -> Result<ListResponse<Attachment>> {
         let path = format!("/emails/receiving/{email_id}/attachments");
 
         let request = self.0.build(Method::GET, &path).query(&list_opts);
         let response = self.0.send(request).await?;
-        let content = response.json::<ListResponse<InboundAttachment>>().await?;
+        let content = response.json::<ListResponse<Attachment>>().await?;
 
         Ok(content)
     }
@@ -235,10 +231,10 @@ pub mod types {
     pub struct InboundAttachment {
         pub id: InboundAttachmentId,
         pub filename: Option<String>,
+        pub size: Option<u32>,
         pub content_type: String,
         pub content_id: Option<String>,
         pub content_disposition: Option<String>,
-        pub size: Option<u32>,
     }
 
     #[derive(Debug, Clone, Copy)]

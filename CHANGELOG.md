@@ -22,6 +22,9 @@ and this project adheres to
   - `InboundAttatchmentId` -> `InboundAttachmentId`
   - `InboundAttachment.InboundAttatchmentId` -> `InboundAttachment.InboundAttachmentId`
 - `Attachment.content_disposition` is now a concrete type instead of a string
+- `receiving::get_attachment` and `receiving::list_attachments` now return `Attachment` instead of
+  `InboundAttachment`
+
 
 ## [0.21.1] - 2026-02-23
 
