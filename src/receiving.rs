@@ -1,7 +1,10 @@
 use std::sync::Arc;
 
+use ::reqwest::Method;
 use mailparse::{DispositionType, MailHeaderMap};
-use reqwest::Method;
+
+#[cfg(feature = "blocking")]
+use reqwest::blocking as reqwest;
 
 use crate::{
     Config, Error, Result,
@@ -82,6 +85,7 @@ impl ReceivingSvc {
         Ok(content)
     }
 
+    #[maybe_async::maybe_async]
     pub async fn forward(
         &self,
         opts: ForwardReceivingEmail<ContentSpecified>,
