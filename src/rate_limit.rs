@@ -4,7 +4,7 @@
 //! as slightly-less-verbose alternatives.
 
 use crate::{Error, Result};
-use rand::Rng;
+use rand::RngExt;
 use std::{future::Future, ops::Range, time::Duration};
 
 /// Configuration options for retrying requests.
