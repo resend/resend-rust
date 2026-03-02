@@ -336,7 +336,7 @@ pub mod types {
         }
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct CreateEmailResponse {
         /// The ID of the sent email.
         pub id: EmailId,
@@ -363,13 +363,13 @@ pub mod types {
         }
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct UpdateEmailResponse {
         /// Unique identifier for the updated contact.
         pub id: EmailId,
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct CancelScheduleResponse {
         /// The ID of the cancelled email.
         pub id: EmailId,
@@ -507,7 +507,7 @@ pub mod types {
 
     /// Received email.
     #[must_use]
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct Email {
         /// The ID of the email.
         pub id: EmailId,
@@ -546,7 +546,7 @@ pub mod types {
     /// Strongly typed `last_event`.
     ///
     /// <https://resend.com/docs/dashboard/emails/introduction#understand-email-events>
-    #[derive(Debug, Clone, Copy, Deserialize, Eq, PartialEq)]
+    #[derive(Debug, Clone, Copy, Serialize, Deserialize, Eq, PartialEq)]
     #[serde(rename_all = "snake_case")]
     pub enum EmailEvent {
         /// The recipient's mail server rejected the email.
@@ -576,7 +576,7 @@ pub mod types {
     }
 
     #[must_use]
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct Attachment {
         pub id: AttatchmentId,
         pub filename: Option<String>,

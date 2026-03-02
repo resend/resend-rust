@@ -95,7 +95,7 @@ pub mod types {
         pub name: String,
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct CreateSegmentResponse {
         /// The ID of the segment.
         pub id: SegmentId,
@@ -105,7 +105,7 @@ pub mod types {
 
     /// Name and ID of an existing contact list.
     #[must_use]
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct Segment {
         /// The ID of the segment.
         pub id: SegmentId,
@@ -117,7 +117,7 @@ pub mod types {
         pub created_at: String,
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct RemoveSegmentResponse {
         /// The ID of the segment.
         #[allow(dead_code)]

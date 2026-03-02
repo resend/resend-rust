@@ -288,7 +288,7 @@ pub mod types {
         }
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct UpdateBroadcastResponse {
         /// Unique identifier for the updated broadcast.
         pub id: BroadcastId,
@@ -296,7 +296,7 @@ pub mod types {
 
     crate::define_id_type!(BroadcastId);
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct CreateBroadcastResponse {
         /// The ID of the created broadcast.
         pub id: BroadcastId,
@@ -330,14 +330,14 @@ pub mod types {
         }
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct SendBroadcastResponse {
         /// The ID of the sent broadcast.
         pub id: BroadcastId,
     }
 
     #[must_use]
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct Broadcast {
         pub id: BroadcastId,
         pub name: String,
@@ -354,7 +354,7 @@ pub mod types {
         pub html: Option<String>,
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct RemoveBroadcastResponse {
         /// The ID of the broadcast.
         #[allow(dead_code)]

@@ -1,11 +1,11 @@
 #[allow(unreachable_pub)]
 pub mod types {
-    use serde::Deserialize;
+    use serde::{Deserialize, Serialize};
 
     /// Error returned as a response.
     ///
     /// <https://resend.com/docs/api-reference/errors>
-    #[derive(Debug, Clone, Deserialize, thiserror::Error)]
+    #[derive(Debug, Clone, Serialize, Deserialize, thiserror::Error)]
     #[error("{name}: {message}")]
     pub struct ErrorResponse {
         #[serde(rename = "statusCode")]

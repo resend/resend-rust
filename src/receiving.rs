@@ -85,13 +85,20 @@ impl ReceivingSvc {
 pub mod types {
     use std::collections::HashMap;
 
-    use serde::Deserialize;
+    use serde::{Deserialize, Serialize};
 
     crate::define_id_type!(InboundEmailId);
     crate::define_id_type!(InboundAttatchmentId);
 
     #[must_use]
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct Raw {
+        pub download_url: String,
+        pub expires_at: String,
+    }
+
+    #[must_use]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct InboundEmail {
         pub id: InboundEmailId,
         pub to: Vec<String>,
@@ -109,12 +116,13 @@ pub mod types {
         #[serde(default)]
         pub headers: HashMap<String, String>,
         pub message_id: String,
+        pub raw: Option<Raw>,
         #[serde(default)]
         pub attachments: Vec<InboundAttachment>,
     }
 
     #[must_use]
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct InboundAttachment {
         pub id: InboundAttatchmentId,
         pub filename: Option<String>,
@@ -196,5 +204,44 @@ mod test {
 
         let res = serde_json::from_str::<ListResponse<InboundEmail>>(emails);
         assert!(res.is_ok());
+    }
+
+    #[test]
+    fn deserialize_test2() {
+        let emails = r#"{
+  "object": "list",
+  "has_more": true,
+  "data": [
+    {
+      "id": "a39999a6-88e3-48b1-888b-beaabcde1b33",
+      "to": ["recipient@example.com"],
+      "from": "sender@example.com",
+      "created_at": "2025-10-09 14:37:40.951732+00",
+      "subject": "Hello World",
+      "bcc": [],
+      "cc": [],
+      "reply_to": [],
+      "message_id": "<111-222-333@email.provider.example.com>",
+      "raw": {
+        "download_url": "https://example.com/emails/raw/abc123?signature=xyz789",
+        "expires_at": "2023-04-08T00:13:52.669661+00:00"
+      },
+      "attachments": [
+        {
+          "filename": "example.txt",
+          "content_type": "text/plain",
+          "content_id": null,
+          "content_disposition": "attachment",
+          "id": "47e999c7-c89c-4999-bf32-aaaaa1c3ff21",
+          "size": 13
+        }
+      ]
+    }
+  ]
+}"#;
+
+        let res = serde_json::from_str::<ListResponse<InboundEmail>>(emails);
+        assert!(res.is_ok());
+        assert!(res.unwrap().data[0].raw.is_some());
     }
 }

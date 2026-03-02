@@ -207,7 +207,7 @@ pub mod types {
         ApNorthEast1,
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct DomainSpfRecord {
         /// The name of the record.
         pub name: String,
@@ -226,7 +226,7 @@ pub mod types {
         pub proxy_status: Option<ProxyStatus>,
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct DomainDkimRecord {
         /// The name of the record.
         pub name: String,
@@ -245,7 +245,7 @@ pub mod types {
         pub proxy_status: Option<ProxyStatus>,
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct ReceivingRecord {
         /// The name of the record.
         pub name: String,
@@ -262,19 +262,19 @@ pub mod types {
         pub priority: i32,
     }
 
-    #[derive(Debug, Copy, Clone, Deserialize)]
+    #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
     pub enum ReceivingRecordType {
         #[allow(clippy::upper_case_acronyms)]
         MX,
     }
 
-    #[derive(Debug, Copy, Clone, Deserialize)]
+    #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
     pub enum ProxyStatus {
         Enable,
         Disable,
     }
 
-    #[derive(Debug, Copy, Clone, Deserialize)]
+    #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
     pub enum DomainStatus {
         Pending,
         Verified,
@@ -285,14 +285,14 @@ pub mod types {
         NotStarted,
     }
 
-    #[derive(Debug, Copy, Clone, Deserialize)]
+    #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
     pub enum SpfRecordType {
         MX,
         #[allow(clippy::upper_case_acronyms)]
         TXT,
     }
 
-    #[derive(Debug, Copy, Clone, Deserialize)]
+    #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
     pub enum DkimRecordType {
         #[allow(clippy::upper_case_acronyms)]
         CNAME,
@@ -301,7 +301,7 @@ pub mod types {
     }
 
     /// Individual [`Domain`] record.
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     #[serde(tag = "record")]
     pub enum DomainRecord {
         #[serde(rename = "SPF")]
@@ -314,7 +314,7 @@ pub mod types {
 
     /// Details of an existing domain.
     #[must_use]
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct Domain {
         /// The ID of the domain.
         pub id: DomainId,
@@ -332,7 +332,7 @@ pub mod types {
         pub records: Option<Vec<DomainRecord>>,
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct VerifyDomainResponse {
         /// The ID of the domain.
         #[allow(dead_code)]
@@ -382,13 +382,13 @@ pub mod types {
         }
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct UpdateDomainResponse {
         /// The ID of the updated domain.
         pub id: DomainId,
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct DeleteDomainResponse {
         /// The ID of the domain.
         pub id: DomainId,

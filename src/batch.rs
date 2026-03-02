@@ -62,6 +62,8 @@ impl BatchSvc {
 
 #[allow(unreachable_pub)]
 pub mod types {
+    use serde::{Deserialize, Serialize};
+
     use crate::types::CreateEmailResponse;
 
     /// Batch validation modes control how emails are validated in batch sending.
@@ -88,13 +90,13 @@ pub mod types {
         }
     }
 
-    #[derive(Debug, Clone, serde::Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct SendEmailBatchResponse {
         /// The IDs of the sent emails.
         pub data: Vec<CreateEmailResponse>,
     }
 
-    #[derive(Debug, Clone, serde::Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct SendEmailBatchPermissiveResponse {
         /// The IDs of the sent emails.
         pub data: Vec<CreateEmailResponse>,
@@ -103,7 +105,7 @@ pub mod types {
         pub errors: Vec<PermissiveBatchErrors>,
     }
 
-    #[derive(Debug, Clone, serde::Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct PermissiveBatchErrors {
         /// Index of the email in the batch request
         pub index: i32,

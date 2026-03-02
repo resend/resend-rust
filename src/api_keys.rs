@@ -141,7 +141,7 @@ pub mod types {
 
     /// Token and ID of the newly created [`ApiKey`].
     #[must_use]
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct ApiKeyToken {
         /// The ID of the API key.
         pub id: ApiKeyId,
@@ -151,7 +151,7 @@ pub mod types {
 
     /// Name and ID of an existing API key.
     #[must_use]
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct ApiKey {
         /// The ID of the API key.
         pub id: ApiKeyId,

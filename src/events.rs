@@ -49,7 +49,7 @@ pub fn try_parse_event_type(data: &str) -> Result<EventType> {
 }
 
 /// Represents any [Resend Event](https://resend.com/docs/dashboard/webhooks/event-types).
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Event {
     EmailEvent(EmailEvent),
@@ -84,7 +84,7 @@ impl From<DomainEventType> for EventType {
     }
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EmailEvent {
     #[serde(rename = "type")]
     pub r#type: EmailEventType,
@@ -92,7 +92,7 @@ pub struct EmailEvent {
     pub data: EmailBody,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ContactEvent {
     #[serde(rename = "type")]
     pub r#type: ContactEventType,
@@ -100,7 +100,7 @@ pub struct ContactEvent {
     pub data: ContactBody,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DomainEvent {
     #[serde(rename = "type")]
     pub r#type: DomainEventType,
@@ -157,7 +157,7 @@ pub enum DomainEventType {
     DomainDeleted,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EmailBody {
     pub created_at: String,
     pub email_id: String,
@@ -168,7 +168,7 @@ pub struct EmailBody {
 }
 
 /// Extra data only populated in [`EmailEventType::EmailClicked`] events.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Click {
     #[serde(rename = "ipAddress")]
     pub ip_address: String,
@@ -178,7 +178,7 @@ pub struct Click {
     pub user_agent: String,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ContactBody {
     pub id: String,
     pub audience_id: String,

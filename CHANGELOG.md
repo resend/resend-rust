@@ -13,6 +13,7 @@ and this project adheres to
 ### Added
 
 - Many fields that were previously private in `events` are now public
+- Lots of structs that previously only implemented `Deserialize` now also implement `Serialize`
 
 
 ## [0.21.0] - 2026-02-03
