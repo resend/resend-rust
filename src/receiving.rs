@@ -277,7 +277,9 @@ pub mod types {
                 from: from.into(),
             }
         }
+    }
 
+    impl<T> ForwardReceivingEmail<T> {
         #[inline]
         pub fn with_passthrough(mut self, passthrough: bool) -> Self {
             self.passthrough = passthrough;
