@@ -6,14 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-<!-- ## Unreleased -->
+## Unreleased
 
-## [0.21.1] - 2026-02-23
+### Added 
 
-### Added
-
-- Many fields that were previously private in `events` are now public
 - Lots of structs that previously only implemented `Deserialize` now also implement `Serialize`
+- New `receiving::forward` endpoint for forwarding received emails
 - `CreateEmailBaseOptions::with_attachments`
 
 ### Changed
@@ -24,6 +22,12 @@ and this project adheres to
   - `InboundAttatchmentId` -> `InboundAttachmentId`
   - `InboundAttachment.InboundAttatchmentId` -> `InboundAttachment.InboundAttachmentId`
 - `Attachment.content_disposition` is now a concrete type instead of a string
+
+## [0.21.1] - 2026-02-23
+
+### Added
+
+- Many fields that were previously private in `events` are now public
 
 ## [0.21.0] - 2026-02-03
 
