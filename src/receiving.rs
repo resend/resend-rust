@@ -10,7 +10,7 @@ use crate::{
     Config, Error, Result,
     emails::EmailsSvc,
     list_opts::{ListOptions, ListResponse},
-    receiving::types::{ContentSpecified, ForwardReceivingEmail},
+    receiving::types::ForwardReceivingEmail,
     types::{
         Attachment, CreateAttachment, CreateEmailBaseOptions, ForwardInboundEmailResponse,
         InboundEmail, InboundEmailId,
@@ -88,7 +88,7 @@ impl ReceivingSvc {
     #[maybe_async::maybe_async]
     pub async fn forward(
         &self,
-        opts: ForwardReceivingEmail<ContentSpecified>,
+        opts: ForwardReceivingEmail,
     ) -> Result<ForwardInboundEmailResponse> {
         let email_response = self.get(&opts.email_id).await?;
 
@@ -241,18 +241,9 @@ pub mod types {
         pub content_disposition: Option<String>,
     }
 
-    #[derive(Debug, Clone, Copy)]
-    pub struct ContentNotSpecified {}
-
-    #[derive(Debug, Clone, Copy)]
-    pub struct ContentSpecified {}
-
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
-    pub struct ForwardReceivingEmail<Contents = ContentNotSpecified> {
-        #[serde(skip)]
-        pub(crate) contents: std::marker::PhantomData<Contents>,
-
+    pub struct ForwardReceivingEmail {
         pub(crate) passthrough: bool,
 
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -272,7 +263,6 @@ pub mod types {
             to: impl IntoIterator<Item = impl Into<String>>,
         ) -> Self {
             Self {
-                contents: std::marker::PhantomData,
                 passthrough: true,
                 text: None,
                 html: None,
@@ -283,45 +273,23 @@ pub mod types {
         }
     }
 
-    impl<T> ForwardReceivingEmail<T> {
+    impl ForwardReceivingEmail {
         #[inline]
         pub fn with_passthrough(mut self, passthrough: bool) -> Self {
             self.passthrough = passthrough;
             self
         }
-    }
 
-    impl ForwardReceivingEmail<ContentNotSpecified> {
         #[inline]
-        pub fn with_text(self, text: &str) -> ForwardReceivingEmail<ContentSpecified> {
-            ForwardReceivingEmail::<ContentSpecified> {
-                contents: std::marker::PhantomData,
-
-                passthrough: self.passthrough,
-
-                text: Some(text.to_owned()),
-                html: None,
-
-                email_id: self.email_id,
-                to: self.to,
-                from: self.from,
-            }
+        pub fn with_text(mut self, text: &str) -> Self {
+            self.text = Some(text.to_owned());
+            self
         }
 
         #[inline]
-        pub fn with_html(self, html: &str) -> ForwardReceivingEmail<ContentSpecified> {
-            ForwardReceivingEmail::<ContentSpecified> {
-                contents: std::marker::PhantomData,
-
-                passthrough: self.passthrough,
-
-                text: None,
-                html: Some(html.to_owned()),
-
-                email_id: self.email_id,
-                to: self.to,
-                from: self.from,
-            }
+        pub fn with_html(mut self, html: &str) -> Self {
+            self.html = Some(html.to_owned());
+            self
         }
     }
 
