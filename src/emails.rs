@@ -285,7 +285,7 @@ pub mod types {
             self
         }
 
-        /// Adds or overwrites an email header.
+        /// Adds an email header.
         #[inline]
         pub fn with_header(mut self, name: &str, value: &str) -> Self {
             let headers = self.headers.get_or_insert_with(HashMap::new);
