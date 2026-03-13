@@ -61,6 +61,7 @@ pub fn try_parse_event_type(data: &str) -> Result<EventType> {
 /// Represents any [Resend Event](https://resend.com/docs/dashboard/webhooks/event-types).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
+#[allow(clippy::large_enum_variant)]
 pub enum Event {
     EmailEvent(EmailEvent),
     ContactEvent(ContactEvent),

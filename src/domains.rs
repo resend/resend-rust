@@ -215,7 +215,7 @@ pub mod types {
         pub value: String,
         /// The type of record.
         #[serde(rename = "type")]
-        pub d_type: SpfRecordType,
+        pub r#type: SpfRecordType,
         /// The time to live for the record.
         pub ttl: String,
         /// The status of the record.
@@ -234,7 +234,7 @@ pub mod types {
         pub value: String,
         /// The type of record.
         #[serde(rename = "type")]
-        pub d_type: DkimRecordType,
+        pub r#type: DkimRecordType,
         /// The time to live for the record.
         pub ttl: String,
         /// The status of the record.
@@ -253,7 +253,7 @@ pub mod types {
         pub value: String,
         /// The type of record.
         #[serde(rename = "type")]
-        pub d_type: ReceivingRecordType,
+        pub r#type: ReceivingRecordType,
         /// The time to live for the record.
         pub ttl: String,
         /// The status of the record.

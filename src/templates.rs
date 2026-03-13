@@ -156,7 +156,7 @@ pub mod types {
     pub struct Variable {
         key: String,
         #[serde(rename = "type")]
-        ttype: VariableType,
+        r#type: VariableType,
         fallback_value: Option<serde_json::Value>,
     }
 
@@ -270,12 +270,12 @@ pub mod types {
         /// Creates a new [`Variable`].
         ///
         /// - `key`: The key of the variable. We recommend capitalizing the key (e.g. `FIRST_NAME`).
-        /// - `ttype`: The type of the variable.
+        /// - `r#type`: The type of the variable.
         ///   Can be `string`, `number`, `boolean`, `object`, or `list`.
-        pub fn new(key: impl Into<String>, ttype: VariableType) -> Self {
+        pub fn new(key: impl Into<String>, r#type: VariableType) -> Self {
             Self {
                 key: key.into(),
-                ttype,
+                r#type,
                 fallback_value: None,
             }
         }

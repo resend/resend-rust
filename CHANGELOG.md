@@ -27,6 +27,13 @@ and this project adheres to
   `InboundAttachment`
 - Fixed some `DomainStatus`es parsing incorrectly
 - A bunch of updates to `EmailBody`, now fully up to spec
+- Renamed the type fields of the following structs to `r#type` for consistency
+  - `CreateContactPropertyOptions.ttype`
+  - `ContactProperty.ttype`
+  - `DomainSpfRecord.d_type`
+  - `DomainDkimRecord.d_type`
+  - `ReceivingRecord.d_type`
+  - `Variable.ttype`
 
 ## [0.21.1] - 2026-02-23
 

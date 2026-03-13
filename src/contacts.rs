@@ -514,24 +514,24 @@ pub mod types {
     pub struct CreateContactPropertyOptions {
         key: String,
         #[serde(rename = "type")]
-        ttype: PropertyType,
+        r#type: PropertyType,
         fallback_value: Option<serde_json::Value>,
     }
 
     impl CreateContactPropertyOptions {
         /// - `key`: The property key. Max length is `50` characters. Only alphanumeric characters
         ///   and underscores are allowed.
-        /// - `ttype`: The property type.
-        pub fn new(key: impl Into<String>, ttype: PropertyType) -> Self {
+        /// - `r#type`: The property type.
+        pub fn new(key: impl Into<String>, r#type: PropertyType) -> Self {
             Self {
                 key: key.into(),
-                ttype,
+                r#type,
                 fallback_value: None,
             }
         }
 
         /// The default value to use when the property is not set for a contact. Must match the
-        /// type specified in the `ttype` field.
+        /// type specified in the `r#type` field.
         pub fn with_fallback(mut self, fallback: impl Into<serde_json::Value>) -> Self {
             self.fallback_value = Some(fallback.into());
             self
@@ -549,7 +549,7 @@ pub mod types {
         pub created_at: String,
         pub key: String,
         #[serde(rename = "type")]
-        pub ttype: PropertyType,
+        pub r#type: PropertyType,
         pub fallback_value: Option<serde_json::Value>,
     }
 
