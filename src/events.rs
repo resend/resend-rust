@@ -7,7 +7,10 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::{Result, types::Domain};
+use crate::{
+    Result,
+    types::{Domain, SegmentId},
+};
 
 /// Parses a JSON event into an [`Event`].
 /// ## Example
@@ -182,6 +185,7 @@ pub struct Click {
 pub struct ContactBody {
     pub id: String,
     pub audience_id: String,
+    pub segment_ids: Vec<SegmentId>,
     pub created_at: String,
     pub updated_at: String,
     pub email: String,
@@ -405,6 +409,7 @@ mod test {
       "data": {
         "id": "e169aa45-1ecf-4183-9955-b1499d5701d3",
         "audience_id": "78261eea-8f8b-4381-83c6-79fa7120f1cf",
+        "segment_ids": ["78261eea-8f8b-4381-83c6-79fa7120f1cf"],
         "created_at": "2024-11-17T19:32:22.980Z",
         "updated_at": "2024-11-17T19:32:22.980Z",
         "email": "steve.wozniak@gmail.com",
@@ -423,6 +428,7 @@ mod test {
                 contact_event.r#type,
                 ContactEventType::ContactCreated
             ));
+            assert!(contact_event.data.segment_ids.len() == 1);
         } else {
             panic!("Wrong parsing");
         }
@@ -437,6 +443,7 @@ mod test {
       "data": {
         "id": "e169aa45-1ecf-4183-9955-b1499d5701d3",
         "audience_id": "78261eea-8f8b-4381-83c6-79fa7120f1cf",
+        "segment_ids": ["78261eea-8f8b-4381-83c6-79fa7120f1cf"],
         "created_at": "2024-10-10T15:11:94.110Z",
         "updated_at": "2024-10-11T23:47:56.678Z",
         "email": "steve.wozniak@gmail.com",
@@ -455,6 +462,7 @@ mod test {
                 contact_event.r#type,
                 ContactEventType::ContactUpdated
             ));
+            assert!(contact_event.data.segment_ids.len() == 1);
         } else {
             panic!("Wrong parsing");
         }
@@ -469,6 +477,7 @@ mod test {
       "data": {
         "id": "e169aa45-1ecf-4183-9955-b1499d5701d3",
         "audience_id": "78261eea-8f8b-4381-83c6-79fa7120f1cf",
+        "segment_ids": ["78261eea-8f8b-4381-83c6-79fa7120f1cf"],
         "created_at": "2024-11-10T15:11:94.110Z",
         "updated_at": "2024-11-17T19:32:22.980Z",
         "email": "steve.wozniak@gmail.com",
@@ -487,6 +496,7 @@ mod test {
                 contact_event.r#type,
                 ContactEventType::ContactDeleted
             ));
+            assert!(contact_event.data.segment_ids.len() == 1);
         } else {
             panic!("Wrong parsing");
         }
@@ -502,7 +512,6 @@ mod test {
         "id": "d91cd9bd-1176-453e-8fc1-35364d380206",
         "name": "example.com",
         "status": "not_started",
-        "capability": "send",
         "created_at": "2024-04-26T20:21:26.347412+00:00",
         "region": "us-east-1",
         "records": [
@@ -560,7 +569,6 @@ mod test {
         "id": "d91cd9bd-1176-453e-8fc1-35364d380206",
         "name": "example.com",
         "status": "not_started",
-        "capability": "send",
         "created_at": "2024-04-26T20:21:26.347412+00:00",
         "region": "us-east-1",
         "records": [
@@ -588,6 +596,15 @@ mod test {
             "type": "TXT",
             "status": "not_started",
             "ttl": "Auto"
+          },
+          {
+            "name": "inbound.yourdomain.tld",
+            "priority": 10,
+            "record": "Receiving MX",
+            "status": "pending",
+            "ttl": "Auto",
+            "type": "MX",
+            "value": "inbound-smtp.us-east-1.amazonaws.com"
           }
         ]
       }
@@ -602,7 +619,7 @@ mod test {
                 domain_event.r#type,
                 DomainEventType::DomainUpdated
             ));
-            assert!(domain_event.data.records.is_some_and(|r| r.len() == 3));
+            assert!(domain_event.data.records.is_some_and(|r| r.len() == 4));
         } else {
             panic!("Wrong parsing");
         }
@@ -618,7 +635,6 @@ mod test {
         "id": "d91cd9bd-1176-453e-8fc1-35364d380206",
         "name": "example.com",
         "status": "not_started",
-        "capability": "send",
         "created_at": "2024-04-26T20:21:26.347412+00:00",
         "region": "us-east-1",
         "records": [

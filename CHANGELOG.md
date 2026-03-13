@@ -13,6 +13,7 @@ and this project adheres to
 - Lots of structs that previously only implemented `Deserialize` now also implement `Serialize`
 - New `receiving::forward` endpoint for forwarding received emails
 - `CreateEmailBaseOptions::with_attachments`
+- `ContactBody.segment_ids`
 
 ### Changed
 
@@ -24,7 +25,7 @@ and this project adheres to
 - `Attachment.content_disposition` is now a concrete type instead of a string
 - `receiving::get_attachment` and `receiving::list_attachments` now return `Attachment` instead of
   `InboundAttachment`
-
+- Fixed some `DomainStatus`es parsing incorrectly
 
 ## [0.21.1] - 2026-02-23
 

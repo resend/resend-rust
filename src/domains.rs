@@ -275,13 +275,12 @@ pub mod types {
     }
 
     #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+    #[serde(rename_all = "snake_case")]
     pub enum DomainStatus {
         Pending,
         Verified,
         Failed,
-        #[serde(rename = "temporary_failure")]
         TemporaryFailure,
-        #[serde(rename = "not_started")]
         NotStarted,
     }
 
@@ -308,7 +307,7 @@ pub mod types {
         DomainSpfRecord(DomainSpfRecord),
         #[serde(rename = "DKIM")]
         DomainDkimRecord(DomainDkimRecord),
-        #[serde(rename = "Receiving")]
+        #[serde(rename = "Receiving MX")]
         ReceivingRecord(ReceivingRecord),
     }
 
