@@ -5,11 +5,13 @@
 
 #![allow(dead_code)]
 
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 
 use crate::{
     Result,
-    types::{Domain, SegmentId},
+    types::{BroadcastId, Domain, EmailId, InboundAttachment, SegmentId, TemplateId},
 };
 
 /// Parses a JSON event into an [`Event`].
@@ -21,15 +23,20 @@ use crate::{
 /// let data = r#"
 ///   {
 ///     "type": "email.sent",
-///     "created_at": "2024-11-23T15:53:07.839Z",
+///     "created_at": "2024-02-22T23:41:12.126Z",
 ///     "data": {
-///         "created_at": "2024-11-23 15:53:07.743225+00",
-///         "email_id": "9a148e6d-d79f-43cb-8022-22320546e1db",
-///         "from": "Acme <onboarding@resend.dev>",
-///         "subject": "hello world",
-///         "to": ["delivered@resend.dev"]
+///       "broadcast_id": "8b146471-e88e-4322-86af-016cd36fd216",
+///       "created_at": "2024-02-22T23:41:11.894719+00:00",
+///       "email_id": "56761188-7520-42d8-8898-ff6fc54ce618",
+///       "from": "Acme <onboarding@resend.dev>",
+///       "to": ["delivered@resend.dev"],
+///       "subject": "Sending this example",
+///       "template_id": "43f68331-0622-4e15-8202-246a0388854b",
+///       "tags": {
+///         "category": "confirm_email"
+///       }
 ///     }
-///   }"#;
+/// }"#;
 ///
 ///  let parsed: Result<Event, resend_rs::Error> = try_parse_event(data);
 /// ```
@@ -162,12 +169,63 @@ pub enum DomainEventType {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EmailBody {
+    pub broadcast_id: Option<BroadcastId>,
     pub created_at: String,
-    pub email_id: String,
+    pub email_id: EmailId,
     pub from: String,
     pub to: Vec<String>,
-    pub click: Option<Click>,
     pub subject: String,
+    pub template_id: Option<TemplateId>,
+
+    #[serde(flatten)]
+    pub received: Option<Received>,
+    pub click: Option<Click>,
+    pub bounce: Option<Bounce>,
+    pub failed: Option<Failed>,
+    pub suppressed: Option<Suppressed>,
+
+    // TODO: This might end up changing to an array
+    #[serde(default)]
+    pub tags: HashMap<String, String>,
+}
+
+/// Extra data only populated in [`EmailEventType::EmailSuppressed`] events.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Suppressed {
+    pub message: String,
+    #[serde(rename = "type")]
+    pub r#type: String,
+}
+
+/// Extra data only populated in [`EmailEventType::EmailReceived`] events.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Received {
+    pub bcc: Vec<String>,
+    pub cc: Vec<String>,
+    pub message_id: String,
+    pub attachments: Vec<InboundAttachment>,
+}
+
+/// Extra data only populated in [`EmailEventType::EmailFailed`] events.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Failed {
+    pub reason: String,
+}
+
+/// Extra data only populated in [`EmailEventType::EmailBounced`] events.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Bounce {
+    pub message: String,
+    #[serde(rename = "subType")]
+    pub sub_type: BounceType,
+    #[serde(rename = "type")]
+    pub r#type: String,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub enum BounceType {
+    Suppressed,
+    MessageRejected,
 }
 
 /// Extra data only populated in [`EmailEventType::EmailClicked`] events.
@@ -189,8 +247,8 @@ pub struct ContactBody {
     pub created_at: String,
     pub updated_at: String,
     pub email: String,
-    pub first_name: String,
-    pub last_name: String,
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
     pub unsubscribed: bool,
 }
 
@@ -210,13 +268,18 @@ mod test {
         let data = r#"
     {
       "type": "email.sent",
-      "created_at": "2024-11-23T15:53:07.839Z",
+      "created_at": "2024-02-22T23:41:12.126Z",
       "data": {
-          "created_at": "2024-11-23 15:53:07.743225+00",
-          "email_id": "9a148e6d-d79f-43cb-8022-22320546e1db",
-          "from": "Acme <onboarding@resend.dev>",
-          "subject": "hello world",
-          "to": ["delivered@resend.dev"]
+        "broadcast_id": "8b146471-e88e-4322-86af-016cd36fd216",
+        "created_at": "2024-02-22T23:41:11.894719+00:00",
+        "email_id": "56761188-7520-42d8-8898-ff6fc54ce618",
+        "from": "Acme <onboarding@resend.dev>",
+        "to": ["delivered@resend.dev"],
+        "subject": "Sending this example",
+        "template_id": "43f68331-0622-4e15-8202-246a0388854b",
+        "tags": {
+          "category": "confirm_email"
+        }
       }
     }"#;
 
@@ -238,11 +301,16 @@ mod test {
       "type": "email.delivered",
       "created_at": "2024-02-22T23:41:12.126Z",
       "data": {
+        "broadcast_id": "8b146471-e88e-4322-86af-016cd36fd216",
         "created_at": "2024-02-22T23:41:11.894719+00:00",
         "email_id": "56761188-7520-42d8-8898-ff6fc54ce618",
         "from": "Acme <onboarding@resend.dev>",
         "to": ["delivered@resend.dev"],
-        "subject": "Sending this example"
+        "subject": "Sending this example",
+        "template_id": "43f68331-0622-4e15-8202-246a0388854b",
+        "tags": {
+          "category": "confirm_email"
+        }
       }
     }"#;
 
@@ -264,11 +332,16 @@ mod test {
       "type": "email.delivery_delayed",
       "created_at": "2024-02-22T23:41:12.126Z",
       "data": {
+        "broadcast_id": "8b146471-e88e-4322-86af-016cd36fd216",
         "created_at": "2024-02-22T23:41:11.894719+00:00",
         "email_id": "56761188-7520-42d8-8898-ff6fc54ce618",
         "from": "Acme <onboarding@resend.dev>",
         "to": ["delivered@resend.dev"],
-        "subject": "Sending this example"
+        "subject": "Sending this example",
+        "template_id": "43f68331-0622-4e15-8202-246a0388854b",
+        "tags": {
+          "category": "confirm_email"
+        }
       }
     }"#;
 
@@ -293,11 +366,16 @@ mod test {
       "type": "email.complained",
       "created_at": "2024-02-22T23:41:12.126Z",
       "data": {
+        "broadcast_id": "8b146471-e88e-4322-86af-016cd36fd216",
         "created_at": "2024-02-22T23:41:11.894719+00:00",
         "email_id": "56761188-7520-42d8-8898-ff6fc54ce618",
         "from": "Acme <onboarding@resend.dev>",
         "to": ["delivered@resend.dev"],
-        "subject": "Sending this example"
+        "subject": "Sending this example",
+        "template_id": "43f68331-0622-4e15-8202-246a0388854b",
+        "tags": {
+          "category": "confirm_email"
+        }
       }
     }"#;
 
@@ -322,11 +400,21 @@ mod test {
       "type": "email.bounced",
       "created_at": "2024-11-22T23:41:12.126Z",
       "data": {
+        "broadcast_id": "8b146471-e88e-4322-86af-016cd36fd216",
         "created_at": "2024-11-22T23:41:11.894719+00:00",
         "email_id": "56761188-7520-42d8-8898-ff6fc54ce618",
         "from": "Acme <onboarding@resend.dev>",
         "to": ["delivered@resend.dev"],
-        "subject": "Sending this example"
+        "subject": "Sending this example",
+        "template_id": "43f68331-0622-4e15-8202-246a0388854b",
+        "bounce": {
+          "message": "The recipient's email address is on the suppression list because it has a recent history of producing hard bounces.",
+          "subType": "Suppressed",
+          "type": "Permanent"
+        },
+        "tags": {
+          "category": "confirm_email"
+        }
       }
     }"#;
 
@@ -336,6 +424,7 @@ mod test {
 
         if let Event::EmailEvent(email_event) = parsed {
             assert!(matches!(email_event.r#type, EmailEventType::EmailBounced));
+            assert!(email_event.data.bounce.is_some());
         } else {
             panic!("Wrong parsing");
         }
@@ -348,11 +437,16 @@ mod test {
       "type": "email.opened",
       "created_at": "2024-02-22T23:41:12.126Z",
       "data": {
+        "broadcast_id": "8b146471-e88e-4322-86af-016cd36fd216",
         "created_at": "2024-02-22T23:41:11.894719+00:00",
         "email_id": "56761188-7520-42d8-8898-ff6fc54ce618",
         "from": "Acme <onboarding@resend.dev>",
         "to": ["delivered@resend.dev"],
-        "subject": "Sending this example"
+        "subject": "Sending this example",
+        "template_id": "43f68331-0622-4e15-8202-246a0388854b",
+        "tags": {
+          "category": "confirm_email"
+        }
       }
     }"#;
 
@@ -374,6 +468,7 @@ mod test {
       "type": "email.clicked",
       "created_at": "2024-11-22T23:41:12.126Z",
       "data": {
+        "broadcast_id": "8b146471-e88e-4322-86af-016cd36fd216",
         "created_at": "2024-11-22T23:41:11.894719+00:00",
         "email_id": "56761188-7520-42d8-8898-ff6fc54ce618",
         "from": "Acme <onboarding@resend.dev>",
@@ -384,7 +479,11 @@ mod test {
           "timestamp": "2024-11-24T05:00:57.163Z",
           "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15"
         },
-        "subject": "Sending this example"
+        "subject": "Sending this example",
+        "template_id": "43f68331-0622-4e15-8202-246a0388854b",
+        "tags": {
+          "category": "confirm_email"
+        }
       }
     }"#;
 
@@ -395,6 +494,162 @@ mod test {
         if let Event::EmailEvent(email_event) = parsed {
             assert!(matches!(email_event.r#type, EmailEventType::EmailClicked));
             assert!(email_event.data.click.is_some());
+            assert!(!email_event.data.tags.is_empty());
+        } else {
+            panic!("Wrong parsing");
+        }
+    }
+
+    #[test]
+    fn email_failed() {
+        let data = r#"
+    {
+      "type": "email.failed",
+      "created_at": "2024-11-22T23:41:12.126Z",
+      "data": {
+        "broadcast_id": "8b146471-e88e-4322-86af-016cd36fd216",
+        "created_at": "2024-11-22T23:41:11.894719+00:00",
+        "email_id": "56761188-7520-42d8-8898-ff6fc54ce618",
+        "from": "Acme <onboarding@resend.dev>",
+        "to": ["delivered@resend.dev"],
+        "subject": "Sending this example",
+        "template_id": "43f68331-0622-4e15-8202-246a0388854b",
+        "failed": {
+          "reason": "reached_daily_quota"
+        },
+        "tags": {
+          "category": "confirm_email"
+        }
+      }
+    }"#;
+
+        let parsed = try_parse_event(data);
+        assert!(parsed.is_ok());
+        let parsed = parsed.unwrap();
+
+        if let Event::EmailEvent(email_event) = parsed {
+            assert!(matches!(email_event.r#type, EmailEventType::EmailFailed));
+            assert!(email_event.data.failed.is_some());
+            assert!(!email_event.data.tags.is_empty());
+        } else {
+            panic!("Wrong parsing");
+        }
+    }
+
+    #[test]
+    fn email_received() {
+        let data = r#"
+    {
+      "type": "email.received",
+      "created_at": "2024-02-22T23:41:12.126Z",
+      "data": {
+        "email_id": "56761188-7520-42d8-8898-ff6fc54ce618",
+        "created_at": "2024-02-22T23:41:11.894719+00:00",
+        "from": "Acme <onboarding@resend.dev>",
+        "to": ["delivered@resend.dev"],
+        "bcc": [],
+        "cc": [],
+        "message_id": "<example+123>",
+        "subject": "Sending this example",
+        "attachments": [
+          {
+            "id": "2a0c9ce0-3112-4728-976e-47ddcd16a318",
+            "filename": "avatar.png",
+            "content_type": "image/png",
+            "content_disposition": "inline",
+            "content_id": "img001"
+          }
+        ]
+      }
+    }"#;
+
+        let parsed = try_parse_event(data);
+        assert!(parsed.is_ok());
+        let parsed = parsed.unwrap();
+
+        if let Event::EmailEvent(email_event) = parsed {
+            assert!(matches!(email_event.r#type, EmailEventType::EmailReceived));
+            assert!(email_event.data.received.is_some());
+            assert!(email_event.data.tags.is_empty());
+
+            let received = email_event.data.received.unwrap();
+            assert!(received.attachments.len() == 1);
+            assert!(received.cc.is_empty());
+            assert!(received.bcc.is_empty());
+        } else {
+            panic!("Wrong parsing");
+        }
+    }
+
+    #[test]
+    fn email_scheduled() {
+        let data = r#"
+    {
+      "type": "email.scheduled",
+      "created_at": "2024-02-22T23:41:12.126Z",
+      "data": {
+        "broadcast_id": "8b146471-e88e-4322-86af-016cd36fd216",
+        "created_at": "2024-02-22T23:41:11.894719+00:00",
+        "email_id": "56761188-7520-42d8-8898-ff6fc54ce618",
+        "from": "Acme <onboarding@resend.dev>",
+        "to": ["delivered@resend.dev"],
+        "subject": "Sending this example",
+        "template_id": "43f68331-0622-4e15-8202-246a0388854b",
+        "tags": {
+          "category": "confirm_email"
+        }
+      }
+    }"#;
+
+        let parsed = try_parse_event(data);
+        assert!(parsed.is_ok());
+        let parsed = parsed.unwrap();
+
+        if let Event::EmailEvent(email_event) = parsed {
+            assert!(matches!(email_event.r#type, EmailEventType::EmailScheduled));
+            assert!(email_event.data.received.is_none());
+            assert!(!email_event.data.tags.is_empty());
+        } else {
+            panic!("Wrong parsing");
+        }
+    }
+
+    #[test]
+    fn email_suppressed() {
+        let data = r#"
+    {
+      "type": "email.suppressed",
+      "created_at": "2024-11-22T23:41:12.126Z",
+      "data": {
+        "broadcast_id": "8b146471-e88e-4322-86af-016cd36fd216",
+        "created_at": "2024-11-22T23:41:11.894719+00:00",
+        "email_id": "56761188-7520-42d8-8898-ff6fc54ce618",
+        "from": "Acme <onboarding@resend.dev>",
+        "to": ["delivered@resend.dev"],
+        "subject": "Sending this example",
+        "template_id": "43f68331-0622-4e15-8202-246a0388854b",
+        "suppressed": {
+          "message": "Resend has suppressed sending to this address because it is on the account-level suppression list. This does not count toward your bounce rate metric",
+          "type": "OnAccountSuppressionList"
+        },
+        "tags": {
+          "category": "confirm_email"
+        }
+      }
+    }"#;
+
+        let parsed = try_parse_event(data);
+        assert!(parsed.is_ok());
+        let parsed = parsed.unwrap();
+
+        if let Event::EmailEvent(email_event) = parsed {
+            assert!(matches!(
+                email_event.r#type,
+                EmailEventType::EmailSuppressed
+            ));
+            assert!(email_event.data.received.is_none());
+            assert!(!email_event.data.tags.is_empty());
+            assert!(email_event.data.suppressed.is_some());
         } else {
             panic!("Wrong parsing");
         }

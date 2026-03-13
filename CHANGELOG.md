@@ -26,6 +26,7 @@ and this project adheres to
 - `receiving::get_attachment` and `receiving::list_attachments` now return `Attachment` instead of
   `InboundAttachment`
 - Fixed some `DomainStatus`es parsing incorrectly
+- A bunch of updates to `EmailBody`, now fully up to spec
 
 ## [0.21.1] - 2026-02-23
 
