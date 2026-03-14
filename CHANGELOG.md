@@ -35,6 +35,10 @@ and this project adheres to
   - `DomainDkimRecord.d_type`
   - `ReceivingRecord.d_type`
   - `Variable.ttype`
+- Slightly simplified validation errors
+  - `ValidationError403Email` and `ValidationError403Domain` have now been replace with `ValidationError403`
+    This was done because another 403 error was added for domains so the earlier distinction made no sense and
+    was overly complex anyway.
 
 ## [0.21.1] - 2026-02-23
 
