@@ -14,6 +14,7 @@ and this project adheres to
 - New `receiving::forward` endpoint for forwarding received emails
 - `CreateEmailBaseOptions::with_attachments`
 - `ContactBody.segment_ids`
+- `ApiKey.last_used_at`
 
 ### Changed
 

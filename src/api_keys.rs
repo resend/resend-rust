@@ -159,6 +159,7 @@ pub mod types {
         pub name: String,
         /// The date and time the API key was created in ISO8601 format.
         pub created_at: String,
+        pub last_used_at: Option<String>,
     }
 }
 
