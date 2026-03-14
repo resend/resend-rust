@@ -380,6 +380,7 @@ mod test {
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
+    #[ignore = "Can no longer send broadcasts from the resend.dev domain"]
     async fn create_send_broadcast() -> DebugResult<()> {
         let resend = &*CLIENT;
         std::thread::sleep(std::time::Duration::from_secs(1));
@@ -424,6 +425,7 @@ mod test {
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
+    #[ignore = "Can no longer send broadcasts from the resend.dev domain"]
     async fn list_get_broadcast() -> DebugResult<()> {
         let resend = &*CLIENT;
         std::thread::sleep(std::time::Duration::from_secs(1));
@@ -459,7 +461,7 @@ mod test {
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
-    #[track_caller]
+    #[ignore = "Can no longer send broadcasts from the resend.dev domain"]
     async fn update_broadcast() -> DebugResult<()> {
         let resend = &*CLIENT;
         std::thread::sleep(std::time::Duration::from_secs(1));
