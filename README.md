@@ -4,7 +4,7 @@
 [![Crate Docs][docs-badge]][docs-url]
 [![Crate Version][crates-badge]][crates-url]
 
-A minimal [Resend](https://resend.com) client.
+The official [Resend](https://resend.com) client.
 
 Add with:
 
@@ -15,8 +15,7 @@ cargo add tokio -F macros,rt-multi-thread
 
 Emails are sent via the `Resend` client which provides both a synchronous and
 asynchronous send method. The two are mutually exclusive and accessible via the
-`blocking` feature. The crate uses [reqwest][reqwest] and [serde][serde]
-internally.
+`blocking` feature. The crate uses [reqwest] and [serde] internally.
 
 ### Documentation
 

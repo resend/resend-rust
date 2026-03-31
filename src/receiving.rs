@@ -1,11 +1,20 @@
 use std::sync::Arc;
 
-use reqwest::Method;
+use ::reqwest::Method;
+use mailparse::{DispositionType, MailHeaderMap};
+
+#[cfg(feature = "blocking")]
+use reqwest::blocking as reqwest;
 
 use crate::{
-    Config, Result,
+    Config, Error, Result,
+    emails::EmailsSvc,
     list_opts::{ListOptions, ListResponse},
-    types::{InboundAttachment, InboundEmail},
+    receiving::types::ForwardReceivingEmail,
+    types::{
+        Attachment, CreateAttachment, CreateEmailBaseOptions, ForwardInboundEmailResponse,
+        InboundEmail, InboundEmailId,
+    },
 };
 
 /// `Resend` APIs for `/emails/receiving` endpoints.
@@ -47,16 +56,12 @@ impl ReceivingSvc {
     ///
     /// <https://resend.com/docs/api-reference/emails/retrieve-received-email>
     #[maybe_async::maybe_async]
-    pub async fn get_attachment(
-        &self,
-        attachment_id: &str,
-        email_id: &str,
-    ) -> Result<InboundAttachment> {
+    pub async fn get_attachment(&self, attachment_id: &str, email_id: &str) -> Result<Attachment> {
         let path = format!("/emails/receiving/{email_id}/attachments/{attachment_id}");
 
         let request = self.0.build(Method::GET, &path);
         let response = self.0.send(request).await?;
-        let content = response.json::<InboundAttachment>().await?;
+        let content = response.json::<Attachment>().await?;
 
         Ok(content)
     }
@@ -70,14 +75,118 @@ impl ReceivingSvc {
         &self,
         email_id: &str,
         list_opts: ListOptions<T>,
-    ) -> Result<ListResponse<InboundAttachment>> {
+    ) -> Result<ListResponse<Attachment>> {
         let path = format!("/emails/receiving/{email_id}/attachments");
 
         let request = self.0.build(Method::GET, &path).query(&list_opts);
         let response = self.0.send(request).await?;
-        let content = response.json::<ListResponse<InboundAttachment>>().await?;
+        let content = response.json::<ListResponse<Attachment>>().await?;
 
         Ok(content)
+    }
+
+    #[maybe_async::maybe_async]
+    pub async fn forward(
+        &self,
+        opts: ForwardReceivingEmail,
+    ) -> Result<ForwardInboundEmailResponse> {
+        let email_response = self.get(&opts.email_id).await?;
+
+        let raw = email_response.raw.ok_or_else(|| {
+            Error::Resend(crate::types::ErrorResponse {
+                status_code: 400,
+                message: "Raw email content is not available for this email".to_owned(),
+                name: "validation_error".to_owned(),
+            })
+        })?;
+
+        let raw_response_content = reqwest::get(raw.download_url).await?.bytes().await?;
+
+        let email_svc = EmailsSvc(Arc::<Config>::clone(&self.0));
+
+        if opts.passthrough {
+            let parsed = mailparse::parse_mail(&raw_response_content)
+                .map_err(|_e| Error::Parse("Failed to parse raw email".to_owned()))?;
+
+            let attachments = parsed
+                .subparts
+                .iter()
+                .filter(|el| {
+                    el.get_content_disposition().disposition == DispositionType::Attachment
+                })
+                .map(|attachment| {
+                    let disposition = attachment.get_content_disposition();
+
+                    let filename = disposition
+                        .params
+                        .get("filename")
+                        .ok_or_else(|| Error::Parse("Could not parse filename".to_string()))?
+                        .to_owned();
+                    let content = attachment
+                        .get_body_raw()
+                        .map_err(|_e| Error::Parse("Could not get attachment body".to_string()))?;
+                    let content_type = attachment.ctype.mimetype.clone();
+
+                    if let Some(content_id) = attachment.headers.get_first_header("Content-ID") {
+                        let mut content_id = content_id.get_key();
+                        if content_id.starts_with('<') {
+                            content_id = content_id[1..content_id.len() - 1].to_string();
+                        }
+
+                        let attachment = CreateAttachment::from_content(content)
+                            .with_content_id(&content_id)
+                            .with_filename(&filename)
+                            .with_content_type(&content_type);
+                        Ok(attachment)
+                    } else {
+                        let attachment = CreateAttachment::from_content(content)
+                            .with_filename(&filename)
+                            .with_content_type(&content_type);
+                        Ok(attachment)
+                    }
+                })
+                .collect::<Result<Vec<_>>>()?;
+
+            let mut email = CreateEmailBaseOptions::new(opts.from, opts.to, email_response.subject)
+                .with_attachments(attachments);
+
+            if let Some(text) = &opts.text {
+                email = email.with_text(text);
+            } else if let Some(html) = &opts.html {
+                email = email.with_html(html);
+            }
+
+            let res = email_svc.send(email).await?;
+
+            Ok(ForwardInboundEmailResponse {
+                id: InboundEmailId::new(&res.id),
+            })
+        } else {
+            let subject = if email_response.subject.starts_with("Fwd:") {
+                email_response.subject
+            } else {
+                format!("Fwd: {}", email_response.subject)
+            };
+
+            let attachment = CreateAttachment::from_content(raw_response_content.to_vec())
+                .with_filename("forwarded_message.eml")
+                .with_content_type("message/rfc822");
+
+            let mut email = CreateEmailBaseOptions::new(opts.from, opts.to, subject)
+                .with_attachments(vec![attachment]);
+
+            if let Some(text) = &opts.text {
+                email = email.with_text(text);
+            } else if let Some(html) = &opts.html {
+                email = email.with_html(html);
+            }
+
+            let res = email_svc.send(email).await?;
+
+            Ok(ForwardInboundEmailResponse {
+                id: InboundEmailId::new(&res.id),
+            })
+        }
     }
 }
 
@@ -85,13 +194,20 @@ impl ReceivingSvc {
 pub mod types {
     use std::collections::HashMap;
 
-    use serde::Deserialize;
+    use serde::{Deserialize, Serialize};
 
     crate::define_id_type!(InboundEmailId);
-    crate::define_id_type!(InboundAttatchmentId);
+    crate::define_id_type!(InboundAttachmentId);
 
     #[must_use]
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct Raw {
+        pub download_url: String,
+        pub expires_at: String,
+    }
+
+    #[must_use]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct InboundEmail {
         pub id: InboundEmailId,
         pub to: Vec<String>,
@@ -109,19 +225,77 @@ pub mod types {
         #[serde(default)]
         pub headers: HashMap<String, String>,
         pub message_id: String,
+        pub raw: Option<Raw>,
         #[serde(default)]
         pub attachments: Vec<InboundAttachment>,
     }
 
     #[must_use]
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct InboundAttachment {
-        pub id: InboundAttatchmentId,
+        pub id: InboundAttachmentId,
         pub filename: Option<String>,
+        pub size: Option<u32>,
         pub content_type: String,
         pub content_id: Option<String>,
         pub content_disposition: Option<String>,
-        pub size: Option<u32>,
+    }
+
+    #[must_use]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct ForwardReceivingEmail {
+        pub(crate) passthrough: bool,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub(crate) text: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub(crate) html: Option<String>,
+
+        pub(crate) email_id: InboundEmailId,
+        pub(crate) to: Vec<String>,
+        pub(crate) from: String,
+    }
+
+    impl ForwardReceivingEmail {
+        pub fn new(
+            email_id: InboundEmailId,
+            from: impl Into<String>,
+            to: impl IntoIterator<Item = impl Into<String>>,
+        ) -> Self {
+            Self {
+                passthrough: true,
+                text: None,
+                html: None,
+                email_id,
+                to: to.into_iter().map(Into::into).collect(),
+                from: from.into(),
+            }
+        }
+    }
+
+    impl ForwardReceivingEmail {
+        #[inline]
+        pub fn with_passthrough(mut self, passthrough: bool) -> Self {
+            self.passthrough = passthrough;
+            self
+        }
+
+        #[inline]
+        pub fn with_text(mut self, text: &str) -> Self {
+            self.text = Some(text.to_owned());
+            self
+        }
+
+        #[inline]
+        pub fn with_html(mut self, html: &str) -> Self {
+            self.html = Some(html.to_owned());
+            self
+        }
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct ForwardInboundEmailResponse {
+        pub id: InboundEmailId,
     }
 }
 
@@ -129,10 +303,10 @@ pub mod types {
 #[allow(clippy::unwrap_used)]
 #[allow(clippy::needless_return)]
 mod test {
-    use crate::{list_opts::ListOptions, types::InboundEmail};
     use crate::{
-        list_opts::ListResponse,
+        list_opts::{ListOptions, ListResponse},
         test::{CLIENT, DebugResult},
+        types::{ForwardReceivingEmail, InboundEmail},
     };
 
     #[ignore = "At the moment, we can't programmatically send inbound emails and since said inbound emails are only retained for 2 weeks, this cannot be automatically tested."]
@@ -148,6 +322,15 @@ mod test {
         let email_id = &emails.data.first().unwrap().id;
 
         let _email = resend.receiving.get(email_id).await?;
+
+        let fwd_opts = ForwardReceivingEmail::new(
+            email_id.clone(),
+            "test@resend.dev",
+            vec!["delivered@resend.dev"],
+        )
+        .with_text("text")
+        .with_passthrough(true);
+        let _fwd_res = resend.receiving.forward(fwd_opts).await?;
 
         let attachments = resend
             .receiving
@@ -196,5 +379,44 @@ mod test {
 
         let res = serde_json::from_str::<ListResponse<InboundEmail>>(emails);
         assert!(res.is_ok());
+    }
+
+    #[test]
+    fn deserialize_test2() {
+        let emails = r#"{
+  "object": "list",
+  "has_more": true,
+  "data": [
+    {
+      "id": "a39999a6-88e3-48b1-888b-beaabcde1b33",
+      "to": ["recipient@example.com"],
+      "from": "sender@example.com",
+      "created_at": "2025-10-09 14:37:40.951732+00",
+      "subject": "Hello World",
+      "bcc": [],
+      "cc": [],
+      "reply_to": [],
+      "message_id": "<111-222-333@email.provider.example.com>",
+      "raw": {
+        "download_url": "https://example.com/emails/raw/abc123?signature=xyz789",
+        "expires_at": "2023-04-08T00:13:52.669661+00:00"
+      },
+      "attachments": [
+        {
+          "filename": "example.txt",
+          "content_type": "text/plain",
+          "content_id": null,
+          "content_disposition": "attachment",
+          "id": "47e999c7-c89c-4999-bf32-aaaaa1c3ff21",
+          "size": 13
+        }
+      ]
+    }
+  ]
+}"#;
+
+        let res = serde_json::from_str::<ListResponse<InboundEmail>>(emails);
+        assert!(res.is_ok());
+        assert!(res.unwrap().data.first().unwrap().raw.is_some());
     }
 }

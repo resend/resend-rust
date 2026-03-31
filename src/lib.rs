@@ -116,13 +116,14 @@ pub mod types {
         ReceivingRecordType, Region, SpfRecordType, Tls, UpdateDomainResponse,
     };
     pub use super::emails::types::{
-        Attachment, CancelScheduleResponse, ContentOrPath, CreateAttachment,
+        Attachment, CancelScheduleResponse, ContentDisposition, ContentOrPath, CreateAttachment,
         CreateEmailBaseOptions, CreateEmailResponse, Email, EmailEvent, EmailId, EmailTemplate,
         Tag, UpdateEmailOptions, UpdateEmailResponse,
     };
     pub use super::error::types::{ErrorKind, ErrorResponse};
     pub use super::receiving::types::{
-        InboundAttachment, InboundAttatchmentId, InboundEmail, InboundEmailId,
+        ForwardInboundEmailResponse, ForwardReceivingEmail, InboundAttachment, InboundAttachmentId,
+        InboundEmail, InboundEmailId,
     };
     pub use super::segments::types::{CreateSegmentResponse, Segment, SegmentId};
     pub use super::templates::types::{

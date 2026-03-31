@@ -118,14 +118,14 @@ pub mod types {
     }
 
     #[must_use]
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct CreateWebhookResponse {
         pub id: WebhookId,
         pub signing_secret: String,
     }
 
     #[must_use]
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct Webhook {
         pub id: WebhookId,
         pub created_at: String,
@@ -176,13 +176,13 @@ pub mod types {
         }
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct UpdateWebhookResponse {
         /// Unique identifier for the updated webhook.
         pub id: WebhookId,
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct DeleteWebhookResponse {
         /// The ID of the webhook.
         #[allow(dead_code)]

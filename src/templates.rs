@@ -156,7 +156,7 @@ pub mod types {
     pub struct Variable {
         key: String,
         #[serde(rename = "type")]
-        ttype: VariableType,
+        r#type: VariableType,
         fallback_value: Option<serde_json::Value>,
     }
 
@@ -270,12 +270,12 @@ pub mod types {
         /// Creates a new [`Variable`].
         ///
         /// - `key`: The key of the variable. We recommend capitalizing the key (e.g. `FIRST_NAME`).
-        /// - `ttype`: The type of the variable.
+        /// - `r#type`: The type of the variable.
         ///   Can be `string`, `number`, `boolean`, `object`, or `list`.
-        pub fn new(key: impl Into<String>, ttype: VariableType) -> Self {
+        pub fn new(key: impl Into<String>, r#type: VariableType) -> Self {
             Self {
                 key: key.into(),
-                ttype,
+                r#type,
                 fallback_value: None,
             }
         }
@@ -296,7 +296,7 @@ pub mod types {
         }
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct CreateTemplateResponse {
         /// The ID of the created template.
         pub id: TemplateId,
@@ -304,7 +304,7 @@ pub mod types {
 
     /// Received Template.
     #[must_use]
-    #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+    #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
     pub struct Template {
         pub id: TemplateId,
         pub alias: Option<String>,
@@ -335,7 +335,7 @@ pub mod types {
     }
 
     /// Strongly typed `status`.
-    #[derive(Debug, Clone, Copy, Deserialize, Eq, PartialEq)]
+    #[derive(Debug, Clone, Copy, Serialize, Deserialize, Eq, PartialEq)]
     #[serde(rename_all = "snake_case")]
     pub enum TemplateEvent {
         Draft,
@@ -431,25 +431,25 @@ pub mod types {
         }
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct UpdateTemplateResponse {
         /// Unique identifier for the updated template.
         pub id: TemplateId,
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct PublishTemplateResponse {
         /// Unique identifier for the published template.
         pub id: TemplateId,
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct DuplicateTemplateResponse {
         /// Unique identifier for the duplicated template.
         pub id: TemplateId,
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct DeleteTemplateResponse {
         /// Unique identifier for the template.
         pub id: TemplateId,

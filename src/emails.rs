@@ -152,7 +152,7 @@ pub mod types {
     use crate::{emails::parse_nullable_vec, idempotent::Idempotent, types::TemplateId};
 
     crate::define_id_type!(EmailId);
-    crate::define_id_type!(AttatchmentId);
+    crate::define_id_type!(AttachmentId);
 
     /// All requisite components and associated data to send an email.
     ///
@@ -285,7 +285,7 @@ pub mod types {
             self
         }
 
-        /// Adds or overwrites an email header.
+        /// Adds an email header.
         #[inline]
         pub fn with_header(mut self, name: &str, value: &str) -> Self {
             let headers = self.headers.get_or_insert_with(HashMap::new);
@@ -301,6 +301,19 @@ pub mod types {
         pub fn with_attachment(mut self, file: impl Into<CreateAttachment>) -> Self {
             let attachments = self.attachments.get_or_insert_with(Vec::new);
             attachments.push(file.into());
+            self
+        }
+
+        /// Adds multiple attachments.
+        ///
+        /// Limited to max 40mb per email.
+        #[inline]
+        pub fn with_attachments(
+            mut self,
+            new_attachments: impl IntoIterator<Item = impl Into<CreateAttachment>>,
+        ) -> Self {
+            let attachments = self.attachments.get_or_insert_with(Vec::new);
+            attachments.extend(new_attachments.into_iter().map(Into::into));
             self
         }
 
@@ -336,7 +349,7 @@ pub mod types {
         }
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct CreateEmailResponse {
         /// The ID of the sent email.
         pub id: EmailId,
@@ -363,13 +376,13 @@ pub mod types {
         }
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct UpdateEmailResponse {
         /// Unique identifier for the updated contact.
         pub id: EmailId,
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct CancelScheduleResponse {
         /// The ID of the cancelled email.
         pub id: EmailId,
@@ -377,7 +390,7 @@ pub mod types {
 
     /// Name and value of the attached [`Email`] tag.
     #[must_use]
-    #[derive(Debug, Clone, Serialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct Tag {
         /// The name of the email tag. It can only contain ASCII letters (a–z, A–Z), numbers (0–9),
         /// underscores (_), or dashes (-). It can contain no more than 256 characters.
@@ -507,7 +520,7 @@ pub mod types {
 
     /// Received email.
     #[must_use]
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct Email {
         /// The ID of the email.
         pub id: EmailId,
@@ -546,7 +559,7 @@ pub mod types {
     /// Strongly typed `last_event`.
     ///
     /// <https://resend.com/docs/dashboard/emails/introduction#understand-email-events>
-    #[derive(Debug, Clone, Copy, Deserialize, Eq, PartialEq)]
+    #[derive(Debug, Clone, Copy, Serialize, Deserialize, Eq, PartialEq)]
     #[serde(rename_all = "snake_case")]
     pub enum EmailEvent {
         /// The recipient's mail server rejected the email.
@@ -576,16 +589,24 @@ pub mod types {
     }
 
     #[must_use]
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct Attachment {
-        pub id: AttatchmentId,
+        pub id: AttachmentId,
         pub filename: Option<String>,
         pub size: u32,
         pub content_type: String,
+        pub content_disposition: ContentDisposition,
         pub content_id: Option<String>,
-        pub content_disposition: String,
         pub download_url: String,
         pub expires_at: String,
+    }
+
+    #[must_use]
+    #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+    #[serde(rename_all = "snake_case")]
+    pub enum ContentDisposition {
+        Inline,
+        Attachment,
     }
 
     #[must_use]

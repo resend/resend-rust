@@ -374,7 +374,7 @@ pub mod types {
         }
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct CreateContactResponse {
         /// Unique identifier for the created contact.
         pub id: ContactId,
@@ -382,7 +382,7 @@ pub mod types {
 
     /// Details of an existing contact.
     #[must_use]
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct Contact {
         /// Unique identifier for the contact.
         pub id: ContactId,
@@ -442,13 +442,13 @@ pub mod types {
         }
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct UpdateContactResponse {
         /// Unique identifier for the updated contact.
         pub id: ContactId,
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct DeleteContactResponse {
         /// The ID of the contact.
         #[allow(dead_code)]
@@ -457,7 +457,7 @@ pub mod types {
         pub deleted: bool,
     }
 
-    #[derive(Deserialize, Debug, Clone)]
+    #[derive(Serialize, Deserialize, Debug, Clone)]
     pub struct ContactTopic {
         pub id: TopicId,
         pub name: String,
@@ -488,13 +488,13 @@ pub mod types {
     }
 
     #[must_use]
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct AddContactSegmentResponse {
         pub id: SegmentId,
     }
 
     #[must_use]
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct RemoveContactSegmentResponse {
         pub id: SegmentId,
         pub deleted: bool,
@@ -514,42 +514,42 @@ pub mod types {
     pub struct CreateContactPropertyOptions {
         key: String,
         #[serde(rename = "type")]
-        ttype: PropertyType,
+        r#type: PropertyType,
         fallback_value: Option<serde_json::Value>,
     }
 
     impl CreateContactPropertyOptions {
         /// - `key`: The property key. Max length is `50` characters. Only alphanumeric characters
         ///   and underscores are allowed.
-        /// - `ttype`: The property type.
-        pub fn new(key: impl Into<String>, ttype: PropertyType) -> Self {
+        /// - `r#type`: The property type.
+        pub fn new(key: impl Into<String>, r#type: PropertyType) -> Self {
             Self {
                 key: key.into(),
-                ttype,
+                r#type,
                 fallback_value: None,
             }
         }
 
         /// The default value to use when the property is not set for a contact. Must match the
-        /// type specified in the `ttype` field.
+        /// type specified in the `r#type` field.
         pub fn with_fallback(mut self, fallback: impl Into<serde_json::Value>) -> Self {
             self.fallback_value = Some(fallback.into());
             self
         }
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct CreateContactPropertyResponse {
         pub id: ContactPropertyId,
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct ContactProperty {
         pub id: ContactPropertyId,
         pub created_at: String,
         pub key: String,
         #[serde(rename = "type")]
-        pub ttype: PropertyType,
+        pub r#type: PropertyType,
         pub fallback_value: Option<serde_json::Value>,
     }
 
@@ -570,13 +570,13 @@ pub mod types {
         }
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct UpdateContactPropertyResponse {
         /// Unique identifier for the updated contact property.
         pub id: ContactPropertyId,
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct DeleteContactPropertyResponse {
         #[allow(dead_code)]
         pub id: ContactPropertyId,

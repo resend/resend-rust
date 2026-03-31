@@ -141,7 +141,7 @@ pub mod types {
 
     /// Token and ID of the newly created [`ApiKey`].
     #[must_use]
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct ApiKeyToken {
         /// The ID of the API key.
         pub id: ApiKeyId,
@@ -151,7 +151,7 @@ pub mod types {
 
     /// Name and ID of an existing API key.
     #[must_use]
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct ApiKey {
         /// The ID of the API key.
         pub id: ApiKeyId,
@@ -159,6 +159,7 @@ pub mod types {
         pub name: String,
         /// The date and time the API key was created in ISO8601 format.
         pub created_at: String,
+        pub last_used_at: Option<String>,
     }
 }
 

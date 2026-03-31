@@ -6,14 +6,45 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-<!-- ## Unreleased -->
+## Unreleased
+
+### Added 
+
+- Lots of structs that previously only implemented `Deserialize` now also implement `Serialize`
+- New `receiving::forward` endpoint for forwarding received emails
+- `CreateEmailBaseOptions::with_attachments`
+- `ContactBody.segment_ids`
+- `ApiKey.last_used_at`
+
+### Changed
+
+- Fixed some typos in typos in types
+  - `AttatchmentId` -> `AttachmentId`
+  - `Attachment.AttatchmentId` -> `Attachment.AttachmentId`
+  - `InboundAttatchmentId` -> `InboundAttachmentId`
+  - `InboundAttachment.InboundAttatchmentId` -> `InboundAttachment.InboundAttachmentId`
+- `Attachment.content_disposition` is now a concrete type instead of a string
+- `receiving::get_attachment` and `receiving::list_attachments` now return `Attachment` instead of
+  `InboundAttachment`
+- Fixed some `DomainStatus`es parsing incorrectly
+- A bunch of updates to `EmailBody`, now fully up to spec
+- Renamed the type fields of the following structs to `r#type` for consistency
+  - `CreateContactPropertyOptions.ttype`
+  - `ContactProperty.ttype`
+  - `DomainSpfRecord.d_type`
+  - `DomainDkimRecord.d_type`
+  - `ReceivingRecord.d_type`
+  - `Variable.ttype`
+- Slightly simplified validation errors
+  - `ValidationError403Email` and `ValidationError403Domain` have now been replace with `ValidationError403`
+    This was done because another 403 error was added for domains so the earlier distinction made no sense and
+    was overly complex anyway.
 
 ## [0.21.1] - 2026-02-23
 
 ### Added
 
 - Many fields that were previously private in `events` are now public
-
 
 ## [0.21.0] - 2026-02-03
 

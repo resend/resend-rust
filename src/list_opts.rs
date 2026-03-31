@@ -94,7 +94,7 @@ impl ListOptions<TimeNotSpecified> {
 ///
 /// See <https://resend.com/docs/pagination> for more information.
 #[must_use]
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListResponse<T> {
     pub has_more: bool,
     pub data: Vec<T>,

@@ -150,7 +150,7 @@ pub mod types {
     }
 
     #[must_use]
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct CreateTopicResponse {
         /// Unique identifier for the published topic.
         pub id: TopicId,
@@ -220,13 +220,13 @@ pub mod types {
         }
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct UpdateTopicResponse {
         /// Unique identifier for the updated topic.
         pub id: TopicId,
     }
 
-    #[derive(Debug, Clone, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct DeleteTopicResponse {
         /// Unique identifier for the topic.
         pub id: TopicId,
