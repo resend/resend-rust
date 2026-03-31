@@ -185,7 +185,6 @@ pub struct EmailBody {
     pub failed: Option<Failed>,
     pub suppressed: Option<Suppressed>,
 
-    // TODO: This might end up changing to an array
     #[serde(default)]
     pub tags: HashMap<String, String>,
 }
