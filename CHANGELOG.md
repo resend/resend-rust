@@ -19,7 +19,7 @@ and this project adheres to
 
 ### Changed
 
-- Fixed some typos in typos in types
+- Fixed some typos in types
   - `AttatchmentId` -> `AttachmentId`
   - `Attachment.AttatchmentId` -> `Attachment.AttachmentId`
   - `InboundAttatchmentId` -> `InboundAttachmentId`
@@ -37,7 +37,7 @@ and this project adheres to
   - `ReceivingRecord.d_type`
   - `Variable.ttype`
 - Slightly simplified validation errors
-  - `ValidationError403Email` and `ValidationError403Domain` have now been replace with `ValidationError403`
+  - `ValidationError403Email` and `ValidationError403Domain` have now been replaced with `ValidationError403`
     This was done because another 403 error was added for domains so the earlier distinction made no sense and
     was overly complex anyway.
 
