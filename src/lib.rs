@@ -17,7 +17,7 @@
 //!
 //! - Secondly, a couple of helper methods as well as macros are implemented in the [`rate_limit`]
 //!   module that allow catching rate limit errors and retrying the request instead of failing.
-//!   
+//!
 //!   These were implemented to handle cases where this crate is used in a horizontally scaled
 //!   environment and thus needs to work on different machines at the same time in which case the
 //!   internal rate limits alone cannot guarantee that there will be no rate limit errors.
@@ -66,6 +66,7 @@ mod error;
 pub mod events;
 pub mod idempotent;
 pub mod list_opts;
+mod logs;
 pub mod rate_limit;
 mod receiving;
 mod segments;
@@ -82,6 +83,7 @@ pub mod services {
     pub use super::contacts::ContactsSvc;
     pub use super::domains::DomainsSvc;
     pub use super::emails::EmailsSvc;
+    pub use super::logs::LogsSvc;
     pub use super::receiving::ReceivingSvc;
     pub use super::segments::SegmentsSvc;
     pub use super::templates::TemplateSvc;
@@ -121,6 +123,7 @@ pub mod types {
         Tag, UpdateEmailOptions, UpdateEmailResponse,
     };
     pub use super::error::types::{ErrorKind, ErrorResponse};
+    pub use super::logs::types::Log;
     pub use super::receiving::types::{
         ForwardInboundEmailResponse, ForwardReceivingEmail, InboundAttachment, InboundAttachmentId,
         InboundEmail, InboundEmailId,
