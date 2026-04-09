@@ -55,6 +55,7 @@ pub use config::{Config, ConfigBuilder};
 pub use serde_json::{Value, json};
 
 mod api_keys;
+mod automations;
 mod batch;
 mod broadcasts;
 mod client;
@@ -78,6 +79,7 @@ pub mod services {
     //! `Resend` API services.
 
     pub use super::api_keys::ApiKeysSvc;
+    pub use super::automations::AutomationsSvc;
     pub use super::batch::BatchSvc;
     pub use super::broadcasts::BroadcastsSvc;
     pub use super::contacts::ContactsSvc;
@@ -95,6 +97,12 @@ pub mod types {
 
     pub use super::api_keys::types::{
         ApiKey, ApiKeyId, ApiKeyToken, CreateApiKeyOptions, Permission,
+    };
+    pub use super::automations::types::{
+        Automation, AutomationId, AutomationRun, AutomationRunId, AutomationStatus,
+        CreateAutomationOptions, CreateAutomationResponse, DeleteAutomationResponse, Edge,
+        EdgeType, Step, StopAutomationResponse, UpdateAutomationOptions, UpdateAutomationResponse,
+        WaitForEventStepConfig,
     };
     pub use super::batch::types::{
         BatchValidation, PermissiveBatchErrors, SendEmailBatchPermissiveResponse,
