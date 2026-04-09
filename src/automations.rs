@@ -21,6 +21,7 @@ impl AutomationsSvc {
     ///
     /// <https://resend.com/docs/api-reference/automations/create-automation>
     #[maybe_async::maybe_async]
+    #[allow(clippy::needless_pass_by_value)]
     pub async fn create(
         &self,
         automation: CreateAutomationOptions,
@@ -36,6 +37,7 @@ impl AutomationsSvc {
     ///
     /// <https://resend.com/docs/api-reference/automations/update-automation>
     #[maybe_async::maybe_async]
+    #[allow(clippy::needless_pass_by_value)]
     pub async fn update(
         &self,
         automation_id: &str,
@@ -68,6 +70,7 @@ impl AutomationsSvc {
     ///
     /// <https://resend.com/docs/api-reference/automations/list-automations>
     #[maybe_async::maybe_async]
+    #[allow(clippy::needless_pass_by_value)]
     pub async fn list<T>(&self, list_opts: ListOptions<T>) -> Result<ListResponse<Automation>> {
         let request = self.0.build(Method::GET, "/automations").query(&list_opts);
         let response = self.0.send(request).await?;
@@ -108,6 +111,7 @@ impl AutomationsSvc {
     ///
     /// <https://resend.com/docs/api-reference/automations/list-automation-runs>
     #[maybe_async::maybe_async]
+    #[allow(clippy::needless_pass_by_value)]
     pub async fn list_runs<T>(
         &self,
         automation_id: &str,
