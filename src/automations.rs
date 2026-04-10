@@ -6,9 +6,9 @@ use crate::{
     Config, Result,
     list_opts::{ListOptions, ListResponse},
     types::{
-        Automation, AutomationRun, CreateAutomationOptions, CreateAutomationResponse,
-        DeleteAutomationResponse, StopAutomationResponse, UpdateAutomationOptions,
-        UpdateAutomationResponse,
+        Automation, AutomationMinimal, AutomationRun, CreateAutomationOptions,
+        CreateAutomationResponse, DeleteAutomationResponse, StopAutomationResponse,
+        UpdateAutomationOptions, UpdateAutomationResponse,
     },
 };
 
@@ -71,10 +71,13 @@ impl AutomationsSvc {
     /// <https://resend.com/docs/api-reference/automations/list-automations>
     #[maybe_async::maybe_async]
     #[allow(clippy::needless_pass_by_value)]
-    pub async fn list<T>(&self, list_opts: ListOptions<T>) -> Result<ListResponse<Automation>> {
+    pub async fn list<T>(
+        &self,
+        list_opts: ListOptions<T>,
+    ) -> Result<ListResponse<AutomationMinimal>> {
         let request = self.0.build(Method::GET, "/automations").query(&list_opts);
         let response = self.0.send(request).await?;
-        let content = response.json::<ListResponse<Automation>>().await?;
+        let content = response.json::<ListResponse<AutomationMinimal>>().await?;
 
         Ok(content)
     }
@@ -179,35 +182,35 @@ pub mod types {
     #[serde(tag = "type", rename_all = "snake_case")]
     pub enum Step {
         Trigger {
-            r#ref: String,
+            key: String,
             config: TriggerStepConfig,
         },
         Delay {
-            r#ref: String,
+            key: String,
             config: DelayStepConfig,
         },
         SendEmail {
-            r#ref: String,
+            key: String,
             config: SendEmailStepConfig,
         },
         WaitForEvent {
-            r#ref: String,
+            key: String,
             config: WaitForEventStepConfig,
         },
         Condition {
-            r#ref: String,
+            key: String,
             config: Value,
         },
         ContactUpdate {
-            r#ref: String,
+            key: String,
             config: Value,
         },
         ContactDelete {
-            r#ref: String,
+            key: String,
             config: Value,
         },
         AddToSegment {
-            r#ref: String,
+            key: String,
             config: Value,
         },
     }
@@ -278,6 +281,16 @@ pub mod types {
         pub updated_at: Option<String>,
         pub steps: Vec<Step>,
         pub edges: Vec<Edge>,
+    }
+
+    #[must_use]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct AutomationMinimal {
+        pub id: AutomationId,
+        pub name: String,
+        pub status: AutomationStatus,
+        pub created_at: String,
+        pub updated_at: Option<String>,
     }
 
     #[must_use]
@@ -394,7 +407,7 @@ mod test {
             name: "automation".to_owned(),
             status: AutomationStatus::Enabled,
             steps: vec![Step::WaitForEvent {
-                r#ref: "test".to_owned(),
+                key: "test".to_owned(),
                 config: WaitForEventStepConfig {
                     event_name: "test".to_owned(),
                     timeout_seconds: Some(3),
@@ -486,7 +499,7 @@ mod test {
             name: "Welcome series".to_owned(),
             status: AutomationStatus::Enabled,
             steps: vec![Step::Trigger {
-                r#ref: "trigger".to_owned(),
+                key: "trigger".to_owned(),
                 config: TriggerStepConfig {
                     event_name: "user.created".to_owned(),
                 },
@@ -501,12 +514,11 @@ mod test {
         let automation = resend.automations.update(&automation.id, opts).await?;
 
         // Get
-        // TODO: Missing ref error
-        // let automation = resend.automations.get(&automation.id).await?;
+        let automation = resend.automations.get(&automation.id).await?;
 
         // List
-        // TODO: Missing ref error
-        // let automations = resend.automations.list(ListOptions::default()).await?;
+        let automations = resend.automations.list(ListOptions::default()).await?;
+        assert!(!automations.data.is_empty());
 
         // List Runs
         let runs = resend

@@ -99,10 +99,10 @@ pub mod types {
         ApiKey, ApiKeyId, ApiKeyToken, CreateApiKeyOptions, Permission,
     };
     pub use super::automations::types::{
-        Automation, AutomationId, AutomationRun, AutomationRunId, AutomationStatus,
-        CreateAutomationOptions, CreateAutomationResponse, DeleteAutomationResponse, Edge,
-        EdgeType, Step, StopAutomationResponse, UpdateAutomationOptions, UpdateAutomationResponse,
-        WaitForEventStepConfig,
+        Automation, AutomationId, AutomationMinimal, AutomationRun, AutomationRunId,
+        AutomationStatus, CreateAutomationOptions, CreateAutomationResponse,
+        DeleteAutomationResponse, Edge, EdgeType, Step, StopAutomationResponse,
+        UpdateAutomationOptions, UpdateAutomationResponse, WaitForEventStepConfig,
     };
     pub use super::batch::types::{
         BatchValidation, PermissiveBatchErrors, SendEmailBatchPermissiveResponse,
