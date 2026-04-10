@@ -165,7 +165,7 @@ pub mod types {
         pub name: String,
         pub status: AutomationStatus,
         pub steps: Vec<Step>,
-        pub edges: Vec<Edge>,
+        pub connections: Vec<Connection>,
     }
 
     #[must_use]
@@ -185,13 +185,13 @@ pub mod types {
             key: String,
             config: TriggerStepConfig,
         },
-        Delay {
-            key: String,
-            config: DelayStepConfig,
-        },
         SendEmail {
             key: String,
             config: SendEmailStepConfig,
+        },
+        Delay {
+            key: String,
+            config: DelayStepConfig,
         },
         WaitForEvent {
             key: String,
@@ -222,42 +222,50 @@ pub mod types {
     }
 
     #[must_use]
-    #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-    pub struct DelayStepConfig {
-        pub seconds: u32,
-    }
-
-    #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct SendEmailStepConfig {
-        pub template_id: String,
+        pub template: AutomationTemplate,
         pub subject: Option<String>,
         pub from: Option<String>,
         pub reply_to: Option<String>,
         // I give up
-        pub variables: HashMap<String, Value>,
+        pub variables: Option<Value>,
+    }
+
+    #[must_use]
+    #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+    pub struct AutomationTemplate {
+        pub id: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub variables: Option<Value>,
+    }
+
+    #[must_use]
+    #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+    pub struct DelayStepConfig {
+        pub duration: u32,
     }
 
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct WaitForEventStepConfig {
         pub event_name: String,
-        pub timeout_seconds: Option<u32>,
+        pub timeout: Option<u32>,
         pub filter_rule: Option<Value>,
     }
 
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
-    pub struct Edge {
+    pub struct Connection {
         pub from: String,
         pub to: String,
-        pub edge_type: Option<EdgeType>,
+        pub r#type: Option<ConnectionType>,
     }
 
     #[must_use]
     #[derive(Debug, Clone, Copy, Serialize, Deserialize, Default)]
     #[serde(rename_all = "snake_case")]
-    pub enum EdgeType {
+    pub enum ConnectionType {
         #[default]
         Default,
         ConditionMet,
@@ -280,7 +288,7 @@ pub mod types {
         pub created_at: String,
         pub updated_at: Option<String>,
         pub steps: Vec<Step>,
-        pub edges: Vec<Edge>,
+        pub connections: Vec<Connection>,
     }
 
     #[must_use]
@@ -303,7 +311,7 @@ pub mod types {
         #[serde(skip_serializing_if = "Option::is_none")]
         steps: Option<Vec<Step>>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        edges: Option<Vec<Edge>>,
+        connections: Option<Vec<Connection>>,
     }
 
     impl UpdateAutomationOptions {
@@ -331,8 +339,8 @@ pub mod types {
         }
 
         #[inline]
-        pub fn with_edges(mut self, edges: Vec<Edge>) -> Self {
-            self.edges = Some(edges);
+        pub fn with_connections(mut self, connections: Vec<Connection>) -> Self {
+            self.connections = Some(connections);
             self
         }
     }
@@ -393,36 +401,41 @@ pub mod types {
 #[allow(clippy::needless_return)]
 mod test {
     use crate::{
-        automations::types::TriggerStepConfig,
+        automations::types::{SendEmailStepConfig, TriggerStepConfig},
         test::{CLIENT, DebugResult},
-        types::{
-            Automation, AutomationStatus, CreateAutomationOptions, Edge, EdgeType, Step,
-            WaitForEventStepConfig,
-        },
+        types::{Automation, AutomationStatus, Connection, CreateAutomationOptions, Step},
     };
 
     #[test]
     fn serialize_create() {
         let tmp = CreateAutomationOptions {
-            name: "automation".to_owned(),
+            name: "Welcome series".to_owned(),
             status: AutomationStatus::Enabled,
-            steps: vec![Step::WaitForEvent {
-                key: "test".to_owned(),
-                config: WaitForEventStepConfig {
-                    event_name: "test".to_owned(),
-                    timeout_seconds: Some(3),
-                    filter_rule: Some(serde_json::json!({
-                      "type": "rule",
-                      "field": "idk",
-                      "operator": "eq",
-                      "value": null,
-                    })),
+            steps: vec![
+                Step::Trigger {
+                    key: "start".to_owned(),
+                    config: TriggerStepConfig {
+                        event_name: "user.created".to_owned(),
+                    },
                 },
-            }],
-            edges: vec![Edge {
-                from: "from".to_owned(),
-                to: "to".to_owned(),
-                edge_type: Some(EdgeType::Default),
+                Step::SendEmail {
+                    key: "welcome".to_owned(),
+                    config: SendEmailStepConfig {
+                        subject: None,
+                        from: None,
+                        reply_to: None,
+                        variables: None,
+                        template: crate::automations::types::AutomationTemplate {
+                            id: "34a080c9-b17d-4187-ad80-5af20266e535".to_owned(),
+                            variables: None,
+                        },
+                    },
+                },
+            ],
+            connections: vec![Connection {
+                from: "start".to_owned(),
+                to: "welcome".to_owned(),
+                r#type: None,
             }],
         };
 
@@ -436,50 +449,28 @@ mod test {
             "object": "automation",
             "id": "c9b16d4f-ba6c-4e2e-b044-6bf4404e57fd",
             "name": "Welcome series",
-            "status": "enabled",
-            "created_at": "2025-10-01 12:00:00.000000+00",
-            "updated_at": "2025-10-01 12:00:00.000000+00",
+            "status": "disabled",
+            "created_at": "2026-10-01 12:00:00.000000+00",
+            "updated_at": "2026-10-01 12:00:00.000000+00",
             "steps": [
               {
+                "key": "start",
                 "type": "trigger",
                 "config": { "event_name": "user.created" }
               },
               {
+                "key": "welcome",
                 "type": "send_email",
                 "config": {
-                  "template_id": "tpl_xxxxxxxxx",
-                  "subject": "Welcome!",
-                  "from": "Acme <hello@example.com>"
-                }
-              },
-              {
-                "type": "delay",
-                "config": { "seconds": 172800 }
-              },
-              {
-                "type": "send_email",
-                "config": {
-                  "template_id": "f6e86e54-0ab4-404d-8edc-d52ea8cf602e",
-                  "subject": "Getting started",
-                  "from": "Acme <hello@example.com>"
+                  "template": { "id": "34a080c9-b17d-4187-ad80-5af20266e535" }
                 }
               }
             ],
-            "edges": [
+            "connections": [
               {
-                "from": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-                "to": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
-                "edge_type": "default"
-              },
-              {
-                "from": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
-                "to": "c3d4e5f6-a7b8-9012-cdef-123456789012",
-                "edge_type": "default"
-              },
-              {
-                "from": "c3d4e5f6-a7b8-9012-cdef-123456789012",
-                "to": "d4e5f6a7-b8c9-0123-def1-234567890123",
-                "edge_type": "default"
+                "from": "start",
+                "to": "welcome",
+                "type": "default"
               }
             ]
           }"#;
@@ -504,7 +495,7 @@ mod test {
                     event_name: "user.created".to_owned(),
                 },
             }],
-            edges: vec![],
+            connections: vec![],
         };
         let automation = resend.automations.create(opts).await?;
         std::thread::sleep(std::time::Duration::from_secs(2));
