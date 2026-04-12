@@ -211,7 +211,7 @@ pub mod types {
         },
         AddToSegment {
             key: String,
-            config: Value,
+            config: AddToSegmentStepConfig,
         },
     }
 
@@ -293,17 +293,23 @@ pub mod types {
     }
 
     #[must_use]
-    #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct DelayStepConfig {
-        pub duration: u32,
+        pub duration: String,
     }
 
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct WaitForEventStepConfig {
         pub event_name: String,
-        pub timeout: Option<u32>,
+        pub timeout: Option<String>,
         pub filter_rule: Option<Value>,
+    }
+
+    #[must_use]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct AddToSegmentStepConfig {
+        pub segment_id: String,
     }
 
     #[must_use]
