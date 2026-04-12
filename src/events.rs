@@ -5,14 +5,182 @@
 
 #![allow(dead_code)]
 
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
+use reqwest::Method;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    Result,
-    types::{BroadcastId, Domain, EmailId, InboundAttachment, SegmentId, TemplateId},
+    Config, Result,
+    list_opts::{ListOptions, ListResponse},
+    types::{
+        BroadcastId, CreateEventOptions, CreateEventResponse, DeleteEventResponse, Domain, EmailId,
+        GetEventResponse, InboundAttachment, SegmentId, SendEventOptions, SendEventResponse,
+        TemplateId, UpdateEventOptions, UpdateEventResponse,
+    },
 };
+
+/// `Resend` APIs for `/events` endpoints.
+#[derive(Clone, Debug)]
+pub struct EventsSvc(pub(crate) Arc<Config>);
+
+impl EventsSvc {
+    /// Create a new event that can be used to trigger automations.
+    ///
+    /// <https://resend.com/docs/api-reference/events/create-event>
+    #[maybe_async::maybe_async]
+    #[allow(clippy::needless_pass_by_value)]
+    pub async fn create(&self, event: CreateEventOptions) -> Result<CreateEventResponse> {
+        let request = self.0.build(Method::POST, "/events");
+        let response = self.0.send(request.json(&event)).await?;
+        let content = response.json::<CreateEventResponse>().await?;
+
+        Ok(content)
+    }
+
+    /// Send a named event to trigger matching automations.
+    ///
+    /// <https://resend.com/docs/api-reference/events/send-event>
+    #[maybe_async::maybe_async]
+    #[allow(clippy::needless_pass_by_value)]
+    pub async fn send(&self, opts: SendEventOptions) -> Result<SendEventResponse> {
+        let request = self.0.build(Method::POST, "/events/send");
+        let response = self.0.send(request.json(&opts)).await?;
+        let content = response.json::<SendEventResponse>().await?;
+
+        Ok(content)
+    }
+
+    /// Retrieve a single event by ID or name.
+    ///
+    /// <https://resend.com/docs/api-reference/events/get-event>
+    #[maybe_async::maybe_async]
+    pub async fn get(&self, event_id: &str) -> Result<GetEventResponse> {
+        let path = format!("/events/{event_id}");
+
+        let request = self.0.build(Method::GET, &path);
+        let response = self.0.send(request).await?;
+        let content = response.json::<GetEventResponse>().await?;
+
+        Ok(content)
+    }
+
+    /// Retrieve a list of events.
+    ///
+    /// <https://resend.com/docs/api-reference/events/list-events>
+    #[maybe_async::maybe_async]
+    #[allow(clippy::needless_pass_by_value)]
+    pub async fn list<T>(
+        &self,
+        list_opts: ListOptions<T>,
+    ) -> Result<ListResponse<GetEventResponse>> {
+        let request = self.0.build(Method::GET, "/events").query(&list_opts);
+        let response = self.0.send(request).await?;
+        let content = response.json::<ListResponse<GetEventResponse>>().await?;
+
+        Ok(content)
+    }
+
+    /// Update an existing event schema.
+    ///
+    /// <https://resend.com/docs/api-reference/events/update-event>
+    #[maybe_async::maybe_async]
+    #[allow(clippy::needless_pass_by_value)]
+    pub async fn update(
+        &self,
+        event_id: &str,
+        update: UpdateEventOptions,
+    ) -> Result<UpdateEventResponse> {
+        let path = format!("/events/{event_id}");
+
+        let request = self.0.build(Method::PATCH, &path);
+        let response = self.0.send(request.json(&update)).await?;
+        let content = response.json::<UpdateEventResponse>().await?;
+
+        Ok(content)
+    }
+
+    /// Remove an existing event.
+    ///
+    /// <https://resend.com/docs/api-reference/events/delete-event>
+    #[maybe_async::maybe_async]
+    pub async fn delete(&self, event_id: &str) -> Result<DeleteEventResponse> {
+        let path = format!("/events/{event_id}");
+
+        let request = self.0.build(Method::DELETE, &path);
+        let response = self.0.send(request).await?;
+        let content = response.json::<DeleteEventResponse>().await?;
+
+        Ok(content)
+    }
+}
+
+#[allow(unreachable_pub)]
+pub mod types {
+    use serde::{Deserialize, Serialize};
+    use serde_json::Value;
+
+    crate::define_id_type!(EventId);
+
+    #[must_use]
+    #[derive(Debug, Clone, Serialize)]
+    pub struct CreateEventOptions {
+        pub name: String,
+        pub schema: Value,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct CreateEventResponse {
+        pub id: EventId,
+    }
+
+    #[must_use]
+    #[derive(Debug, Clone, Serialize)]
+    #[serde(rename_all = "snake_case")]
+    pub enum ContactIdOrEmail {
+        ContactId(String),
+        Email(String),
+    }
+
+    #[must_use]
+    #[derive(Debug, Clone, Serialize)]
+    pub struct SendEventOptions {
+        pub event: String,
+        #[serde(flatten)]
+        pub contact_id_or_email: ContactIdOrEmail,
+        pub payload: Value,
+    }
+
+    #[must_use]
+    #[derive(Debug, Clone, Serialize)]
+    pub struct UpdateEventOptions {
+        pub schema: Value,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct SendEventResponse {
+        pub event: String,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct GetEventResponse {
+        pub id: EventId,
+        pub name: String,
+        pub schema: Option<Value>,
+        pub created_at: String,
+        pub updated_at: Option<String>,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct DeleteEventResponse {
+        pub id: EventId,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct UpdateEventResponse {
+        pub id: EventId,
+    }
+}
 
 /// Parses a JSON event into an [`Event`].
 /// ## Example
@@ -255,12 +423,86 @@ pub struct ContactBody {
 #[allow(clippy::unwrap_used)]
 #[cfg(test)]
 mod test {
-    use crate::events::{
-        ContactEventType, DomainEventType, EmailEventType, Event, try_parse_event,
-        try_parse_event_type,
+    use crate::{
+        events::{
+            ContactEventType, DomainEventType, EmailEventType, Event, try_parse_event,
+            try_parse_event_type,
+        },
+        list_opts::ListOptions,
+        test::CLIENT,
+        types::{ContactIdOrEmail, CreateContactOptions, CreateEventOptions},
     };
-    use crate::test::DebugResult;
+    use crate::{test::DebugResult, types::SendEventOptions};
+
+    use serde_json::json;
     use strum::EnumCount;
+
+    #[test]
+    fn serialize_send() {
+        let opts = SendEventOptions {
+            event: "user.created".to_owned(),
+            contact_id_or_email: ContactIdOrEmail::ContactId("contact".to_string()),
+            payload: json!({
+              "plan": "pro"
+            }),
+        };
+        let res = serde_json::to_string(&opts).unwrap();
+        println!("{res}");
+    }
+
+    #[tokio_shared_rt::test(shared = true)]
+    #[cfg(not(feature = "blocking"))]
+    async fn all() -> DebugResult<()> {
+        use crate::types::UpdateEventOptions;
+
+        let resend = &*CLIENT;
+
+        // Create
+        let opts = CreateEventOptions {
+            name: "user.created".to_owned(),
+            schema: json!({
+              "plan": "string"
+            }),
+        };
+        let _event = resend.events.create(opts).await?;
+
+        // Send
+        let opts = CreateContactOptions::new("steve.wozniak@gmail.com");
+        let contact = resend.contacts.create(opts).await?;
+        std::thread::sleep(std::time::Duration::from_secs(2));
+
+        let opts = SendEventOptions {
+            event: "user.created".to_owned(),
+            contact_id_or_email: ContactIdOrEmail::ContactId(contact.to_string()),
+            payload: json!({
+              "plan": "pro"
+            }),
+        };
+        let event = resend.events.send(opts).await?;
+        std::thread::sleep(std::time::Duration::from_secs(2));
+
+        // Get
+        let event = resend.events.get(&event.event).await?;
+
+        // List
+        let events = resend.events.list(ListOptions::default()).await?;
+        assert!(!events.is_empty());
+
+        // Update
+        let opts = UpdateEventOptions {
+            schema: json!({
+              "plan": "string",
+              "trial": "boolean"
+            }),
+        };
+        let event = resend.events.update(&event.id, opts).await?;
+
+        // Delete
+        let _deleted = resend.events.delete(&event.id).await?;
+        let _deleted = resend.contacts.delete("steve.wozniak@gmail.com").await?;
+
+        Ok(())
+    }
 
     #[cfg(not(feature = "blocking"))]
     #[test]

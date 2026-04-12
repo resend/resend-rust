@@ -132,6 +132,11 @@ pub mod types {
         Tag, UpdateEmailOptions, UpdateEmailResponse,
     };
     pub use super::error::types::{ErrorKind, ErrorResponse};
+    pub use super::events::types::{
+        ContactIdOrEmail, CreateEventOptions, CreateEventResponse, DeleteEventResponse,
+        GetEventResponse, SendEventOptions, SendEventResponse, UpdateEventOptions,
+        UpdateEventResponse,
+    };
     pub use super::logs::types::Log;
     pub use super::receiving::types::{
         ForwardInboundEmailResponse, ForwardReceivingEmail, InboundAttachment, InboundAttachmentId,
