@@ -11,6 +11,7 @@ and this project adheres to
 ### Added
 
 - logs endpoints
+- automations endpoints
 
 ## [0.22.0] - 2026-03-31
 
