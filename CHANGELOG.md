@@ -16,6 +16,10 @@ and this project adheres to
 - logs endpoints
 - automations endpoints
 - events endpoints
+- domains:
+  - `domains.add` is now `domains.create`
+  - domains.verify now returns `VerifyDomainResponse`
+  - added a couple of new fields
 
 ## [0.22.0] - 2026-03-31
 

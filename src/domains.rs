@@ -4,7 +4,7 @@ use std::sync::Arc;
 use reqwest::Method;
 use types::DeleteDomainResponse;
 
-use crate::{Config, Result};
+use crate::{Config, Result, domains::types::VerifyDomainResponse};
 use crate::{
     list_opts::{ListOptions, ListResponse},
     types::{CreateDomainOptions, Domain, DomainChanges},
@@ -23,7 +23,7 @@ impl DomainsSvc {
     #[maybe_async::maybe_async]
     // Reasoning for allow: https://github.com/resend/resend-rust/pull/1#issuecomment-2081646115
     #[allow(clippy::needless_pass_by_value)]
-    pub async fn add(&self, domain: CreateDomainOptions) -> Result<Domain> {
+    pub async fn create(&self, domain: CreateDomainOptions) -> Result<Domain> {
         let request = self.0.build(Method::POST, "/domains");
         let response = self.0.send(request.json(&domain)).await?;
         let content = response.json::<Domain>().await?;
@@ -49,14 +49,14 @@ impl DomainsSvc {
     ///
     /// <https://resend.com/docs/api-reference/domains/verify-domain>
     #[maybe_async::maybe_async]
-    pub async fn verify(&self, domain_id: &str) -> Result<()> {
+    pub async fn verify(&self, domain_id: &str) -> Result<VerifyDomainResponse> {
         let path = format!("/domains/{domain_id}/verify");
 
         let request = self.0.build(Method::POST, &path);
         let response = self.0.send(request).await?;
-        let _content = response.json::<types::VerifyDomainResponse>().await?;
+        let content = response.json::<VerifyDomainResponse>().await?;
 
-        Ok(())
+        Ok(content)
     }
 
     /// Updates an existing domain.
@@ -215,8 +215,8 @@ pub mod types {
         }
 
         #[inline]
-        pub fn with_tracking_subdomain(mut self, tracking_subdomain: String) -> Self {
-            self.tracking_subdomain = Some(tracking_subdomain);
+        pub fn with_tracking_subdomain(mut self, tracking_subdomain: impl Into<String>) -> Self {
+            self.tracking_subdomain = Some(tracking_subdomain.into());
             self
         }
 
@@ -404,7 +404,7 @@ pub mod types {
 
     /// List of changes to apply to a [`Domain`].
     #[must_use]
-    #[derive(Debug, Default, Copy, Clone, Serialize)]
+    #[derive(Debug, Default, Clone, Serialize)]
     pub struct DomainChanges {
         /// Enable or disable click tracking for the domain.
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -416,6 +416,8 @@ pub mod types {
         tls: Option<Tls>,
         #[serde(skip_serializing_if = "Option::is_none")]
         capabilities: Option<DomainCapabilities>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        tracking_subdomain: Option<String>,
     }
 
     impl DomainChanges {
@@ -443,6 +445,12 @@ pub mod types {
         #[inline]
         pub const fn with_tls(mut self, tls: Tls) -> Self {
             self.tls = Some(tls);
+            self
+        }
+
+        #[inline]
+        pub fn with_tracking_subdomain(mut self, tracking_subdomain: impl Into<String>) -> Self {
+            self.tracking_subdomain = Some(tracking_subdomain.into());
             self
         }
     }
@@ -481,7 +489,7 @@ mod test {
         // Create
         let domain = resend
             .domains
-            .add(CreateDomainOptions::new("example.com"))
+            .create(CreateDomainOptions::new("example.com"))
             .await?;
 
         std::thread::sleep(std::time::Duration::from_secs(4));
@@ -500,7 +508,7 @@ mod test {
             .with_tls(Tls::Enforced);
 
         std::thread::sleep(std::time::Duration::from_secs(4));
-        let f = async || resend.domains.update(&domain.id, updates).await;
+        let f = async || resend.domains.update(&domain.id, updates.clone()).await;
         let domain = retry(f, 5, std::time::Duration::from_secs(2)).await?;
         std::thread::sleep(std::time::Duration::from_secs(4));
 

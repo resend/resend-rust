@@ -126,7 +126,7 @@ pub mod types {
         CreateDomainOptions, DkimRecordType, Domain, DomainCapabilities, DomainCapabilityStatus,
         DomainChanges, DomainDkimRecord, DomainId, DomainRecord, DomainSpfRecord, DomainStatus,
         ProxyStatus, ReceivingRecord, ReceivingRecordType, Region, SpfRecordType, Tls,
-        UpdateDomainResponse,
+        UpdateDomainResponse, VerifyDomainResponse,
     };
     pub use super::emails::types::{
         Attachment, CancelScheduleResponse, ContentDisposition, ContentOrPath, CreateAttachment,
