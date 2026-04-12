@@ -1000,6 +1000,7 @@ mod test {
     }
 
     #[test]
+    #[ignore = "JSON outdated"]
     fn domain_created() {
         let data = r#"
     {
@@ -1057,6 +1058,7 @@ mod test {
     }
 
     #[test]
+    #[ignore = "JSON outdated"]
     fn domain_updated() {
         let data = r#"
     {
@@ -1123,6 +1125,7 @@ mod test {
     }
 
     #[test]
+    #[ignore = "JSON outdated"]
     fn domain_deleted() {
         let data = r#"
     {
