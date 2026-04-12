@@ -119,6 +119,7 @@ impl fmt::Debug for DomainsSvc {
 #[allow(unreachable_pub)]
 pub mod types {
     use serde::{Deserialize, Serialize};
+    use serde_json::Value;
 
     #[derive(Debug, Copy, Clone, Serialize)]
     #[serde(rename_all = "lowercase")]
@@ -143,7 +144,7 @@ pub mod types {
         name: String,
         /// The region where the email will be sent from.
         ///
-        /// Possible values are `'us-east-1' | 'eu-west-1' | 'sa-east-1'`.
+        /// Possible values are `'us-east-1' | 'eu-west-1' | 'sa-east-1' | 'ap-northeast-1'`.
         #[serde(rename = "region", skip_serializing_if = "Option::is_none")]
         region: Option<Region>,
         /// For advanced use cases, choose a subdomain for the Return-Path address.
@@ -152,6 +153,17 @@ pub mod types {
         /// that could undermine credibility (e.g. `testing`), as they may be exposed to recipients.
         #[serde(skip_serializing_if = "Option::is_none")]
         custom_return_path: Option<String>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        open_tracking: Option<bool>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        click_tracking: Option<bool>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        tracking_subdomain: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        tls: Option<Tls>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        capabilities: Option<Value>,
     }
 
     impl CreateDomainOptions {
@@ -164,6 +176,12 @@ pub mod types {
                 name: name.to_owned(),
                 region: None,
                 custom_return_path: None,
+
+                open_tracking: None,
+                click_tracking: None,
+                tracking_subdomain: None,
+                tls: None,
+                capabilities: None,
             }
         }
 
@@ -181,6 +199,36 @@ pub mod types {
         #[inline]
         pub fn with_custom_return_path(mut self, custom_return_path: impl Into<String>) -> Self {
             self.custom_return_path = Some(custom_return_path.into());
+            self
+        }
+
+        #[inline]
+        pub fn with_open_tracking(mut self, open_tracking: bool) -> Self {
+            self.open_tracking = Some(open_tracking);
+            self
+        }
+
+        #[inline]
+        pub fn with_click_tracking(mut self, click_tracking: bool) -> Self {
+            self.click_tracking = Some(click_tracking);
+            self
+        }
+
+        #[inline]
+        pub fn with_tracking_subdomain(mut self, tracking_subdomain: String) -> Self {
+            self.tracking_subdomain = Some(tracking_subdomain);
+            self
+        }
+
+        #[inline]
+        pub fn with_tls(mut self, tls: Tls) -> Self {
+            self.tls = Some(tls);
+            self
+        }
+
+        #[inline]
+        pub fn with_capabilities(mut self, capabilities: Value) -> Self {
+            self.capabilities = Some(capabilities);
             self
         }
     }
@@ -319,9 +367,8 @@ pub mod types {
         pub id: DomainId,
         /// The name of the domain.
         pub name: String,
-        // TODO: Technically both this and the domainrecord could be an enum https://resend.com/docs/api-reference/domains/get-domain#path-parameters
         /// The status of the domain.
-        pub status: String,
+        pub status: DomainStatus,
 
         /// The date and time the domain was created in ISO8601 format.
         pub created_at: String,
@@ -329,6 +376,23 @@ pub mod types {
         pub region: Region,
         /// The records of the domain.
         pub records: Option<Vec<DomainRecord>>,
+
+        pub capabilities: DomainCapabilities,
+    }
+
+    #[must_use]
+    #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+    pub struct DomainCapabilities {
+        pub sending: DomainCapabilityStatus,
+        pub receiving: DomainCapabilityStatus,
+    }
+
+    #[non_exhaustive]
+    #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+    #[serde(rename_all = "snake_case")]
+    pub enum DomainCapabilityStatus {
+        Enabled,
+        Disabled,
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -350,6 +414,8 @@ pub mod types {
         open_tracking: Option<bool>,
         #[serde(skip_serializing_if = "Option::is_none")]
         tls: Option<Tls>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        capabilities: Option<DomainCapabilities>,
     }
 
     impl DomainChanges {
