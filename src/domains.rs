@@ -63,6 +63,7 @@ impl DomainsSvc {
     ///
     /// <https://resend.com/docs/api-reference/domains/update-domain>
     #[maybe_async::maybe_async]
+    #[allow(clippy::needless_pass_by_value)]
     pub async fn update(
         &self,
         domain_id: &str,
