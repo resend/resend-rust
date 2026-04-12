@@ -9,6 +9,7 @@ use reqwest::blocking::Client as ReqwestClient;
 use crate::{
     batch::BatchSvc,
     config::Config,
+    events::EventsSvc,
     logs::LogsSvc,
     services::{AutomationsSvc, ReceivingSvc},
     webhooks::WebhookSvc,
@@ -53,6 +54,8 @@ pub struct Resend {
     pub logs: LogsSvc,
     /// `Resend` APIs for `/automations` endpoints.
     pub automations: AutomationsSvc,
+    /// `Resend` APIs for `/events` endpoints.
+    pub events: EventsSvc,
 }
 
 impl Resend {
@@ -106,7 +109,8 @@ impl Resend {
             receiving: ReceivingSvc(Arc::clone(&inner)),
             webhooks: WebhookSvc(Arc::clone(&inner)),
             logs: LogsSvc(Arc::clone(&inner)),
-            automations: AutomationsSvc(inner),
+            automations: AutomationsSvc(Arc::clone(&inner)),
+            events: EventsSvc(inner),
         }
     }
 
