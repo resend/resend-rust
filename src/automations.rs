@@ -228,8 +228,44 @@ pub mod types {
         pub subject: Option<String>,
         pub from: Option<String>,
         pub reply_to: Option<String>,
-        // I give up
         pub variables: Option<Value>,
+    }
+
+    impl SendEmailStepConfig {
+        #[inline]
+        pub fn new(template: AutomationTemplate) -> Self {
+            Self {
+                template,
+                subject: None,
+                from: None,
+                reply_to: None,
+                variables: None,
+            }
+        }
+
+        #[inline]
+        pub fn with_subject(mut self, subject: impl Into<String>) -> Self {
+            self.subject = Some(subject.into());
+            self
+        }
+
+        #[inline]
+        pub fn with_from(mut self, from: impl Into<String>) -> Self {
+            self.from = Some(from.into());
+            self
+        }
+
+        #[inline]
+        pub fn with_reply_to(mut self, reply_to: impl Into<String>) -> Self {
+            self.reply_to = Some(reply_to.into());
+            self
+        }
+
+        #[inline]
+        pub fn with_variables(mut self, variables: Value) -> Self {
+            self.variables = Some(variables);
+            self
+        }
     }
 
     #[must_use]
@@ -238,6 +274,22 @@ pub mod types {
         pub id: String,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub variables: Option<Value>,
+    }
+
+    impl AutomationTemplate {
+        #[inline]
+        pub fn new(id: impl Into<String>) -> Self {
+            Self {
+                id: id.into(),
+                variables: None,
+            }
+        }
+
+        #[inline]
+        pub fn with_variables(mut self, variables: Value) -> Self {
+            self.variables = Some(variables);
+            self
+        }
     }
 
     #[must_use]
@@ -260,6 +312,23 @@ pub mod types {
         pub from: String,
         pub to: String,
         pub r#type: Option<ConnectionType>,
+    }
+
+    impl Connection {
+        #[inline]
+        pub fn new(from: impl Into<String>, to: impl Into<String>) -> Self {
+            Self {
+                from: from.into(),
+                to: to.into(),
+                r#type: None,
+            }
+        }
+
+        #[inline]
+        pub fn with_type(mut self, r#type: ConnectionType) -> Self {
+            self.r#type = Some(r#type);
+            self
+        }
     }
 
     #[must_use]

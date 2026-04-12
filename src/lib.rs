@@ -101,8 +101,9 @@ pub mod types {
     pub use super::automations::types::{
         Automation, AutomationId, AutomationMinimal, AutomationRun, AutomationRunId,
         AutomationStatus, AutomationTemplate, Connection, ConnectionType, CreateAutomationOptions,
-        CreateAutomationResponse, DeleteAutomationResponse, Step, StopAutomationResponse,
-        UpdateAutomationOptions, UpdateAutomationResponse, WaitForEventStepConfig,
+        CreateAutomationResponse, DelayStepConfig, DeleteAutomationResponse, SendEmailStepConfig,
+        Step, StopAutomationResponse, TriggerStepConfig, UpdateAutomationOptions,
+        UpdateAutomationResponse, WaitForEventStepConfig,
     };
     pub use super::batch::types::{
         BatchValidation, PermissiveBatchErrors, SendEmailBatchPermissiveResponse,
