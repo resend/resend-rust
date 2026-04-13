@@ -105,8 +105,11 @@ impl ReceivingSvc {
         let email_svc = EmailsSvc(Arc::<Config>::clone(&self.0));
 
         if opts.passthrough {
-            let parsed = mailparse::parse_mail(&raw_response_content)
-                .map_err(|_e| Error::Parse("Failed to parse raw email".to_owned()))?;
+            let parsed =
+                mailparse::parse_mail(&raw_response_content).map_err(|e| Error::Parse {
+                    message: "Failed to parse raw email".to_owned(),
+                    source: Some(Box::new(e)),
+                })?;
 
             let attachments = parsed
                 .subparts
@@ -120,11 +123,11 @@ impl ReceivingSvc {
                     let filename = disposition
                         .params
                         .get("filename")
-                        .ok_or_else(|| Error::Parse("Could not parse filename".to_string()))?
+                        .ok_or_else(|| Error::Other("Could not get filename".to_string()))?
                         .to_owned();
                     let content = attachment
                         .get_body_raw()
-                        .map_err(|_e| Error::Parse("Could not get attachment body".to_string()))?;
+                        .map_err(|_e| Error::Other("Could not get attachment body".to_string()))?;
                     let content_type = attachment.ctype.mimetype.clone();
 
                     if let Some(content_id) = attachment.headers.get_first_header("Content-ID") {
