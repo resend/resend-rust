@@ -35,3 +35,5 @@ jobs:
 
       - name: GitHub Release
         uses: softprops/action-gh-release@v3
+        with:
+          body: Check the [Changelog](https://github.com/resend/resend-rust/blob/main/CHANGELOG.md)
