@@ -1,6 +1,8 @@
 name: Publish
 on:
-  workflow_dispatch:
+  - workflow_dispatch:
+  - push:
+      tags:
 
 jobs:
   publish:
@@ -27,3 +29,6 @@ jobs:
 
       - name: Publish
         run: cargo release publish --execute --no-confirm
+
+      - name: GitHub Release
+        uses: softprops/action-gh-release@v3
