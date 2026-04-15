@@ -573,6 +573,7 @@ mod test {
     }
 
     #[test]
+    #[allow(clippy::indexing_slicing)]
     fn deserialize_domain_with_tracking_caa_record() {
         use crate::domains::types::{Domain, DomainRecord};
 
