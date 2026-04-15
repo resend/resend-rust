@@ -311,10 +311,52 @@ pub mod types {
         pub priority: i32,
     }
 
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct TrackingRecord {
+        /// The name of the record.
+        pub name: String,
+        /// The value of the record.
+        pub value: String,
+        /// The type of record.
+        #[serde(rename = "type")]
+        pub r#type: TrackingRecordType,
+        /// The time to live for the record.
+        pub ttl: String,
+        /// The status of the record.
+        pub status: DomainStatus,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct TrackingCaaRecord {
+        /// The name of the record.
+        pub name: String,
+        /// The value of the record (e.g. `0 issue "amazon.com"`).
+        pub value: String,
+        /// The type of record.
+        #[serde(rename = "type")]
+        pub r#type: TrackingCaaRecordType,
+        /// The time to live for the record.
+        pub ttl: String,
+        /// The status of the record.
+        pub status: DomainStatus,
+    }
+
     #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
     pub enum ReceivingRecordType {
         #[allow(clippy::upper_case_acronyms)]
         MX,
+    }
+
+    #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+    pub enum TrackingRecordType {
+        #[allow(clippy::upper_case_acronyms)]
+        CNAME,
+    }
+
+    #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+    pub enum TrackingCaaRecordType {
+        #[allow(clippy::upper_case_acronyms)]
+        CAA,
     }
 
     #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
@@ -358,6 +400,10 @@ pub mod types {
         DomainDkimRecord(DomainDkimRecord),
         #[serde(rename = "Receiving MX")]
         ReceivingRecord(ReceivingRecord),
+        #[serde(rename = "Tracking")]
+        TrackingRecord(TrackingRecord),
+        #[serde(rename = "TrackingCAA")]
+        TrackingCaaRecord(TrackingCaaRecord),
     }
 
     /// Details of an existing domain.
@@ -524,5 +570,44 @@ mod test {
         assert!(list.is_empty());
 
         Ok(())
+    }
+
+    #[test]
+    fn deserialize_domain_with_tracking_caa_record() {
+        use crate::domains::types::{Domain, DomainRecord};
+
+        let json = r#"{
+            "object": "domain",
+            "id": "7c2a439f-d5fc-4dc1-8bab-ced17f14c972",
+            "name": "namingishard.dev",
+            "created_at": "2026-04-14 11:16:24.808219+00",
+            "status": "verified",
+            "capabilities": { "sending": "enabled", "receiving": "disabled" },
+            "records": [
+                {
+                    "record": "Tracking",
+                    "type": "CNAME",
+                    "name": "links",
+                    "value": "links1.resend-dns-staging.com",
+                    "ttl": "Auto",
+                    "status": "verified"
+                },
+                {
+                    "record": "TrackingCAA",
+                    "name": "",
+                    "type": "CAA",
+                    "ttl": "Auto",
+                    "value": "0 issue \"amazon.com\"",
+                    "status": "verified"
+                }
+            ],
+            "region": "eu-west-1"
+        }"#;
+
+        let domain: Domain = serde_json::from_str(json).expect("domain deserializes");
+        let records = domain.records.expect("records present");
+        assert_eq!(records.len(), 2);
+        assert!(matches!(records[0], DomainRecord::TrackingRecord(_)));
+        assert!(matches!(records[1], DomainRecord::TrackingCaaRecord(_)));
     }
 }
