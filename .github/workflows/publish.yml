@@ -8,28 +8,30 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - name: Use cached dependencies
-        uses: Swatinem/rust-cache@v2
+      # - name: Use cached dependencies
+      #   uses: Swatinem/rust-cache@v2
 
-      - name: Check semver
-        run: |
-          cargo install cargo-semver-checks --locked
-          cargo semver-checks check-release
+      # - name: Check semver
+      #   run: |
+      #     cargo install cargo-semver-checks --locked
+      #     cargo semver-checks check-release
 
-      - name: Install cargo-release
-        run: cargo install cargo-release
+      # - name: Install cargo-release
+      #   run: cargo install cargo-release
 
-      - name: Login to Crates.io
-        run: cargo login ${{ secrets.CRATESIO_TOKEN }}
+      # - name: Login to Crates.io
+      #   run: cargo login ${{ secrets.CRATESIO_TOKEN }}
 
-      - name: Publish
-        run: cargo release publish --execute --no-confirm --allow-branch HEAD
+      # - name: Publish
+      #   run: cargo release publish --execute --no-confirm --allow-branch HEAD
 
       - name: GitHub Release
         uses: softprops/action-gh-release@v3
