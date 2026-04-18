@@ -23,12 +23,6 @@ and this project adheres to
 
 - `TrackingRecord` and `TrackingCaaRecord` in `ProxyStatus`
 
-## [0.24.0] - 2026-04-16
-
-### Added 
-
-- `TrackingRecord` and `TrackingCaaRecord` in `ProxyStatus`
-
 ## [0.23.0] - 2026-04-12
 
 ### Added
@@ -38,7 +32,7 @@ and this project adheres to
 - automations endpoints
 - events endpoints
 - domains:
-  - added a couple of new fields
+- added a couple of new fields
 
 ### Changed
 
