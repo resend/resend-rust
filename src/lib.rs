@@ -174,8 +174,15 @@ pub enum Error {
     Resend(#[from] types::ErrorResponse),
 
     /// Errors that may occur during the parsing of an API response.
-    #[error("Failed to parse Resend API response. Received: \n{0}")]
-    Parse(String),
+    #[error("Failed to parse Resend API response. Received: \n{message}")]
+    Parse {
+        message: String,
+        source: Option<Box<dyn std::error::Error + Send + Sync>>,
+    },
+
+    /// Other more generic errors
+    #[error("{0}")]
+    Other(String),
 
     /// Detailed rate limit error. For the old error variant see
     /// [`types::ErrorKind::RateLimitExceeded`].

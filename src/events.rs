@@ -209,7 +209,10 @@ pub mod types {
 ///  let parsed: Result<Event, resend_rs::Error> = try_parse_event(data);
 /// ```
 pub fn try_parse_event(data: &str) -> Result<Event> {
-    serde_json::from_str::<Event>(data).map_err(|e| crate::Error::Parse(e.to_string()))
+    serde_json::from_str::<Event>(data).map_err(|e| crate::Error::Parse {
+        message: "Could not parse event".to_owned(),
+        source: Some(Box::new(e)),
+    })
 }
 
 /// Parses an event type string into an [`EventType`].
@@ -223,7 +226,10 @@ pub fn try_parse_event(data: &str) -> Result<Event> {
 ///  let parsed: Result<EventType, resend_rs::Error> = try_parse_event_type(data);
 /// ```
 pub fn try_parse_event_type(data: &str) -> Result<EventType> {
-    serde_json::from_str::<EventType>(data).map_err(|e| crate::Error::Parse(e.to_string()))
+    serde_json::from_str::<EventType>(data).map_err(|e| crate::Error::Parse {
+        message: "Could not parse event type".to_owned(),
+        source: Some(Box::new(e)),
+    })
 }
 
 /// Represents any [Resend Event](https://resend.com/docs/dashboard/webhooks/event-types).

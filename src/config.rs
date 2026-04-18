@@ -228,10 +228,20 @@ impl Config {
                     .is_some_and(|content_type| content_type.contains("html"));
 
                 if content_type_is_html {
-                    return Err(Error::Parse(response.text().await?));
+                    return Err(Error::Parse {
+                        message: response.text().await?,
+                        source: None,
+                    });
                 }
 
-                let error = response.json::<ErrorResponse>().await?;
+                let error_raw = response.text().await?;
+                let error = serde_json::from_str::<ErrorResponse>(&error_raw).map_err(|e| {
+                    Error::Parse {
+                        message: error_raw,
+                        source: Some(Box::new(e)),
+                    }
+                })?;
+
                 Err(Error::Resend(error))
             }
             _ => Ok(response),

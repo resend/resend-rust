@@ -6,7 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-<!--## Unreleased-->
+## Unreleased
+
+### Added
+
+- `Other` error variant
+
+### Changed
+
+- the parse error variant went from `Parse(String)` to `Parse: {message: String, source: Option<Error>}`.
+- some errors that used to be `::Parse` are now instead `::Other` (these were very odd edge cases though, chances are you didn't run into them)
+
+## [0.24.0] - 2026-04-16
+
+### Added 
+
+- `TrackingRecord` and `TrackingCaaRecord` in `ProxyStatus`
 
 ## [0.24.0] - 2026-04-16
 
@@ -23,9 +38,13 @@ and this project adheres to
 - automations endpoints
 - events endpoints
 - domains:
+  - added a couple of new fields
+
+### Changed
+
+- domains:
   - `domains.add` is now `domains.create`
   - domains.verify now returns `VerifyDomainResponse`
-  - added a couple of new fields
 
 ## [0.22.0] - 2026-03-31
 
