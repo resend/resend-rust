@@ -1,10 +1,15 @@
 name: Publish
 on:
   workflow_dispatch:
+  push:
+    tags:
+      - "v*.*.*"
 
 jobs:
   publish:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -26,4 +31,9 @@ jobs:
         run: cargo login ${{ secrets.CRATESIO_TOKEN }}
 
       - name: Publish
-        run: cargo release publish --execute --no-confirm
+        run: cargo release publish --execute --no-confirm --allow-branch HEAD
+
+      - name: GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          body: Check the [Changelog](https://github.com/resend/resend-rust/blob/main/CHANGELOG.md)

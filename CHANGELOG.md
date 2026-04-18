@@ -17,6 +17,12 @@ and this project adheres to
 - the parse error variant went from `Parse(String)` to `Parse: {message: String, source: Option<Error>}`.
 - some errors that used to be `::Parse` are now instead `::Other` (these were very odd edge cases though, chances are you didn't run into them)
 
+## [0.24.0] - 2026-04-16
+
+### Added 
+
+- `TrackingRecord` and `TrackingCaaRecord` in `ProxyStatus`
+
 ## [0.23.0] - 2026-04-12
 
 ### Added
@@ -496,6 +502,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+[0.24.0]: https://crates.io/crates/resend-rs/0.24.0
 [0.23.0]: https://crates.io/crates/resend-rs/0.23.0
 [0.22.0]: https://crates.io/crates/resend-rs/0.22.0
 [0.21.1]: https://crates.io/crates/resend-rs/0.21.1
