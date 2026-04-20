@@ -2,6 +2,8 @@ name: Lint
 
 on:
   push:
+    tags-ignore:
+      - "**"
   pull_request:
 
 env:
