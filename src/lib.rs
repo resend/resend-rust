@@ -124,7 +124,8 @@ pub mod types {
     };
     pub use super::domains::types::{
         CreateDomainOptions, DkimRecordType, Domain, DomainCapabilities, DomainCapabilityStatus,
-        DomainChanges, DomainDkimRecord, DomainId, DomainRecord, DomainSpfRecord, DomainStatus,
+        DomainChanges, DomainDkimRecord, DomainId, DomainRecord, DomainRecordStatus,
+        DomainSpfRecord, DomainStatus,
         ProxyStatus, ReceivingRecord, ReceivingRecordType, Region, SpfRecordType, Tls,
         UpdateDomainResponse, VerifyDomainResponse,
     };
