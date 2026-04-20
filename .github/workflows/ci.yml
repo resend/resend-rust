@@ -3,6 +3,8 @@ name: Build & Tests
 on:
   push:
     branches: [main]
+    tags-ignore:
+      - "**"
 
 env:
   CARGO_TERM_COLOR: always
@@ -87,7 +89,8 @@ jobs:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
 
   x86_64-pc-windows-msvc:
-    needs: [aarch64-unknown-linux-gnu, x86_64-unknown-linux-gnu, x86_64-apple-darwin]
+    needs:
+      [aarch64-unknown-linux-gnu, x86_64-unknown-linux-gnu, x86_64-apple-darwin]
     runs-on: macos-15
     steps:
       - name: Checkout
