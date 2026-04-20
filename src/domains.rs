@@ -268,7 +268,7 @@ pub mod types {
         /// The time to live for the record.
         pub ttl: String,
         /// The status of the record.
-        pub status: DomainStatus,
+        pub status: DomainRecordStatus,
 
         pub routing_policy: Option<String>,
         pub priority: Option<i32>,
@@ -287,7 +287,7 @@ pub mod types {
         /// The time to live for the record.
         pub ttl: String,
         /// The status of the record.
-        pub status: DomainStatus,
+        pub status: DomainRecordStatus,
 
         pub routing_policy: Option<String>,
         pub priority: Option<i32>,
@@ -306,7 +306,7 @@ pub mod types {
         /// The time to live for the record.
         pub ttl: String,
         /// The status of the record.
-        pub status: DomainStatus,
+        pub status: DomainRecordStatus,
 
         pub priority: i32,
     }
@@ -323,7 +323,7 @@ pub mod types {
         /// The time to live for the record.
         pub ttl: String,
         /// The status of the record.
-        pub status: DomainStatus,
+        pub status: DomainRecordStatus,
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -338,7 +338,7 @@ pub mod types {
         /// The time to live for the record.
         pub ttl: String,
         /// The status of the record.
-        pub status: DomainStatus,
+        pub status: DomainRecordStatus,
     }
 
     #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
@@ -368,6 +368,17 @@ pub mod types {
     #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
     #[serde(rename_all = "snake_case")]
     pub enum DomainStatus {
+        Pending,
+        Verified,
+        Failed,
+        NotStarted,
+        PartiallyVerified,
+        PartiallyFailed,
+    }
+
+    #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+    #[serde(rename_all = "snake_case")]
+    pub enum DomainRecordStatus {
         Pending,
         Verified,
         Failed,
@@ -529,7 +540,7 @@ mod test {
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
-    #[ignore = "Flaky backend"]
+    // #[ignore = "Flaky backend"]
     async fn all() -> DebugResult<()> {
         let resend = &*CLIENT;
 
@@ -610,5 +621,41 @@ mod test {
         assert_eq!(records.len(), 2);
         assert!(matches!(records[0], DomainRecord::TrackingRecord(_)));
         assert!(matches!(records[1], DomainRecord::TrackingCaaRecord(_)));
+    }
+
+    #[test]
+    fn deserialize_partially_verified_domain() {
+        use crate::domains::types::{Domain, DomainStatus};
+
+        let json = r#"{
+            "object": "domain",
+            "id": "fd61172c-cafc-40f5-b049-b45947779a29",
+            "name": "resend.com",
+            "status": "partially_verified",
+            "created_at": "2023-06-21T06:10:36.144Z",
+            "region": "us-east-1",
+            "capabilities": { "sending": "enabled", "receiving": "disabled" }
+        }"#;
+
+        let domain: Domain = serde_json::from_str(json).expect("domain deserializes");
+        assert!(matches!(domain.status, DomainStatus::PartiallyVerified));
+    }
+
+    #[test]
+    fn deserialize_partially_failed_domain() {
+        use crate::domains::types::{Domain, DomainStatus};
+
+        let json = r#"{
+            "object": "domain",
+            "id": "fd61172c-cafc-40f5-b049-b45947779a29",
+            "name": "resend.com",
+            "status": "partially_failed",
+            "created_at": "2023-06-21T06:10:36.144Z",
+            "region": "us-east-1",
+            "capabilities": { "sending": "enabled", "receiving": "enabled" }
+        }"#;
+
+        let domain: Domain = serde_json::from_str(json).expect("domain deserializes");
+        assert!(matches!(domain.status, DomainStatus::PartiallyFailed));
     }
 }

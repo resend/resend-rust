@@ -6,16 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+<!--## Unreleased-->
+
+## [0.25.0] - 2026-04-20
 
 ### Added
 
 - `Other` error variant
+- `DomainRecordStatus`
 
 ### Changed
 
 - the parse error variant went from `Parse(String)` to `Parse: {message: String, source: Option<Error>}`.
 - some errors that used to be `::Parse` are now instead `::Other` (these were very odd edge cases though, chances are you didn't run into them)
+- The following are now of type `DomainRecordStatus` instead of `DomainStatus`:
+  - `DomainSpfRecord.status`
+  - `DomainDkimRecord.status`
+  - `ReceivingRecord.status`
+  - `TrackingRecord.status`
+  - `TrackingCaaRecord.status`
+- `DomainStatus` has additional options: `NotStarted`, `PartiallyVerified`, `PartiallyFailed`
 
 ## [0.24.0] - 2026-04-16
 
@@ -502,6 +512,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+[0.25.0]: https://crates.io/crates/resend-rs/0.25.0
 [0.24.0]: https://crates.io/crates/resend-rs/0.24.0
 [0.23.0]: https://crates.io/crates/resend-rs/0.23.0
 [0.22.0]: https://crates.io/crates/resend-rs/0.22.0
