@@ -24,7 +24,8 @@ and this project adheres to
   - `DomainDkimRecord.status`
   - `ReceivingRecord.status`
   - `TrackingRecord.status`
-- `DomainStatus` has additional options: `NotStarted`, `PartiallyStarted`, `PartiallyFailed`
+  - `TrackingCaaRecord.status`
+- `DomainStatus` has additional options: `NotStarted`, `PartiallyVerified`, `PartiallyFailed`
 
 ## [0.24.0] - 2026-04-16
 
