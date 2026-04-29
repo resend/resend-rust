@@ -8,6 +8,12 @@ and this project adheres to
 
 <!--## Unreleased-->
 
+## [0.25.1] - 2026-04-29
+
+### Fixed 
+
+- Batch emails no longer ignore the Idempotency-Key header (https://github.com/resend/resend-rust/pull/54)
+
 ## [0.25.0] - 2026-04-20
 
 ### Added
@@ -512,6 +518,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+[0.25.1]: https://crates.io/crates/resend-rs/0.25.1
 [0.25.0]: https://crates.io/crates/resend-rs/0.25.0
 [0.24.0]: https://crates.io/crates/resend-rs/0.24.0
 [0.23.0]: https://crates.io/crates/resend-rs/0.23.0

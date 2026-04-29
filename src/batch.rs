@@ -47,11 +47,15 @@ impl BatchSvc {
     {
         let emails: Idempotent<T> = emails.into();
 
-        let emails: Vec<_> = emails.data.into_iter().collect();
-
         let mut request = self.0.build(Method::POST, "/emails/batch");
 
         request = request.header("x-batch-validation", batch_validation.to_string());
+
+        if let Some(ref idempotency_key) = emails.idempotency_key {
+            request = request.header("Idempotency-Key", idempotency_key);
+        }
+
+        let emails: Vec<_> = emails.data.into_iter().collect();
 
         let response = self.0.send(request.json(&emails)).await?;
         let content = response.json::<SendEmailBatchPermissiveResponse>().await?;
