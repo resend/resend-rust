@@ -9,6 +9,9 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
+permissions:
+  contents: read
+
 concurrency:
   group: lint/${{ github.ref }}
   cancel-in-progress: true
@@ -17,15 +20,16 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6
 
       - name: Use cached dependencies
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
-          key: "ubuntu-22.04-x86_64-unknown-linux-gnu"
+          key: "ubuntu-22.04-x86_64-unknown-linux-gnu-${{ hashFiles('**/Cargo.lock') }}"
 
       - name: Install clippy and rustfmt
         run: |

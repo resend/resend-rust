@@ -5,11 +5,18 @@ on:
     tags:
       - "v*.*.*"
 
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   publish:
     runs-on: ubuntu-24.04
-    permissions:
-      contents: write
+    timeout-minutes: 20
+    environment: release
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -17,7 +24,7 @@ jobs:
           fetch-depth: 0
 
       - name: Use cached dependencies
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
 
       - name: Check semver
         run: |
@@ -34,6 +41,6 @@ jobs:
         run: cargo release publish --execute --no-confirm --allow-branch HEAD
 
       - name: GitHub Release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3
         with:
           body: Check the [Changelog](https://github.com/resend/resend-rust/blob/main/CHANGELOG.md)

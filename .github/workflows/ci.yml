@@ -9,6 +9,9 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
+permissions:
+  contents: read
+
 concurrency:
   group: ci/${{ github.ref }}
   cancel-in-progress: true
@@ -16,19 +19,20 @@ concurrency:
 jobs:
   x86_64-unknown-linux-gnu:
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v6
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
         with:
           targets: x86_64-unknown-linux-gnu
 
       - name: Use cached dependencies
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
-          key: "ubuntu-24.04-x86_64-unknown-linux-gnu"
+          key: "ubuntu-24.04-x86_64-unknown-linux-gnu-${{ hashFiles('**/Cargo.lock') }}"
 
       - name: Build
         run: cargo build --verbose
@@ -41,19 +45,20 @@ jobs:
   aarch64-unknown-linux-gnu:
     needs: [x86_64-unknown-linux-gnu]
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v6
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
         with:
           targets: aarch64-unknown-linux-gnu
 
       - name: Use cached dependencies
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
-          key: "ubuntu-24.04-aarch64-unknown-linux-gnu"
+          key: "ubuntu-24.04-aarch64-unknown-linux-gnu-${{ hashFiles('**/Cargo.lock') }}"
 
       - name: Build
         run: cargo build --verbose
@@ -66,19 +71,20 @@ jobs:
   x86_64-apple-darwin:
     needs: [aarch64-unknown-linux-gnu, x86_64-unknown-linux-gnu]
     runs-on: macos-15
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v6
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
         with:
           targets: x86_64-apple-darwin
 
       - name: Use cached dependencies
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
-          key: "macos-15-x86_64-apple-darwin"
+          key: "macos-15-x86_64-apple-darwin-${{ hashFiles('**/Cargo.lock') }}"
 
       - name: Build
         run: cargo build --verbose
@@ -92,19 +98,20 @@ jobs:
     needs:
       [aarch64-unknown-linux-gnu, x86_64-unknown-linux-gnu, x86_64-apple-darwin]
     runs-on: macos-15
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v6
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
         with:
           targets: x86_64-pc-windows-msvc
 
       - name: Use cached dependencies
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
-          key: "windows-2022-x86_64-pc-windows-msvc"
+          key: "windows-2022-x86_64-pc-windows-msvc-${{ hashFiles('**/Cargo.lock') }}"
 
       - name: Build
         run: cargo build --verbose
