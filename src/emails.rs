@@ -149,7 +149,11 @@ pub mod types {
 
     use serde::{Deserialize, Serialize};
 
-    use crate::{emails::parse_nullable_vec, idempotent::Idempotent, types::TemplateId};
+    use crate::{
+        emails::parse_nullable_vec,
+        idempotent::Idempotent,
+        types::{TemplateId, TopicId},
+    };
 
     crate::define_id_type!(EmailId);
     crate::define_id_type!(AttachmentId);
@@ -198,8 +202,12 @@ pub mod types {
         /// Email tags.
         #[serde(skip_serializing_if = "Option::is_none")]
         tags: Option<Vec<Tag>>,
+        /// The template to use for the email.
         #[serde(skip_serializing_if = "Option::is_none")]
         template: Option<EmailTemplate>,
+        /// The topic ID to receive the email.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        topic_id: Option<TopicId>,
 
         /// Schedule email to be sent later. The date should be in ISO 8601 format
         /// (e.g: `2024-08-05T11:52:01.858Z`).
@@ -235,6 +243,7 @@ pub mod types {
                 attachments: None,
                 tags: None,
                 template: None,
+                topic_id: None,
                 scheduled_at: None,
             }
         }
@@ -325,9 +334,17 @@ pub mod types {
             self
         }
 
+        /// Adds the template to use for the email.
         #[inline]
         pub fn with_template(mut self, template: impl Into<EmailTemplate>) -> Self {
             self.template = Some(template.into());
+            self
+        }
+
+        /// Sets the topic ID to receive the email.
+        #[inline]
+        pub fn with_topic(mut self, topic_id: &str) -> Self {
+            self.topic_id = Some(TopicId::new(topic_id));
             self
         }
 
