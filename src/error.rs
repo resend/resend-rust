@@ -336,6 +336,7 @@ mod test {
         let expected = fragment
             .select(&selector)
             .map(|el| el.inner_html())
+            .filter(|el| el.starts_with("<code>"))
             .map(|inner| {
                 let mut results = vec![];
                 for (_, [error]) in re.captures_iter(&inner).map(|c| c.extract()) {
