@@ -154,10 +154,10 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
     pub struct Variable {
-        key: String,
+        pub key: String,
         #[serde(rename = "type")]
-        r#type: VariableType,
-        fallback_value: Option<serde_json::Value>,
+        pub r#type: VariableType,
+        pub fallback_value: Option<serde_json::Value>,
     }
 
     #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone, Copy)]
