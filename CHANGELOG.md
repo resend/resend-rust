@@ -9,6 +9,12 @@ and this project adheres to
 <!--## Unreleased-->
 
 <!--TODO: Replace with proper release -->
+## [0.26.0-rc.2] - 2026-06-11
+
+### Changed
+
+- Made `Variable` fields public
+
 ## [0.26.0-rc.1] - 2026-06-03
 
 ### Added
@@ -525,7 +531,8 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
-[0.26.0-rc.1]: https://crates.io/crates/resend-rs/0.25.1
+[0.26.0-rc.2]: https://crates.io/crates/resend-rs/0.26.0-rc.2
+[0.26.0-rc.1]: https://crates.io/crates/resend-rs/0.26.0-rc.1
 [0.25.1]: https://crates.io/crates/resend-rs/0.25.1
 [0.25.0]: https://crates.io/crates/resend-rs/0.25.0
 [0.24.0]: https://crates.io/crates/resend-rs/0.24.0
