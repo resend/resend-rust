@@ -312,6 +312,34 @@ pub mod types {
     crate::define_id_type!(ContactId);
     crate::define_id_type!(ContactPropertyId);
 
+    /// A segment reference for adding a contact to a segment during creation.
+    #[derive(Debug, Clone, Serialize)]
+    struct ContactSegmentRef {
+        id: String,
+    }
+
+    /// A custom property key-value pair for contact properties.
+    ///
+    /// # Note
+    /// The Resend API currently only accepts string values for contact properties.
+    /// Non-string values (numbers, booleans, etc.) will be rejected with a validation error.
+    #[derive(Debug, Clone, Serialize)]
+    pub struct CreateContactPropertyValue {
+        key: String,
+        /// String value for the property. Must be a string; the API does not accept other types.
+        value: String,
+    }
+
+    impl CreateContactPropertyValue {
+        /// Creates a new contact property with a key and string value.
+        pub fn new(key: impl Into<String>, value: impl Into<String>) -> Self {
+            Self {
+                key: key.into(),
+                value: value.into(),
+            }
+        }
+    }
+
     /// Details of a new [`Contact`].
     #[must_use]
     #[derive(Debug, Clone, Serialize)]
@@ -331,6 +359,15 @@ pub mod types {
         /// Indicates if the contact is unsubscribed.
         #[serde(skip_serializing_if = "Option::is_none")]
         unsubscribed: Option<bool>,
+        /// Custom properties for the contact.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        properties: Option<Vec<CreateContactPropertyValue>>,
+        /// Segment IDs to add the contact to.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        segments: Option<Vec<ContactSegmentRef>>,
+        /// Topic subscriptions for the contact.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        topics: Option<Vec<UpdateContactTopicOptions>>,
     }
 
     impl CreateContactOptions {
@@ -342,6 +379,9 @@ pub mod types {
                 first_name: None,
                 last_name: None,
                 unsubscribed: None,
+                properties: None,
+                segments: None,
+                topics: None,
             }
         }
 
@@ -370,6 +410,64 @@ pub mod types {
         #[inline]
         pub const fn with_unsubscribed(mut self, unsubscribed: bool) -> Self {
             self.unsubscribed = Some(unsubscribed);
+            self
+        }
+
+        /// Adds a custom property to the contact.
+        #[inline]
+        pub fn with_property(mut self, key: &str, value: impl Into<String>) -> Self {
+            let property = CreateContactPropertyValue::new(key, value.into());
+            let properties = self.properties.get_or_insert_with(Vec::new);
+            properties.push(property);
+            self
+        }
+
+        /// Adds multiple custom properties to the contact.
+        #[inline]
+        pub fn with_properties(mut self, properties: &[CreateContactPropertyValue]) -> Self {
+            let properties_vec = self.properties.get_or_insert_with(Vec::new);
+            properties_vec.extend_from_slice(properties);
+            self
+        }
+
+        /// Adds a segment ID to add the contact to.
+        #[inline]
+        pub fn with_segment(mut self, id: impl Into<String>) -> Self {
+            let segment = ContactSegmentRef {
+                id: id.into(),
+            };
+            let segments = self.segments.get_or_insert_with(Vec::new);
+            segments.push(segment);
+            self
+        }
+
+        /// Adds multiple segment IDs to add the contact to.
+        #[inline]
+        pub fn with_segments(mut self, ids: &[String]) -> Self {
+            let segments = self.segments.get_or_insert_with(Vec::new);
+            for id in ids {
+                segments.push(ContactSegmentRef {
+                    id: id.clone(),
+                });
+            }
+            self
+        }
+
+        /// Adds a topic subscription for the contact.
+        #[inline]
+        #[allow(clippy::needless_pass_by_value)]
+        pub fn with_topic(mut self, topic: UpdateContactTopicOptions) -> Self {
+            let topics = self.topics.get_or_insert_with(Vec::new);
+            topics.push(topic);
+            self
+        }
+
+        /// Adds multiple topic subscriptions for the contact.
+        #[inline]
+        #[allow(clippy::needless_pass_by_value)]
+        pub fn with_topics(mut self, topics: &[UpdateContactTopicOptions]) -> Self {
+            let topics_vec = self.topics.get_or_insert_with(Vec::new);
+            topics_vec.extend_from_slice(topics);
             self
         }
     }
@@ -815,5 +913,55 @@ mod test {
 
         let res = serde_json::from_str::<ContactProperty>(contact_property);
         assert!(res.is_ok());
+    }
+
+    #[test]
+    fn serialize_create_contact_with_extras() {
+        use crate::types::{CreateContactPropertyValue, SubscriptionType, UpdateContactTopicOptions};
+
+        let topic = UpdateContactTopicOptions::new("topic_123", SubscriptionType::OptIn);
+        let property = CreateContactPropertyValue::new("company", "Acme Corp");
+
+        let contact = CreateContactOptions::new("test@example.com")
+            .with_first_name("John")
+            .with_last_name("Doe")
+            .with_property("department", "Sales")
+            .with_properties(&[property])
+            .with_segment("segment_123")
+            .with_segments(&["segment_456".to_string()])
+            .with_topic(topic)
+            .with_topics(&[UpdateContactTopicOptions::new("topic_789", SubscriptionType::OptOut)]);
+
+        let json = serde_json::to_value(&contact).expect("Failed to serialize");
+
+        // Verify structure
+        assert_eq!(json["email"], "test@example.com");
+        assert_eq!(json["first_name"], "John");
+        assert_eq!(json["last_name"], "Doe");
+
+        // Verify properties
+        assert!(json["properties"].is_array());
+        let properties = json["properties"].as_array().expect("properties should be an array");
+        assert_eq!(properties.len(), 2);
+        assert_eq!(properties[0]["key"], "department");
+        assert_eq!(properties[0]["value"], "Sales");
+        assert_eq!(properties[1]["key"], "company");
+        assert_eq!(properties[1]["value"], "Acme Corp");
+
+        // Verify segments
+        assert!(json["segments"].is_array());
+        let segments = json["segments"].as_array().expect("segments should be an array");
+        assert_eq!(segments.len(), 2);
+        assert_eq!(segments[0]["id"], "segment_123");
+        assert_eq!(segments[1]["id"], "segment_456");
+
+        // Verify topics
+        assert!(json["topics"].is_array());
+        let topics = json["topics"].as_array().expect("topics should be an array");
+        assert_eq!(topics.len(), 2);
+        assert_eq!(topics[0]["id"], "topic_123");
+        assert_eq!(topics[0]["subscription"], "opt_in");
+        assert_eq!(topics[1]["id"], "topic_789");
+        assert_eq!(topics[1]["subscription"], "opt_out");
     }
 }
