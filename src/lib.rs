@@ -118,9 +118,9 @@ pub mod types {
     pub use super::contacts::types::{
         AddContactSegmentResponse, Contact, ContactChanges, ContactId, ContactProperty,
         ContactPropertyChanges, ContactPropertyId, ContactTopic, CreateContactOptions,
-        CreateContactPropertyOptions, CreateContactPropertyResponse, DeleteContactPropertyResponse,
-        PropertyType, RemoveContactSegmentResponse, UpdateContactPropertyResponse,
-        UpdateContactTopicOptions,
+        CreateContactPropertyOptions, CreateContactPropertyResponse, CreateContactPropertyValue,
+        DeleteContactPropertyResponse, PropertyType, RemoveContactSegmentResponse,
+        UpdateContactPropertyResponse, UpdateContactTopicOptions,
     };
     pub use super::domains::types::{
         CreateDomainOptions, DkimRecordType, Domain, DomainCapabilities, DomainCapabilityStatus,
