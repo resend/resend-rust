@@ -433,9 +433,7 @@ pub mod types {
         /// Adds a segment ID to add the contact to.
         #[inline]
         pub fn with_segment(mut self, id: impl Into<String>) -> Self {
-            let segment = ContactSegmentRef {
-                id: id.into(),
-            };
+            let segment = ContactSegmentRef { id: id.into() };
             let segments = self.segments.get_or_insert_with(Vec::new);
             segments.push(segment);
             self
@@ -446,9 +444,7 @@ pub mod types {
         pub fn with_segments(mut self, ids: &[String]) -> Self {
             let segments = self.segments.get_or_insert_with(Vec::new);
             for id in ids {
-                segments.push(ContactSegmentRef {
-                    id: id.clone(),
-                });
+                segments.push(ContactSegmentRef { id: id.clone() });
             }
             self
         }
@@ -917,7 +913,9 @@ mod test {
 
     #[test]
     fn serialize_create_contact_with_extras() {
-        use crate::types::{CreateContactPropertyValue, SubscriptionType, UpdateContactTopicOptions};
+        use crate::types::{
+            CreateContactPropertyValue, SubscriptionType, UpdateContactTopicOptions,
+        };
 
         let topic = UpdateContactTopicOptions::new("topic_123", SubscriptionType::OptIn);
         let property = CreateContactPropertyValue::new("company", "Acme Corp");
@@ -930,7 +928,10 @@ mod test {
             .with_segment("segment_123")
             .with_segments(&["segment_456".to_string()])
             .with_topic(topic)
-            .with_topics(&[UpdateContactTopicOptions::new("topic_789", SubscriptionType::OptOut)]);
+            .with_topics(&[UpdateContactTopicOptions::new(
+                "topic_789",
+                SubscriptionType::OptOut,
+            )]);
 
         let json = serde_json::to_value(&contact).expect("Failed to serialize");
 
@@ -941,7 +942,9 @@ mod test {
 
         // Verify properties
         assert!(json["properties"].is_array());
-        let properties = json["properties"].as_array().expect("properties should be an array");
+        let properties = json["properties"]
+            .as_array()
+            .expect("properties should be an array");
         assert_eq!(properties.len(), 2);
         assert_eq!(properties[0]["key"], "department");
         assert_eq!(properties[0]["value"], "Sales");
@@ -950,14 +953,18 @@ mod test {
 
         // Verify segments
         assert!(json["segments"].is_array());
-        let segments = json["segments"].as_array().expect("segments should be an array");
+        let segments = json["segments"]
+            .as_array()
+            .expect("segments should be an array");
         assert_eq!(segments.len(), 2);
         assert_eq!(segments[0]["id"], "segment_123");
         assert_eq!(segments[1]["id"], "segment_456");
 
         // Verify topics
         assert!(json["topics"].is_array());
-        let topics = json["topics"].as_array().expect("topics should be an array");
+        let topics = json["topics"]
+            .as_array()
+            .expect("topics should be an array");
         assert_eq!(topics.len(), 2);
         assert_eq!(topics[0]["id"], "topic_123");
         assert_eq!(topics[0]["subscription"], "opt_in");
