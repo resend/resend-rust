@@ -9,6 +9,14 @@ and this project adheres to
 <!--## Unreleased-->
 
 <!--TODO: Replace with proper release -->
+## [0.26.0-rc.3] - 2026-06-14
+
+### Added
+
+- `CreateContactOptions` now has methods for `properties`, `segments` and `topics`
+- `Contact` now has a `properties` field
+- `EmailTemplate` now has a `with_variable` (and `with_variables`) method
+
 ## [0.26.0-rc.2] - 2026-06-11
 
 ### Changed
@@ -531,6 +539,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+[0.26.0-rc.3]: https://crates.io/crates/resend-rs/0.26.0-rc.3
 [0.26.0-rc.2]: https://crates.io/crates/resend-rs/0.26.0-rc.2
 [0.26.0-rc.1]: https://crates.io/crates/resend-rs/0.26.0-rc.1
 [0.25.1]: https://crates.io/crates/resend-rs/0.25.1
