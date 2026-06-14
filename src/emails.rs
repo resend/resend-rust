@@ -648,9 +648,10 @@ pub mod types {
             self
         }
 
-        /// Sets the variables to the passed argument
+        /// Adds variables
         pub fn with_variables(mut self, variables: HashMap<String, serde_json::Value>) -> Self {
-            self.variables = Some(variables);
+            let self_variables = self.variables.get_or_insert_with(HashMap::new);
+            self_variables.extend(variables);
             self
         }
     }

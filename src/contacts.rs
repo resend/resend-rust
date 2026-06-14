@@ -395,10 +395,11 @@ pub mod types {
             self
         }
 
-        /// Sets the properties to the passed argument
+        /// Adds custom properties to the contact.
         #[inline]
         pub fn with_properties(mut self, properties: HashMap<String, String>) -> Self {
-            self.properties = Some(properties);
+            let self_properties = self.properties.get_or_insert_with(HashMap::new);
+            self_properties.extend(properties);
             self
         }
 
