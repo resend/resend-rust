@@ -905,6 +905,7 @@ mod test {
     }
 
     #[test]
+    #[allow(clippy::indexing_slicing)]
     fn serialize_create_contact_with_extras() {
         use crate::types::{
             CreateContactPropertyValue, SubscriptionType, UpdateContactTopicOptions,
