@@ -302,6 +302,8 @@ impl fmt::Debug for ContactsSvc {
 
 #[allow(unreachable_pub)]
 pub mod types {
+    use std::collections::HashMap;
+
     use serde::{Deserialize, Serialize};
 
     use crate::{
@@ -331,6 +333,15 @@ pub mod types {
         /// Indicates if the contact is unsubscribed.
         #[serde(skip_serializing_if = "Option::is_none")]
         unsubscribed: Option<bool>,
+        /// Custom properties for the contact.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        properties: Option<HashMap<String, String>>,
+        /// Segment IDs to add the contact to.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        segments: Option<Vec<String>>,
+        /// Topic subscriptions for the contact.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        topics: Option<Vec<UpdateContactTopicOptions>>,
     }
 
     impl CreateContactOptions {
@@ -342,6 +353,9 @@ pub mod types {
                 first_name: None,
                 last_name: None,
                 unsubscribed: None,
+                properties: None,
+                segments: None,
+                topics: None,
             }
         }
 
@@ -372,6 +386,58 @@ pub mod types {
             self.unsubscribed = Some(unsubscribed);
             self
         }
+
+        /// Adds a custom property to the contact.
+        #[inline]
+        pub fn with_property(mut self, key: &str, value: &str) -> Self {
+            let properties = self.properties.get_or_insert_with(HashMap::new);
+            let _old = properties.insert(key.to_owned(), value.to_owned());
+            self
+        }
+
+        /// Adds custom properties to the contact.
+        #[inline]
+        pub fn with_properties(mut self, properties: HashMap<String, String>) -> Self {
+            let self_properties = self.properties.get_or_insert_with(HashMap::new);
+            self_properties.extend(properties);
+            self
+        }
+
+        /// Adds a segment ID to add the contact to.
+        #[inline]
+        pub fn with_segment(mut self, id: impl Into<String>) -> Self {
+            let segments = self.segments.get_or_insert_with(Vec::new);
+            segments.push(id.into());
+            self
+        }
+
+        /// Adds multiple segment IDs to add the contact to.
+        #[inline]
+        pub fn with_segments(mut self, ids: &[String]) -> Self {
+            let segments = self.segments.get_or_insert_with(Vec::new);
+            for id in ids {
+                segments.push(id.clone());
+            }
+            self
+        }
+
+        /// Adds a topic subscription for the contact.
+        #[inline]
+        #[allow(clippy::needless_pass_by_value)]
+        pub fn with_topic(mut self, topic: UpdateContactTopicOptions) -> Self {
+            let topics = self.topics.get_or_insert_with(Vec::new);
+            topics.push(topic);
+            self
+        }
+
+        /// Adds multiple topic subscriptions for the contact.
+        #[inline]
+        #[allow(clippy::needless_pass_by_value)]
+        pub fn with_topics(mut self, topics: &[UpdateContactTopicOptions]) -> Self {
+            let topics_vec = self.topics.get_or_insert_with(Vec::new);
+            topics_vec.extend_from_slice(topics);
+            self
+        }
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -396,6 +462,9 @@ pub mod types {
         pub unsubscribed: bool,
         /// Timestamp indicating when the contact was created in ISO8601 format.
         pub created_at: String,
+        /// Custom properties for the contact.
+        #[serde(default)]
+        properties: Option<HashMap<String, ContactPropertyResponse>>,
     }
 
     /// List of changes to apply to a [`Contact`].
@@ -553,6 +622,13 @@ pub mod types {
         pub fallback_value: Option<serde_json::Value>,
     }
 
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct ContactPropertyResponse {
+        pub value: String,
+        #[serde(rename = "type")]
+        pub r#type: PropertyType,
+    }
+
     /// List of changes to apply to a [`ContactProperty`].
     #[must_use]
     #[derive(Debug, Default, Clone, Serialize)]
@@ -587,12 +663,14 @@ pub mod types {
 #[cfg(test)]
 #[allow(clippy::unwrap_used, clippy::needless_return)]
 mod test {
-    use crate::list_opts::ListOptions;
+    use std::collections::HashMap;
+
     use crate::test::{CLIENT, DebugResult};
     use crate::types::{
         ContactChanges, ContactProperty, CreateContactOptions, CreateTopicOptions,
         SubscriptionType, UpdateContactTopicOptions,
     };
+    use crate::{list_opts::ListOptions, types::Contact};
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
@@ -712,6 +790,39 @@ mod test {
     #[ignore = "Flaky backend"]
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
+    async fn contact_properties() -> DebugResult<()> {
+        use crate::types::CreateContactPropertyOptions;
+
+        let resend = &*CLIENT;
+
+        let contact_property =
+            CreateContactPropertyOptions::new("key", crate::types::PropertyType::String);
+        let contact_property = resend.contacts.create_property(contact_property).await?;
+
+        let contact = CreateContactOptions::new("steve.wozniak@gmail.com")
+            .with_first_name("Steve")
+            .with_last_name("Wozniak")
+            .with_unsubscribed(false)
+            .with_property("key", "value");
+
+        let contact = resend.contacts.create(contact).await?;
+
+        let contact = resend.contacts.get(&contact).await?;
+
+        let deleted = resend.contacts.delete(&contact.id).await?;
+        assert!(deleted);
+        let deleted = resend
+            .contacts
+            .delete_property(&contact_property.id)
+            .await?;
+        assert!(deleted.deleted);
+
+        Ok(())
+    }
+
+    #[tokio_shared_rt::test(shared = true)]
+    #[cfg(not(feature = "blocking"))]
+    #[ignore = "Flaky backend"]
     async fn segments() -> DebugResult<()> {
         let resend = &*CLIENT;
 
@@ -815,5 +926,99 @@ mod test {
 
         let res = serde_json::from_str::<ContactProperty>(contact_property);
         assert!(res.is_ok());
+    }
+
+    #[test]
+    fn deserialize_test2() {
+        let contact_property = r#"{
+          "object": "contact",
+          "id": "257d6d3b-e796-464d-ba7d-8ccabc58d16d",
+          "email": "steve.wozniak@gmail.com",
+          "first_name": "Steve",
+          "last_name": "Wozniak",
+          "created_at": "2025-07-21 23:58:57.096708+00",
+          "unsubscribed": false,
+          "properties": {
+            "key": {
+              "value": "value",
+              "type": "string"
+            }
+          }
+        }"#;
+
+        let res = serde_json::from_str::<Contact>(contact_property);
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    #[allow(clippy::indexing_slicing)]
+    fn serialize_create_contact_with_extras() {
+        use crate::types::{SubscriptionType, UpdateContactTopicOptions};
+
+        let topic = UpdateContactTopicOptions::new("topic_123", SubscriptionType::OptIn);
+        let mut properties = HashMap::new();
+        let _old = properties.insert("company".to_owned(), "Acme Corp".to_owned());
+
+        let contact = CreateContactOptions::new("test@example.com")
+            .with_first_name("John")
+            .with_last_name("Doe")
+            .with_property("department", "Sales")
+            .with_properties(properties)
+            .with_segment("segment_123")
+            .with_segments(&["segment_456".to_string()])
+            .with_topic(topic)
+            .with_topics(&[UpdateContactTopicOptions::new(
+                "topic_789",
+                SubscriptionType::OptOut,
+            )]);
+
+        let json = serde_json::to_value(&contact).expect("Failed to serialize");
+
+        // Verify structure
+        assert_eq!(json["email"], "test@example.com");
+        assert_eq!(json["first_name"], "John");
+        assert_eq!(json["last_name"], "Doe");
+
+        // Verify properties
+        assert!(json["properties"].is_object());
+        let properties = json["properties"]
+            .as_object()
+            .expect("properties should be a map");
+        assert_eq!(properties.len(), 2);
+        assert!(properties.contains_key("department"));
+        assert_eq!(
+            properties.get("department"),
+            Some(serde_json::Value::String("Sales".to_owned())).as_ref()
+        );
+        assert_eq!(
+            properties.get("company"),
+            Some(serde_json::Value::String("Acme Corp".to_owned())).as_ref()
+        );
+
+        // Verify segments
+        assert!(json["segments"].is_array());
+        let segments = json["segments"]
+            .as_array()
+            .expect("segments should be an array");
+        assert_eq!(segments.len(), 2);
+        assert_eq!(
+            segments[0],
+            serde_json::Value::String("segment_123".to_owned())
+        );
+        assert_eq!(
+            segments[1],
+            serde_json::Value::String("segment_456".to_owned())
+        );
+
+        // Verify topics
+        assert!(json["topics"].is_array());
+        let topics = json["topics"]
+            .as_array()
+            .expect("topics should be an array");
+        assert_eq!(topics.len(), 2);
+        assert_eq!(topics[0]["id"], "topic_123");
+        assert_eq!(topics[0]["subscription"], "opt_in");
+        assert_eq!(topics[1]["id"], "topic_789");
+        assert_eq!(topics[1]["subscription"], "opt_out");
     }
 }

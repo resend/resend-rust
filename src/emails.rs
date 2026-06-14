@@ -641,8 +641,17 @@ pub mod types {
             }
         }
 
+        /// Adds a variable
+        pub fn with_variable(mut self, key: &str, value: serde_json::Value) -> Self {
+            let variables = self.variables.get_or_insert_with(HashMap::new);
+            let _old = variables.insert(key.to_owned(), value);
+            self
+        }
+
+        /// Adds variables
         pub fn with_variables(mut self, variables: HashMap<String, serde_json::Value>) -> Self {
-            self.variables = Some(variables);
+            let self_variables = self.variables.get_or_insert_with(HashMap::new);
+            self_variables.extend(variables);
             self
         }
     }
