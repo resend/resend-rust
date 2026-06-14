@@ -312,12 +312,6 @@ pub mod types {
     crate::define_id_type!(ContactId);
     crate::define_id_type!(ContactPropertyId);
 
-    /// A segment reference for adding a contact to a segment during creation.
-    #[derive(Debug, Clone, Serialize)]
-    struct ContactSegmentRef {
-        id: String,
-    }
-
     /// A custom property key-value pair for contact properties.
     ///
     /// # Note
@@ -364,7 +358,7 @@ pub mod types {
         properties: Option<Vec<CreateContactPropertyValue>>,
         /// Segment IDs to add the contact to.
         #[serde(skip_serializing_if = "Option::is_none")]
-        segments: Option<Vec<ContactSegmentRef>>,
+        segments: Option<Vec<String>>,
         /// Topic subscriptions for the contact.
         #[serde(skip_serializing_if = "Option::is_none")]
         topics: Option<Vec<UpdateContactTopicOptions>>,
@@ -433,9 +427,8 @@ pub mod types {
         /// Adds a segment ID to add the contact to.
         #[inline]
         pub fn with_segment(mut self, id: impl Into<String>) -> Self {
-            let segment = ContactSegmentRef { id: id.into() };
             let segments = self.segments.get_or_insert_with(Vec::new);
-            segments.push(segment);
+            segments.push(id.into());
             self
         }
 
@@ -444,7 +437,7 @@ pub mod types {
         pub fn with_segments(mut self, ids: &[String]) -> Self {
             let segments = self.segments.get_or_insert_with(Vec::new);
             for id in ids {
-                segments.push(ContactSegmentRef { id: id.clone() });
+                segments.push(id.clone());
             }
             self
         }
