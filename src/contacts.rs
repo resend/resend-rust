@@ -461,6 +461,9 @@ pub mod types {
         pub unsubscribed: bool,
         /// Timestamp indicating when the contact was created in ISO8601 format.
         pub created_at: String,
+        /// Custom properties for the contact.
+        #[serde(default)]
+        properties: Option<HashMap<String, ContactPropertyResponse>>,
     }
 
     /// List of changes to apply to a [`Contact`].
@@ -618,6 +621,13 @@ pub mod types {
         pub fallback_value: Option<serde_json::Value>,
     }
 
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct ContactPropertyResponse {
+        pub value: String,
+        #[serde(rename = "type")]
+        pub r#type: PropertyType,
+    }
+
     /// List of changes to apply to a [`ContactProperty`].
     #[must_use]
     #[derive(Debug, Default, Clone, Serialize)]
@@ -654,12 +664,12 @@ pub mod types {
 mod test {
     use std::collections::HashMap;
 
-    use crate::list_opts::ListOptions;
     use crate::test::{CLIENT, DebugResult};
     use crate::types::{
         ContactChanges, ContactProperty, CreateContactOptions, CreateTopicOptions,
         SubscriptionType, UpdateContactTopicOptions,
     };
+    use crate::{list_opts::ListOptions, types::Contact};
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
@@ -776,6 +786,38 @@ mod test {
         Ok(())
     }
 
+    #[tokio_shared_rt::test(shared = true)]
+    #[cfg(not(feature = "blocking"))]
+    async fn tmp() -> DebugResult<()> {
+        use crate::types::CreateContactPropertyOptions;
+
+        let resend = &*CLIENT;
+
+        let contact_property =
+            CreateContactPropertyOptions::new("key", crate::types::PropertyType::String);
+        let contact_property = resend.contacts.create_property(contact_property).await?;
+
+        let contact = CreateContactOptions::new("steve.wozniak@gmail.com")
+            .with_first_name("Steve")
+            .with_last_name("Wozniak")
+            .with_unsubscribed(false)
+            .with_property("key", "value");
+
+        let contact = resend.contacts.create(contact).await?;
+
+        let contact = resend.contacts.get(&contact).await?;
+
+        let deleted = resend.contacts.delete(&contact.id).await?;
+        assert!(deleted);
+        let deleted = resend
+            .contacts
+            .delete_property(&contact_property.id)
+            .await?;
+        assert!(deleted.deleted);
+
+        Ok(())
+    }
+
     #[ignore = "Flaky backend"]
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
@@ -881,6 +923,28 @@ mod test {
 }"#;
 
         let res = serde_json::from_str::<ContactProperty>(contact_property);
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    fn deserialize_test2() {
+        let contact_property = r#"{
+          "object": "contact",
+          "id": "257d6d3b-e796-464d-ba7d-8ccabc58d16d",
+          "email": "steve.wozniak@gmail.com",
+          "first_name": "Steve",
+          "last_name": "Wozniak",
+          "created_at": "2025-07-21 23:58:57.096708+00",
+          "unsubscribed": false,
+          "properties": {
+            "key": {
+              "value": "value",
+              "type": "string"
+            }
+          }
+        }"#;
+
+        let res = serde_json::from_str::<Contact>(contact_property);
         assert!(res.is_ok());
     }
 
