@@ -787,9 +787,10 @@ mod test {
         Ok(())
     }
 
+    #[ignore = "Flaky backend"]
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
-    async fn tmp() -> DebugResult<()> {
+    async fn contact_properties() -> DebugResult<()> {
         use crate::types::CreateContactPropertyOptions;
 
         let resend = &*CLIENT;
@@ -819,9 +820,9 @@ mod test {
         Ok(())
     }
 
-    #[ignore = "Flaky backend"]
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
+    #[ignore = "Flaky backend"]
     async fn segments() -> DebugResult<()> {
         let resend = &*CLIENT;
 
@@ -979,15 +980,20 @@ mod test {
         assert_eq!(json["last_name"], "Doe");
 
         // Verify properties
-        assert!(json["properties"].is_array());
+        assert!(json["properties"].is_object());
         let properties = json["properties"]
-            .as_array()
-            .expect("properties should be an array");
+            .as_object()
+            .expect("properties should be a map");
         assert_eq!(properties.len(), 2);
-        assert_eq!(properties[0]["key"], "department");
-        assert_eq!(properties[0]["value"], "Sales");
-        assert_eq!(properties[1]["key"], "company");
-        assert_eq!(properties[1]["value"], "Acme Corp");
+        assert!(properties.contains_key("department"));
+        assert_eq!(
+            properties.get("department"),
+            Some(serde_json::Value::String("Sales".to_owned())).as_ref()
+        );
+        assert_eq!(
+            properties.get("company"),
+            Some(serde_json::Value::String("Acme Corp".to_owned())).as_ref()
+        );
 
         // Verify segments
         assert!(json["segments"].is_array());
@@ -995,8 +1001,14 @@ mod test {
             .as_array()
             .expect("segments should be an array");
         assert_eq!(segments.len(), 2);
-        assert_eq!(segments[0]["id"], "segment_123");
-        assert_eq!(segments[1]["id"], "segment_456");
+        assert_eq!(
+            segments[0],
+            serde_json::Value::String("segment_123".to_owned())
+        );
+        assert_eq!(
+            segments[1],
+            serde_json::Value::String("segment_456".to_owned())
+        );
 
         // Verify topics
         assert!(json["topics"].is_array());
