@@ -302,6 +302,8 @@ impl fmt::Debug for ContactsSvc {
 
 #[allow(unreachable_pub)]
 pub mod types {
+    use std::collections::HashMap;
+
     use serde::{Deserialize, Serialize};
 
     use crate::{
@@ -311,28 +313,6 @@ pub mod types {
 
     crate::define_id_type!(ContactId);
     crate::define_id_type!(ContactPropertyId);
-
-    /// A custom property key-value pair for contact properties.
-    ///
-    /// # Note
-    /// The Resend API currently only accepts string values for contact properties.
-    /// Non-string values (numbers, booleans, etc.) will be rejected with a validation error.
-    #[derive(Debug, Clone, Serialize)]
-    pub struct CreateContactPropertyValue {
-        key: String,
-        /// String value for the property. Must be a string; the API does not accept other types.
-        value: String,
-    }
-
-    impl CreateContactPropertyValue {
-        /// Creates a new contact property with a key and string value.
-        pub fn new(key: impl Into<String>, value: impl Into<String>) -> Self {
-            Self {
-                key: key.into(),
-                value: value.into(),
-            }
-        }
-    }
 
     /// Details of a new [`Contact`].
     #[must_use]
@@ -355,7 +335,7 @@ pub mod types {
         unsubscribed: Option<bool>,
         /// Custom properties for the contact.
         #[serde(skip_serializing_if = "Option::is_none")]
-        properties: Option<Vec<CreateContactPropertyValue>>,
+        properties: Option<HashMap<String, String>>,
         /// Segment IDs to add the contact to.
         #[serde(skip_serializing_if = "Option::is_none")]
         segments: Option<Vec<String>>,
@@ -409,18 +389,16 @@ pub mod types {
 
         /// Adds a custom property to the contact.
         #[inline]
-        pub fn with_property(mut self, key: &str, value: impl Into<String>) -> Self {
-            let property = CreateContactPropertyValue::new(key, value.into());
-            let properties = self.properties.get_or_insert_with(Vec::new);
-            properties.push(property);
+        pub fn with_property(mut self, key: &str, value: &str) -> Self {
+            let properties = self.properties.get_or_insert_with(HashMap::new);
+            let _old = properties.insert(key.to_owned(), value.to_owned());
             self
         }
 
-        /// Adds multiple custom properties to the contact.
+        /// Sets the properties to the passed argument
         #[inline]
-        pub fn with_properties(mut self, properties: &[CreateContactPropertyValue]) -> Self {
-            let properties_vec = self.properties.get_or_insert_with(Vec::new);
-            properties_vec.extend_from_slice(properties);
+        pub fn with_properties(mut self, properties: HashMap<String, String>) -> Self {
+            self.properties = Some(properties);
             self
         }
 
@@ -674,6 +652,8 @@ pub mod types {
 #[cfg(test)]
 #[allow(clippy::unwrap_used, clippy::needless_return)]
 mod test {
+    use std::collections::HashMap;
+
     use crate::list_opts::ListOptions;
     use crate::test::{CLIENT, DebugResult};
     use crate::types::{
@@ -907,18 +887,17 @@ mod test {
     #[test]
     #[allow(clippy::indexing_slicing)]
     fn serialize_create_contact_with_extras() {
-        use crate::types::{
-            CreateContactPropertyValue, SubscriptionType, UpdateContactTopicOptions,
-        };
+        use crate::types::{SubscriptionType, UpdateContactTopicOptions};
 
         let topic = UpdateContactTopicOptions::new("topic_123", SubscriptionType::OptIn);
-        let property = CreateContactPropertyValue::new("company", "Acme Corp");
+        let mut properties = HashMap::new();
+        let _old = properties.insert("company".to_owned(), "Acme Corp".to_owned());
 
         let contact = CreateContactOptions::new("test@example.com")
             .with_first_name("John")
             .with_last_name("Doe")
             .with_property("department", "Sales")
-            .with_properties(&[property])
+            .with_properties(properties)
             .with_segment("segment_123")
             .with_segments(&["segment_456".to_string()])
             .with_topic(topic)
