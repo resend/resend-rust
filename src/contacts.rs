@@ -1,16 +1,21 @@
-use std::fmt;
+use std::io::Read;
 use std::sync::Arc;
+use std::{fmt, fs::File};
 
-use reqwest::Method;
+use reqwest::{
+    Method,
+    multipart::{Form, Part},
+};
 
 use crate::{
-    Config, Result,
+    Config, Error, Result,
     contacts::types::ContactPropertyChanges,
     list_opts::ListOptions,
     types::{
-        AddContactSegmentResponse, ContactProperty, ContactTopic, CreateContactPropertyOptions,
-        CreateContactPropertyResponse, DeleteContactPropertyResponse, RemoveContactSegmentResponse,
-        Segment, UpdateContactPropertyResponse, UpdateContactTopicOptions,
+        AddContactSegmentResponse, ContactImport, ContactProperty, ContactTopic,
+        CreateContactImportOptions, CreateContactPropertyOptions, CreateContactPropertyResponse,
+        DeleteContactPropertyResponse, RemoveContactSegmentResponse, Segment,
+        UpdateContactPropertyResponse, UpdateContactTopicOptions,
     },
 };
 use crate::{
@@ -292,6 +297,110 @@ impl ContactsSvc {
 
         Ok(content)
     }
+
+    /// Create a contact import.
+    ///
+    /// # Important
+    ///
+    /// Make sure the file handle has read permissions. You can ensure this by either opening it via [`File::open`] or
+    /// using [`std::fs::OpenOptions`] and setting `read` to `true`.
+    ///
+    /// <https://resend.com/docs/api-reference/contacts/create-contact-import>
+    #[maybe_async::maybe_async]
+    #[allow(clippy::needless_pass_by_value)]
+    pub async fn create_import(
+        &self,
+        mut file: File,
+        contact_import: CreateContactImportOptions,
+    ) -> Result<CreateContactPropertyResponse> {
+        let path = "/contacts/imports";
+
+        let mut contents = String::new();
+        #[allow(clippy::verbose_file_reads)]
+        let _size = file
+            .read_to_string(&mut contents)
+            .map_err(|err| Error::Parse {
+                message: "Error while reading file".to_owned(),
+                source: Some(Box::new(err)),
+            })?;
+
+        let mut form = Form::new().part(
+            "file",
+            Part::text(contents)
+                .mime_str("text/csv")?
+                .file_name("foo.csv"),
+        );
+        form = Self::add_non_json_part(form, "on_conflict", contact_import.on_conflict.as_ref())?;
+        form = Self::add_non_json_part(form, "segments", contact_import.segments.as_ref())?;
+        form = Self::add_non_json_part(form, "topics", contact_import.topics.as_ref())?;
+
+        if let Some(column_map) = contact_import.column_map {
+            let json = serde_json::to_string(&column_map).map_err(|e| Error::Parse {
+                message: "Could not convert field to JSON".to_owned(),
+                source: Some(Box::new(e)),
+            })?;
+            form = form.part("column_map".to_owned(), Part::text(json));
+        }
+
+        let request = self.0.build(Method::POST, path).multipart(form);
+        let response = self.0.send(request).await?;
+        let content = response.json::<CreateContactPropertyResponse>().await?;
+
+        Ok(content)
+    }
+
+    fn add_non_json_part<T: serde::Serialize>(
+        form: Form,
+        field_name: &str,
+        value: Option<&T>,
+    ) -> Result<Form, Error> {
+        match value {
+            Some(v) => {
+                let json = serde_json::to_string(v)
+                    .map(|el| el.replace('\"', "")) // Serdejson is making this into a string field, remove quotation marks
+                    .map_err(|e| Error::Parse {
+                        message: "Could not convert field to JSON".to_owned(),
+                        source: Some(Box::new(e)),
+                    })?;
+                Ok(form.part(field_name.to_owned(), Part::text(json)))
+            }
+            None => Ok(form),
+        }
+    }
+
+    /// Retrieve a single contact import.
+    ///
+    /// <https://resend.com/docs/api-reference/contacts/get-contact-import>
+    #[maybe_async::maybe_async]
+    pub async fn get_import(&self, contact_import_id: &str) -> Result<ContactImport> {
+        let path = format!("/contacts/imports/{contact_import_id}");
+
+        let request = self.0.build(Method::GET, &path);
+        let response = self.0.send(request).await?;
+        let content = response.json::<ContactImport>().await?;
+
+        Ok(content)
+    }
+
+    /// Retrieve a list of contact imports.
+    ///
+    /// - Default limit: 10
+    ///
+    /// <https://resend.com/docs/api-reference/contacts/list-contact-imports>
+    #[maybe_async::maybe_async]
+    #[allow(clippy::needless_pass_by_value)]
+    pub async fn list_imports<T>(
+        &self,
+        list_opts: ListOptions<T>,
+    ) -> Result<ListResponse<ContactImport>> {
+        let path = "/contacts/imports".to_string();
+
+        let request = self.0.build(Method::GET, &path).query(&list_opts);
+        let response = self.0.send(request).await?;
+        let content = response.json::<ListResponse<ContactImport>>().await?;
+
+        Ok(content)
+    }
 }
 
 impl fmt::Debug for ContactsSvc {
@@ -313,6 +422,7 @@ pub mod types {
 
     crate::define_id_type!(ContactId);
     crate::define_id_type!(ContactPropertyId);
+    crate::define_id_type!(ContactImportId);
 
     /// Details of a new [`Contact`].
     #[must_use]
@@ -658,6 +768,220 @@ pub mod types {
         pub id: ContactPropertyId,
         pub deleted: bool,
     }
+
+    #[must_use]
+    #[derive(Debug, Clone, Serialize, Default)]
+    pub struct CreateContactImportOptions {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub(crate) column_map: Option<ContactImportColumnMap>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub(crate) on_conflict: Option<ContactImportOnConflict>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub(crate) segments: Option<Vec<String>>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub(crate) topics: Option<Vec<ContactImportTopic>>,
+    }
+
+    impl CreateContactImportOptions {
+        /// Creates a new [`CreateContactImportOptions`].
+        pub fn new() -> Self {
+            Self {
+                column_map: None,
+                on_conflict: None,
+                segments: None,
+                topics: None,
+            }
+        }
+
+        #[inline]
+        pub fn with_column_map(mut self, column_map: ContactImportColumnMap) -> Self {
+            self.column_map = Some(column_map);
+            self
+        }
+
+        #[inline]
+        pub fn with_on_conflict(mut self, on_conflict: ContactImportOnConflict) -> Self {
+            self.on_conflict = Some(on_conflict);
+            self
+        }
+
+        /// Adds a segment ID to add the contact import to.
+        #[inline]
+        pub fn with_segment(mut self, id: impl Into<String>) -> Self {
+            let segments = self.segments.get_or_insert_with(Vec::new);
+            segments.push(id.into());
+            self
+        }
+
+        /// Adds multiple segment IDs to add the contact import to.
+        #[inline]
+        pub fn with_segments(mut self, ids: &[String]) -> Self {
+            let segments = self.segments.get_or_insert_with(Vec::new);
+            for id in ids {
+                segments.push(id.clone());
+            }
+            self
+        }
+
+        /// Adds a topic subscription for the contact import.
+        #[inline]
+        #[allow(clippy::needless_pass_by_value)]
+        pub fn with_topic(mut self, topic: ContactImportTopic) -> Self {
+            let topics = self.topics.get_or_insert_with(Vec::new);
+            topics.push(topic);
+            self
+        }
+
+        /// Adds multiple topic subscriptions for the contact import.
+        #[inline]
+        #[allow(clippy::needless_pass_by_value)]
+        pub fn with_topics(mut self, topics: &[ContactImportTopic]) -> Self {
+            let topics_vec = self.topics.get_or_insert_with(Vec::new);
+            topics_vec.extend_from_slice(topics);
+            self
+        }
+    }
+
+    #[must_use]
+    #[derive(Debug, Clone, Serialize, Default)]
+    pub struct ContactImportColumnMap {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        email: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        first_name: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        last_name: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        unsubscribed: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        properties: Option<HashMap<String, ContactImportPropertyMapping>>,
+    }
+
+    impl ContactImportColumnMap {
+        pub fn new() -> Self {
+            Self {
+                email: None,
+                first_name: None,
+                last_name: None,
+                unsubscribed: None,
+                properties: None,
+            }
+        }
+
+        pub fn with_email(mut self, email: &str) -> Self {
+            self.email = Some(email.to_owned());
+            self
+        }
+
+        pub fn with_first_name(mut self, first_name: &str) -> Self {
+            self.first_name = Some(first_name.to_owned());
+            self
+        }
+
+        pub fn with_last_name(mut self, last_name: &str) -> Self {
+            self.last_name = Some(last_name.to_owned());
+            self
+        }
+
+        pub fn with_unsubscribed(mut self, unsubscribed: &str) -> Self {
+            self.unsubscribed = Some(unsubscribed.to_owned());
+            self
+        }
+
+        /// Adds a custom property.
+        #[inline]
+        #[allow(clippy::needless_pass_by_value)]
+        pub fn with_property(mut self, key: &str, value: ContactImportPropertyMapping) -> Self {
+            let properties = self.properties.get_or_insert_with(HashMap::new);
+            let _old = properties.insert(key.to_owned(), value);
+            self
+        }
+
+        /// Adds custom properties.
+        #[inline]
+        pub fn with_properties(
+            mut self,
+            properties: HashMap<String, ContactImportPropertyMapping>,
+        ) -> Self {
+            let self_properties = self.properties.get_or_insert_with(HashMap::new);
+            self_properties.extend(properties);
+            self
+        }
+    }
+
+    #[must_use]
+    #[derive(Debug, Clone, Serialize)]
+    pub struct ContactImportPropertyMapping {
+        pub column: String,
+        #[serde(rename = "type")]
+        pub r#type: ContactImportPropertyType,
+    }
+
+    #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone, Copy)]
+    #[must_use]
+    #[serde(rename_all = "snake_case")]
+    pub enum ContactImportPropertyType {
+        String,
+        Number,
+        Boolean,
+    }
+
+    #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone, Copy)]
+    #[must_use]
+    #[serde(rename_all = "snake_case")]
+    pub enum ContactImportOnConflict {
+        Upsert,
+        Skip,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct CreateContactImportResponse {
+        /// Unique identifier for the created contact import.
+        pub id: ContactImportId,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct ContactImportTopic {
+        pub id: String,
+        pub subscription: ContactImportTopicSubscription,
+    }
+
+    #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone, Copy)]
+    #[must_use]
+    #[serde(rename_all = "snake_case")]
+    pub enum ContactImportTopicSubscription {
+        OptIn,
+        OptOut,
+    }
+
+    // counts: ContactImportCounts;
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct ContactImport {
+        pub id: ContactImportId,
+        pub status: ContactImportStatus,
+        pub created_at: String,
+        pub completed_at: String,
+        pub counts: ContactImportCounts,
+    }
+
+    #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone, Copy)]
+    #[must_use]
+    #[serde(rename_all = "snake_case")]
+    pub enum ContactImportStatus {
+        Queued,
+        InProgress,
+        Completed,
+        Failed,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize, Copy)]
+    pub struct ContactImportCounts {
+        total: u32,
+        created: u32,
+        updated: u32,
+        skipped: u32,
+        failed: u32,
+    }
 }
 
 #[cfg(test)]
@@ -909,6 +1233,74 @@ mod test {
         assert!(deleted.deleted);
 
         std::thread::sleep(std::time::Duration::from_secs(4));
+
+        Ok(())
+    }
+
+    #[tokio_shared_rt::test(shared = true)]
+    #[cfg(not(feature = "blocking"))]
+    // #[ignore = "Flaky backend"]
+    async fn contact_import() -> DebugResult<()> {
+        use crate::{
+            contacts::types::{
+                ContactImportColumnMap, ContactImportOnConflict::Upsert,
+                ContactImportPropertyMapping, ContactImportPropertyType::String,
+            },
+            types::CreateContactImportOptions,
+        };
+        use std::fs::File;
+        use std::io::prelude::*;
+
+        let resend = &*CLIENT;
+
+        // Create
+        let mut file = File::create("foo.csv").unwrap();
+        file.write_all(
+            b"Email,First Name,Last Name,Plan\nonboarding@resend.dev,John,Onboarding,El Plan",
+        )
+        .unwrap();
+
+        let import = CreateContactImportOptions::new()
+            .with_column_map(
+                ContactImportColumnMap::new()
+                    .with_email("Email")
+                    .with_first_name("First Name")
+                    .with_last_name("Last Name")
+                    .with_property(
+                        "plan",
+                        ContactImportPropertyMapping {
+                            column: "Plan".to_owned(),
+                            r#type: String,
+                        },
+                    ),
+            )
+            .with_on_conflict(Upsert);
+
+        let import = resend
+            .contacts
+            .create_import(File::open("foo.csv").unwrap(), import)
+            .await?;
+
+        std::thread::sleep(std::time::Duration::from_secs(2));
+
+        // Get
+        let _import = resend.contacts.get_import(&import.id).await?;
+
+        // List
+        let imports = resend.contacts.list_imports(ListOptions::default()).await?;
+        assert!(!imports.is_empty());
+
+        // Delete
+        let deleted = resend.contacts.delete("onboarding@resend.dev").await?;
+        assert!(deleted);
+        let properties = resend
+            .contacts
+            .list_properties(ListOptions::default())
+            .await?;
+        let deleted = resend.contacts.delete_property(&properties[0].id).await?;
+        assert!(deleted.deleted);
+
+        std::fs::remove_file("foo.csv").unwrap();
 
         Ok(())
     }
