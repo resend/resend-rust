@@ -116,10 +116,14 @@ pub mod types {
         UpdateBroadcastOptions, UpdateBroadcastResponse,
     };
     pub use super::contacts::types::{
-        AddContactSegmentResponse, Contact, ContactChanges, ContactId, ContactProperty,
-        ContactPropertyChanges, ContactPropertyId, ContactTopic, CreateContactOptions,
-        CreateContactPropertyOptions, CreateContactPropertyResponse, DeleteContactPropertyResponse,
-        PropertyType, RemoveContactSegmentResponse, UpdateContactPropertyResponse,
+        AddContactSegmentResponse, Contact, ContactChanges, ContactId, ContactImport,
+        ContactImportColumnMap, ContactImportCounts, ContactImportId, ContactImportOnConflict,
+        ContactImportPropertyMapping, ContactImportPropertyType, ContactImportStatus,
+        ContactImportTopic, ContactImportTopicSubscription, ContactProperty,
+        ContactPropertyChanges, ContactPropertyId, ContactTopic, CreateContactImportOptions,
+        CreateContactImportResponse, CreateContactOptions, CreateContactPropertyOptions,
+        CreateContactPropertyResponse, DeleteContactPropertyResponse, PropertyType,
+        RemoveContactSegmentResponse, SegmentObject, UpdateContactPropertyResponse,
         UpdateContactTopicOptions,
     };
     pub use super::domains::types::{
@@ -141,8 +145,9 @@ pub mod types {
     };
     pub use super::logs::types::Log;
     pub use super::receiving::types::{
-        ForwardInboundEmailResponse, ForwardReceivingEmail, InboundAttachment, InboundAttachmentId,
-        InboundEmail, InboundEmailId,
+        ForwardInboundEmailResponse, ForwardReceivingEmail, GetInboundEmailOptions,
+        GetInboundEmailRaw, InboundAttachment, InboundAttachmentId, InboundEmail,
+        InboundEmailHtmlFormat, InboundEmailId,
     };
     pub use super::segments::types::{CreateSegmentResponse, Segment, SegmentId};
     pub use super::templates::types::{

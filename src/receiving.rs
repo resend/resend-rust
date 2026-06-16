@@ -13,7 +13,7 @@ use crate::{
     receiving::types::ForwardReceivingEmail,
     types::{
         Attachment, CreateAttachment, CreateEmailBaseOptions, ForwardInboundEmailResponse,
-        InboundEmail, InboundEmailId,
+        GetInboundEmailOptions, InboundEmail, InboundEmailId,
     },
 };
 
@@ -26,10 +26,11 @@ impl ReceivingSvc {
     ///
     /// <https://resend.com/docs/api-reference/emails/retrieve-received-email>
     #[maybe_async::maybe_async]
-    pub async fn get(&self, email_id: &str) -> Result<InboundEmail> {
+    #[allow(clippy::needless_pass_by_value)]
+    pub async fn get(&self, email_id: &str, opts: GetInboundEmailOptions) -> Result<InboundEmail> {
         let path = format!("/emails/receiving/{email_id}");
 
-        let request = self.0.build(Method::GET, &path);
+        let request = self.0.build(Method::GET, &path).query(&opts);
         let response = self.0.send(request).await?;
         let content = response.json::<InboundEmail>().await?;
 
@@ -90,7 +91,9 @@ impl ReceivingSvc {
         &self,
         opts: ForwardReceivingEmail,
     ) -> Result<ForwardInboundEmailResponse> {
-        let email_response = self.get(&opts.email_id).await?;
+        let email_response = self
+            .get(&opts.email_id, GetInboundEmailOptions::default())
+            .await?;
 
         let raw = email_response.raw.ok_or_else(|| {
             Error::Resend(crate::types::ErrorResponse {
@@ -210,6 +213,44 @@ pub mod types {
     }
 
     #[must_use]
+    #[derive(Debug, Clone, Serialize, Deserialize, Default)]
+    pub struct GetInboundEmailOptions {
+        html_format: InboundEmailHtmlFormat,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        raw: Option<GetInboundEmailRaw>,
+    }
+
+    impl GetInboundEmailOptions {
+        #[inline]
+        pub fn with_html_format(mut self, html_format: InboundEmailHtmlFormat) -> Self {
+            self.html_format = html_format;
+            self
+        }
+
+        #[inline]
+        pub fn with_raw(mut self, raw: GetInboundEmailRaw) -> Self {
+            self.raw = Some(raw);
+            self
+        }
+    }
+
+    #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone, Copy, Default)]
+    #[must_use]
+    #[serde(rename_all = "snake_case")]
+    pub enum InboundEmailHtmlFormat {
+        #[default]
+        DataUri,
+        Cid,
+    }
+
+    #[must_use]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct GetInboundEmailRaw {
+        pub download_url: String,
+        pub expires_at: String,
+    }
+
+    #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct InboundEmail {
         pub id: InboundEmailId,
@@ -316,6 +357,8 @@ mod test {
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> DebugResult<()> {
+        use crate::types::GetInboundEmailOptions;
+
         let resend = &*CLIENT;
 
         // std::thread::sleep(std::time::Duration::from_secs(1));
@@ -324,7 +367,10 @@ mod test {
 
         let email_id = &emails.data.first().unwrap().id;
 
-        let _email = resend.receiving.get(email_id).await?;
+        let _email = resend
+            .receiving
+            .get(email_id, GetInboundEmailOptions::default())
+            .await?;
 
         let fwd_opts = ForwardReceivingEmail::new(
             email_id.clone(),

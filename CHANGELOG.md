@@ -8,26 +8,21 @@ and this project adheres to
 
 <!--## Unreleased-->
 
-<!--TODO: Replace with proper release -->
-## [0.26.0-rc.3] - 2026-06-14
+## [0.26.0] - 2026-06-16
 
 ### Added
 
-- `CreateContactOptions` now has methods for `properties`, `segments` and `topics`
+- `CreateContactOptions` now has methods for `properties`, `segments` and `topics` (https://github.com/resend/resend-rust/pull/69)
 - `Contact` now has a `properties` field
 - `EmailTemplate` now has a `with_variable` (and `with_variables`) method
-
-## [0.26.0-rc.2] - 2026-06-11
+- `CreateEmailBaseOptions.with_topic` (https://github.com/resend/resend-rust/pull/64)
+- 3 contact import endpoints
+- `ListOptions` now has a `with_other` method for adding custom key value pairs (such as `status: completed` for contact imports)
 
 ### Changed
 
 - Made `Variable` fields public
-
-## [0.26.0-rc.1] - 2026-06-03
-
-### Added
-
-- `CreateEmailBaseOptions.with_topic` (https://github.com/resend/resend-rust/pull/64)
+- `receiving.get` now needs a `GetInboundEmailOptions` argument (using `GetInboundEmailOptions::default()` produces the same behavior as before)
 
 ## [0.25.1] - 2026-04-29
 
@@ -539,9 +534,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
-[0.26.0-rc.3]: https://crates.io/crates/resend-rs/0.26.0-rc.3
-[0.26.0-rc.2]: https://crates.io/crates/resend-rs/0.26.0-rc.2
-[0.26.0-rc.1]: https://crates.io/crates/resend-rs/0.26.0-rc.1
+[0.26.0]: https://crates.io/crates/resend-rs/0.26.0
 [0.25.1]: https://crates.io/crates/resend-rs/0.25.1
 [0.25.0]: https://crates.io/crates/resend-rs/0.25.0
 [0.24.0]: https://crates.io/crates/resend-rs/0.24.0

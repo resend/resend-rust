@@ -1,6 +1,7 @@
-use std::ops::Index;
+use std::{collections::HashMap, ops::Index};
 
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 #[derive(Debug, Clone, Copy)]
 pub struct ListBefore {}
@@ -39,6 +40,9 @@ pub struct ListOptions<List = TimeNotSpecified> {
 
     #[serde(rename = "after")]
     after_id: Option<String>,
+
+    #[serde(flatten)]
+    other: Option<HashMap<String, Value>>,
 }
 
 impl Default for ListOptions {
@@ -49,6 +53,7 @@ impl Default for ListOptions {
             limit: None,
             before_id: None,
             after_id: None,
+            other: None,
         }
     }
 }
@@ -64,6 +69,14 @@ impl<T> ListOptions<T> {
         self.limit = Some(limit);
         self
     }
+
+    /// Use this to add any arbitrary key value pairs.
+    pub fn with_other(mut self, key: &str, value: Value) -> Self {
+        let other = self.other.get_or_insert_with(HashMap::new);
+        let _old = other.insert(key.to_owned(), value);
+
+        self
+    }
 }
 
 impl ListOptions<TimeNotSpecified> {
@@ -75,6 +88,7 @@ impl ListOptions<TimeNotSpecified> {
             limit: self.limit,
             before_id: Some(id.to_string()),
             after_id: None,
+            other: self.other,
         }
     }
 
@@ -86,6 +100,7 @@ impl ListOptions<TimeNotSpecified> {
             limit: self.limit,
             before_id: None,
             after_id: Some(id.to_string()),
+            other: self.other,
         }
     }
 }
