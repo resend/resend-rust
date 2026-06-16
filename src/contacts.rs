@@ -1215,6 +1215,7 @@ mod test {
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
+    #[ignore = "Flaky backend"]
     async fn properties() -> DebugResult<()> {
         use crate::{
             contacts::types::ContactPropertyChanges,
@@ -1261,7 +1262,7 @@ mod test {
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
-    // #[ignore = "Flaky backend"]
+    #[ignore = "Flaky backend"]
     async fn contact_import() -> DebugResult<()> {
         use crate::{
             contacts::types::{
