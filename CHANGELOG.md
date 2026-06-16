@@ -22,6 +22,7 @@ and this project adheres to
 ### Changed
 
 - Made `Variable` fields public
+- `receiving.get` now needs a `GetInboundEmailOptions` argument (using `GetInboundEmailOptions::default()` produces the same behavior as before)
 
 ## [0.25.1] - 2026-04-29
 
