@@ -2,10 +2,12 @@ use std::io::Read;
 use std::sync::Arc;
 use std::{fmt, fs::File};
 
-use reqwest::{
-    Method,
-    multipart::{Form, Part},
-};
+#[cfg(feature = "blocking")]
+use reqwest::blocking::multipart::{Form, Part};
+#[cfg(not(feature = "blocking"))]
+use reqwest::multipart::{Form, Part};
+
+use reqwest::Method;
 
 use crate::{
     Config, Error, Result,
