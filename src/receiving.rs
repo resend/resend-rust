@@ -246,8 +246,8 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct GetInboundEmailRaw {
-        download_url: String,
-        expires_at: String,
+        pub download_url: String,
+        pub expires_at: String,
     }
 
     #[must_use]
