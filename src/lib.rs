@@ -117,7 +117,7 @@ pub mod types {
     };
     pub use super::contacts::types::{
         AddContactSegmentResponse, Contact, ContactChanges, ContactId, ContactImport,
-        ContactImportColumnMap, ContactImportCounts, ContactImportOnConflict,
+        ContactImportColumnMap, ContactImportCounts, ContactImportId, ContactImportOnConflict,
         ContactImportPropertyMapping, ContactImportPropertyType, ContactImportStatus,
         ContactImportTopic, ContactImportTopicSubscription, ContactProperty,
         ContactPropertyChanges, ContactPropertyId, ContactTopic, CreateContactImportOptions,
