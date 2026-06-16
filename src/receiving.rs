@@ -222,7 +222,7 @@ pub mod types {
 
     impl GetInboundEmailOptions {
         #[inline]
-        pub fn with_passthrough(mut self, html_format: InboundEmailHtmlFormat) -> Self {
+        pub fn with_html_format(mut self, html_format: InboundEmailHtmlFormat) -> Self {
             self.html_format = html_format;
             self
         }
