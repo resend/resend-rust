@@ -9,23 +9,22 @@ use reqwest::multipart::{Form, Part};
 
 use reqwest::Method;
 
+use self::types::UpdateContactResponse;
 use crate::{
     Config, Error, Result,
     contacts::types::ContactPropertyChanges,
     list_opts::ListOptions,
     types::{
         AddContactSegmentResponse, ContactImport, ContactProperty, ContactTopic,
-        CreateContactImportOptions, CreateContactPropertyOptions, CreateContactPropertyResponse,
-        DeleteContactPropertyResponse, RemoveContactSegmentResponse, Segment,
-        UpdateContactPropertyResponse, UpdateContactTopicOptions,
+        CreateContactImportOptions, CreateContactImportResponse, CreateContactPropertyOptions,
+        CreateContactPropertyResponse, DeleteContactPropertyResponse, RemoveContactSegmentResponse,
+        Segment, UpdateContactPropertyResponse, UpdateContactTopicOptions,
     },
 };
 use crate::{
     list_opts::ListResponse,
     types::{Contact, ContactChanges, ContactId, CreateContactOptions},
 };
-
-use self::types::UpdateContactResponse;
 
 /// `Resend` APIs for `/audiences/:id/contacts` endpoints.
 #[derive(Clone)]
@@ -314,7 +313,7 @@ impl ContactsSvc {
         &self,
         mut file: File,
         contact_import: CreateContactImportOptions,
-    ) -> Result<CreateContactPropertyResponse> {
+    ) -> Result<CreateContactImportResponse> {
         let path = "/contacts/imports";
 
         let mut contents = String::new();
@@ -333,7 +332,6 @@ impl ContactsSvc {
                 .file_name("foo.csv"),
         );
         form = Self::add_non_json_part(form, "on_conflict", contact_import.on_conflict.as_ref())?;
-        form = Self::add_non_json_part(form, "segments", contact_import.segments.as_ref())?;
         form = Self::add_non_json_part(form, "topics", contact_import.topics.as_ref())?;
 
         if let Some(column_map) = contact_import.column_map {
@@ -344,9 +342,20 @@ impl ContactsSvc {
             form = form.part("column_map".to_owned(), Part::text(json));
         }
 
+        if let Some(segments) = &contact_import.segments {
+            let json =
+                serde_json::to_string(&types::SerializableSegments(segments)).map_err(|e| {
+                    Error::Parse {
+                        message: "Could not convert field to JSON".to_owned(),
+                        source: Some(Box::new(e)),
+                    }
+                })?;
+            form = form.part("segments".to_owned(), Part::text(json));
+        }
+
         let request = self.0.build(Method::POST, path).multipart(form);
         let response = self.0.send(request).await?;
-        let content = response.json::<CreateContactPropertyResponse>().await?;
+        let content = response.json::<CreateContactImportResponse>().await?;
 
         Ok(content)
     }
@@ -358,12 +367,16 @@ impl ContactsSvc {
     ) -> Result<Form, Error> {
         match value {
             Some(v) => {
-                let json = serde_json::to_string(v)
-                    .map(|el| el.replace('\"', "")) // Serdejson is making this into a string field, remove quotation marks
-                    .map_err(|e| Error::Parse {
-                        message: "Could not convert field to JSON".to_owned(),
-                        source: Some(Box::new(e)),
-                    })?;
+                let val = serde_json::to_value(v).map_err(|e| Error::Parse {
+                    message: "Could not convert field to JSON".to_owned(),
+                    source: Some(Box::new(e)),
+                })?;
+
+                let json = match val {
+                    serde_json::Value::String(s) => s,
+                    other => other.to_string(),
+                };
+
                 Ok(form.part(field_name.to_owned(), Part::text(json)))
             }
             None => Ok(form),
@@ -421,6 +434,56 @@ pub mod types {
         topics::types::TopicId,
         types::{SegmentId, SubscriptionType},
     };
+    use serde::ser::{SerializeSeq, SerializeStruct, Serializer};
+
+    // Custom serializer that wraps it in {"id": "..."}
+    struct SegmentIdAsObject<'a>(&'a SegmentId);
+
+    impl Serialize for SegmentIdAsObject<'_> {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            let mut s = serializer.serialize_struct("SegmentId", 1)?;
+            s.serialize_field("id", &self.0)?;
+            s.end()
+        }
+    }
+
+    #[allow(clippy::ref_option)]
+    fn serialize_segments_option<S>(
+        value: &Option<Vec<SegmentId>>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match value {
+            None => serializer.serialize_none(),
+            Some(segments) => {
+                let mut seq = serializer.serialize_seq(Some(segments.len()))?;
+                for id in segments {
+                    seq.serialize_element(&SegmentIdAsObject(id))?;
+                }
+                seq.end()
+            }
+        }
+    }
+
+    pub struct SerializableSegments<'a>(pub(crate) &'a [SegmentId]);
+
+    impl Serialize for SerializableSegments<'_> {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            let mut seq = serializer.serialize_seq(Some(self.0.len()))?;
+            for id in self.0 {
+                seq.serialize_element(&SegmentIdAsObject(id))?;
+            }
+            seq.end()
+        }
+    }
 
     crate::define_id_type!(ContactId);
     crate::define_id_type!(ContactPropertyId);
@@ -449,8 +512,11 @@ pub mod types {
         #[serde(skip_serializing_if = "Option::is_none")]
         properties: Option<HashMap<String, String>>,
         /// Segment IDs to add the contact to.
-        #[serde(skip_serializing_if = "Option::is_none")]
-        segments: Option<Vec<String>>,
+        #[serde(
+            skip_serializing_if = "Option::is_none",
+            serialize_with = "serialize_segments_option"
+        )]
+        segments: Option<Vec<SegmentId>>,
         /// Topic subscriptions for the contact.
         #[serde(skip_serializing_if = "Option::is_none")]
         topics: Option<Vec<UpdateContactTopicOptions>>,
@@ -517,9 +583,10 @@ pub mod types {
 
         /// Adds a segment ID to add the contact to.
         #[inline]
-        pub fn with_segment(mut self, id: impl Into<String>) -> Self {
+        pub fn with_segment(mut self, id: &str) -> Self {
+            let id = SegmentId::new(id);
             let segments = self.segments.get_or_insert_with(Vec::new);
-            segments.push(id.into());
+            segments.push(id);
             self
         }
 
@@ -528,7 +595,8 @@ pub mod types {
         pub fn with_segments(mut self, ids: &[String]) -> Self {
             let segments = self.segments.get_or_insert_with(Vec::new);
             for id in ids {
-                segments.push(id.clone());
+                let id = SegmentId::new(id);
+                segments.push(id);
             }
             self
         }
@@ -778,8 +846,11 @@ pub mod types {
         pub(crate) column_map: Option<ContactImportColumnMap>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub(crate) on_conflict: Option<ContactImportOnConflict>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub(crate) segments: Option<Vec<String>>,
+        #[serde(
+            skip_serializing_if = "Option::is_none",
+            serialize_with = "serialize_segments_option"
+        )]
+        pub(crate) segments: Option<Vec<SegmentId>>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub(crate) topics: Option<Vec<ContactImportTopic>>,
     }
@@ -809,9 +880,10 @@ pub mod types {
 
         /// Adds a segment ID to add the contact import to.
         #[inline]
-        pub fn with_segment(mut self, id: impl Into<String>) -> Self {
+        pub fn with_segment(mut self, id: &str) -> Self {
+            let id = SegmentId::new(id);
             let segments = self.segments.get_or_insert_with(Vec::new);
-            segments.push(id.into());
+            segments.push(id);
             self
         }
 
@@ -820,7 +892,8 @@ pub mod types {
         pub fn with_segments(mut self, ids: &[String]) -> Self {
             let segments = self.segments.get_or_insert_with(Vec::new);
             for id in ids {
-                segments.push(id.clone());
+                let id = SegmentId::new(id);
+                segments.push(id);
             }
             self
         }
@@ -962,7 +1035,7 @@ pub mod types {
         pub id: ContactImportId,
         pub status: ContactImportStatus,
         pub created_at: String,
-        pub completed_at: String,
+        pub completed_at: Option<String>,
         pub counts: ContactImportCounts,
     }
 
