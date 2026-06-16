@@ -17,7 +17,7 @@ and this project adheres to
 - `EmailTemplate` now has a `with_variable` (and `with_variables`) method
 - `CreateEmailBaseOptions.with_topic` (https://github.com/resend/resend-rust/pull/64)
 - 3 contact import endpoints
-- `ListOpts` now has a `with_other` method for adding custom key value pairs (such as `status: completed` for contact imports)
+- `ListOptions` now has a `with_other` method for adding custom key value pairs (such as `status: completed` for contact imports)
 
 ### Changed
 
