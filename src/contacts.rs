@@ -1415,14 +1415,8 @@ mod test {
             .as_array()
             .expect("segments should be an array");
         assert_eq!(segments.len(), 2);
-        assert_eq!(
-            segments[0],
-            serde_json::Value::String("segment_123".to_owned())
-        );
-        assert_eq!(
-            segments[1],
-            serde_json::Value::String("segment_456".to_owned())
-        );
+        assert_eq!(segments[0], serde_json::json!({"id": "segment_123"}));
+        assert_eq!(segments[1], serde_json::json!({"id": "segment_456"}));
 
         // Verify topics
         assert!(json["topics"].is_array());
