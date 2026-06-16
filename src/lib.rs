@@ -123,7 +123,8 @@ pub mod types {
         ContactPropertyChanges, ContactPropertyId, ContactTopic, CreateContactImportOptions,
         CreateContactImportResponse, CreateContactOptions, CreateContactPropertyOptions,
         CreateContactPropertyResponse, DeleteContactPropertyResponse, PropertyType,
-        RemoveContactSegmentResponse, UpdateContactPropertyResponse, UpdateContactTopicOptions,
+        RemoveContactSegmentResponse, SegmentObject, UpdateContactPropertyResponse,
+        UpdateContactTopicOptions,
     };
     pub use super::domains::types::{
         CreateDomainOptions, DkimRecordType, Domain, DomainCapabilities, DomainCapabilityStatus,
