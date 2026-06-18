@@ -7,7 +7,7 @@ use types::DeleteDomainResponse;
 use crate::{Config, Result, domains::types::VerifyDomainResponse};
 use crate::{
     list_opts::{ListOptions, ListResponse},
-    types::{CreateDomainOptions, Domain, DomainChanges},
+    types::{CreateDomainClaimOptions, CreateDomainOptions, Domain, DomainChanges, DomainClaim},
 };
 
 use self::types::UpdateDomainResponse;
@@ -109,6 +109,47 @@ impl DomainsSvc {
 
         Ok(content)
     }
+
+    /// Claim a domain that is already verified by another team.
+    ///
+    /// <https://resend.com/docs/api-reference/domains/claim-domain>
+    #[maybe_async::maybe_async]
+    #[allow(clippy::needless_pass_by_value)]
+    pub async fn claim(&self, domain_claim: CreateDomainClaimOptions) -> Result<DomainClaim> {
+        let request = self.0.build(Method::POST, "/domains/claim");
+        let response = self.0.send(request.json(&domain_claim)).await?;
+        let content = response.json::<DomainClaim>().await?;
+
+        Ok(content)
+    }
+
+    /// Retrieve the latest claim for a domain.
+    ///
+    /// <https://resend.com/docs/api-reference/domains/get-domain-claim>
+    #[maybe_async::maybe_async]
+    pub async fn get_claim(&self, domain_id: &str) -> Result<DomainClaim> {
+        let path = format!("/domains/{domain_id}/claim");
+
+        let request = self.0.build(Method::GET, &path);
+        let response = self.0.send(request).await?;
+        let content = response.json::<DomainClaim>().await?;
+
+        Ok(content)
+    }
+
+    /// Trigger DNS verification for a domain claim.
+    ///
+    /// <https://resend.com/docs/api-reference/domains/verify-domain-claim>
+    #[maybe_async::maybe_async]
+    pub async fn verify_claim(&self, domain_id: &str) -> Result<DomainClaim> {
+        let path = format!("/domains/{domain_id}/claim/verify");
+
+        let request = self.0.build(Method::POST, &path);
+        let response = self.0.send(request).await?;
+        let content = response.json::<DomainClaim>().await?;
+
+        Ok(content)
+    }
 }
 
 impl fmt::Debug for DomainsSvc {
@@ -135,6 +176,7 @@ pub mod types {
     }
 
     crate::define_id_type!(DomainId);
+    crate::define_id_type!(DomainClaimId);
 
     /// Details of a new [`Domain`].
     #[must_use]
@@ -525,6 +567,125 @@ pub mod types {
         pub id: DomainId,
         /// Indicates whether the domain was deleted successfully.
         pub deleted: bool,
+    }
+
+    /// Details of a new [`DomainClaim`].
+    #[must_use]
+    #[derive(Debug, Clone, Serialize)]
+    pub struct CreateDomainClaimOptions {
+        #[serde(rename = "name")]
+        name: String,
+        #[serde(rename = "region", skip_serializing_if = "Option::is_none")]
+        region: Option<Region>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        custom_return_path: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        open_tracking: Option<bool>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        click_tracking: Option<bool>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        tracking_subdomain: Option<String>,
+    }
+
+    impl CreateDomainClaimOptions {
+        pub fn new(name: &str) -> Self {
+            Self {
+                name: name.to_owned(),
+                region: None,
+                custom_return_path: None,
+                open_tracking: None,
+                click_tracking: None,
+                tracking_subdomain: None,
+            }
+        }
+
+        /// The region where the email will be sent from.
+        #[inline]
+        pub fn with_region(mut self, region: impl Into<Region>) -> Self {
+            self.region = Some(region.into());
+            self
+        }
+
+        /// For advanced use cases, choose a subdomain for the Return-Path address.
+        /// The custom return path is used for SPF authentication, DMARC alignment, and handling
+        /// bounced emails. Defaults to `send` (i.e., `send.yourdomain.tld`). Avoid setting values
+        /// that could undermine credibility (e.g. `testing`), as they may be exposed to recipients.
+        #[inline]
+        pub fn with_custom_return_path(mut self, custom_return_path: impl Into<String>) -> Self {
+            self.custom_return_path = Some(custom_return_path.into());
+            self
+        }
+
+        #[inline]
+        pub fn with_open_tracking(mut self, open_tracking: bool) -> Self {
+            self.open_tracking = Some(open_tracking);
+            self
+        }
+
+        #[inline]
+        pub fn with_click_tracking(mut self, click_tracking: bool) -> Self {
+            self.click_tracking = Some(click_tracking);
+            self
+        }
+
+        #[inline]
+        pub fn with_tracking_subdomain(mut self, tracking_subdomain: impl Into<String>) -> Self {
+            self.tracking_subdomain = Some(tracking_subdomain.into());
+            self
+        }
+    }
+
+    #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+    #[serde(rename_all = "snake_case")]
+    pub enum DomainClaimStatus {
+        Pending,
+        Verified,
+        Completed,
+        Blocked,
+        Expired,
+        Superseded,
+        Canceled,
+        Failed,
+    }
+
+    #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+    #[serde(rename_all = "snake_case")]
+    pub enum DomainClaimBlockedReason {
+        GracePeriod,
+        RecentOwnerActivity,
+        PendingScheduledEmails,
+    }
+
+    #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+    #[serde(rename_all = "snake_case")]
+    pub enum DomainClaimRecordType {
+        #[allow(clippy::upper_case_acronyms)]
+        TXT,
+    }
+
+    #[must_use]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct DomainClaimRecord {
+        #[serde(rename = "type")]
+        pub r#type: DomainClaimRecordType,
+        pub name: String,
+        pub value: String,
+        pub ttl: String,
+    }
+
+    #[must_use]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct DomainClaim {
+        pub id: DomainClaimId,
+        pub name: String,
+        pub status: DomainClaimStatus,
+        pub domain_id: Option<String>,
+        pub region: Option<Region>,
+        pub record: DomainClaimRecord,
+        pub blocked_reason: Option<DomainClaimBlockedReason>,
+        pub failure_reason: Option<String>,
+        pub created_at: String,
+        pub expires_at: String,
     }
 }
 
