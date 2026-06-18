@@ -128,7 +128,7 @@ impl DomainsSvc {
     /// <https://resend.com/docs/api-reference/domains/get-domain-claim>
     #[maybe_async::maybe_async]
     pub async fn get_claim(&self, domain_id: &str) -> Result<DomainClaim> {
-        let path = format!("/domains/{domain_id}");
+        let path = format!("/domains/{domain_id}/claim");
 
         let request = self.0.build(Method::GET, &path);
         let response = self.0.send(request).await?;
@@ -667,25 +667,25 @@ pub mod types {
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct DomainClaimRecord {
         #[serde(rename = "type")]
-        r#type: DomainClaimRecordType,
-        name: String,
-        value: String,
-        ttl: String,
+        pub r#type: DomainClaimRecordType,
+        pub name: String,
+        pub value: String,
+        pub ttl: String,
     }
 
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct DomainClaim {
-        id: DomainClaimId,
-        name: String,
-        status: DomainClaimStatus,
-        domain_id: Option<String>,
-        region: Option<Region>,
-        record: DomainClaimRecord,
-        blocked_reason: Option<DomainClaimBlockedReason>,
-        failure_reason: Option<String>,
-        created_at: String,
-        expires_at: String,
+        pub id: DomainClaimId,
+        pub name: String,
+        pub status: DomainClaimStatus,
+        pub domain_id: Option<String>,
+        pub region: Option<Region>,
+        pub record: DomainClaimRecord,
+        pub blocked_reason: Option<DomainClaimBlockedReason>,
+        pub failure_reason: Option<String>,
+        pub created_at: String,
+        pub expires_at: String,
     }
 }
 
