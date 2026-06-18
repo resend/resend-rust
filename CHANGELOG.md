@@ -8,6 +8,12 @@ and this project adheres to
 
 <!--## Unreleased-->
 
+## [0.26.1] - 2026-06-18
+
+### Added
+
+- 3 new domain claim endpoints
+
 ## [0.26.0] - 2026-06-16
 
 ### Added
@@ -534,6 +540,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+[0.26.1]: https://crates.io/crates/resend-rs/0.26.1
 [0.26.0]: https://crates.io/crates/resend-rs/0.26.0
 [0.25.1]: https://crates.io/crates/resend-rs/0.25.1
 [0.25.0]: https://crates.io/crates/resend-rs/0.25.0
