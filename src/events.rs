@@ -376,6 +376,8 @@ pub struct Suppressed {
 pub struct Received {
     pub bcc: Vec<String>,
     pub cc: Vec<String>,
+    #[serde(default)]
+    pub received_for: Vec<String>,
     pub message_id: String,
     pub attachments: Vec<InboundAttachment>,
 }
@@ -797,6 +799,7 @@ mod test {
         "to": ["delivered@resend.dev"],
         "bcc": [],
         "cc": [],
+        "received_for": ["forwarded@example.com"],
         "message_id": "<example+123>",
         "subject": "Sending this example",
         "attachments": [
@@ -824,6 +827,7 @@ mod test {
             assert!(received.attachments.len() == 1);
             assert!(received.cc.is_empty());
             assert!(received.bcc.is_empty());
+            assert_eq!(received.received_for, vec!["forwarded@example.com"]);
         } else {
             panic!("Wrong parsing");
         }

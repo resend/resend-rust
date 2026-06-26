@@ -264,6 +264,8 @@ pub mod types {
         pub cc: Vec<String>,
         #[serde(default)]
         pub reply_to: Vec<String>,
+        #[serde(default)]
+        pub received_for: Vec<String>,
         pub html: Option<String>,
         pub text: Option<String>,
         #[serde(default)]
@@ -445,6 +447,7 @@ mod test {
       "bcc": [],
       "cc": [],
       "reply_to": [],
+      "received_for": ["forwarded@example.com"],
       "message_id": "<111-222-333@email.provider.example.com>",
       "raw": {
         "download_url": "https://example.com/emails/raw/abc123?signature=xyz789",
@@ -466,6 +469,9 @@ mod test {
 
         let res = serde_json::from_str::<ListResponse<InboundEmail>>(emails);
         assert!(res.is_ok());
-        assert!(res.unwrap().data.first().unwrap().raw.is_some());
+        let data = res.unwrap();
+        let email = data.data.first().unwrap();
+        assert!(email.raw.is_some());
+        assert_eq!(email.received_for, vec!["forwarded@example.com"]);
     }
 }
