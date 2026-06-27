@@ -8,6 +8,12 @@ and this project adheres to
 
 <!--## Unreleased-->
 
+## [0.27.0] - 2026-06-27
+
+### Added
+
+- add received_for to inbound email and received event types (https://github.com/resend/resend-rust/pull/74)
+
 ## [0.26.1] - 2026-06-18
 
 ### Added
@@ -540,6 +546,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+[0.27.0]: https://crates.io/crates/resend-rs/0.27.0
 [0.26.1]: https://crates.io/crates/resend-rs/0.26.1
 [0.26.0]: https://crates.io/crates/resend-rs/0.26.0
 [0.25.1]: https://crates.io/crates/resend-rs/0.25.1
