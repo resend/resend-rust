@@ -49,10 +49,12 @@ pub mod types {
 
     use serde::{Deserialize, Serialize};
 
+    crate::define_id_type!(LogId);
+
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct Log {
-        pub id: String,
+        pub id: LogId,
         pub created_at: String,
         pub endpoint: String,
         pub method: String,

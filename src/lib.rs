@@ -145,7 +145,7 @@ pub mod types {
         GetEventResponse, SendEventOptions, SendEventResponse, UpdateEventOptions,
         UpdateEventResponse,
     };
-    pub use super::logs::types::Log;
+    pub use super::logs::types::{Log, LogId};
     pub use super::receiving::types::{
         ForwardInboundEmailResponse, ForwardReceivingEmail, GetInboundEmailOptions,
         GetInboundEmailRaw, InboundAttachment, InboundAttachmentId, InboundEmail,
