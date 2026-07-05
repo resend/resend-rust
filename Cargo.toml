@@ -2,7 +2,7 @@
 
 [package]
 name = "resend-rs"
-version = "0.27.0"
+version = "0.28.0"
 edition = "2024"
 
 license = "MIT"
@@ -36,13 +36,13 @@ ecow = { version = "0.3.0", features = ["serde"] }
 thiserror = { version = "2.0" }
 maybe-async = { version = "0.2.11" }
 governor = "0.10.4"
-rand = "0.10.1"
+rand = "0.10.2"
 getrandom = { version = "0.4.3", features = ["wasm_js"] }
 serde_json = "1.0.150"
 mailparse = "0.16.1"
 
 [dev-dependencies]
-jiff = { version = "0.2.29", features = ["serde"] }
+jiff = { version = "0.2.31", features = ["serde"] }
 tokio = { version = "1.52.3", features = [
   "macros",
   "test-util",
