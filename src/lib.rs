@@ -68,6 +68,7 @@ pub mod events;
 pub mod idempotent;
 pub mod list_opts;
 mod logs;
+mod oauth;
 pub mod rate_limit;
 mod receiving;
 mod segments;
@@ -86,6 +87,7 @@ pub mod services {
     pub use super::domains::DomainsSvc;
     pub use super::emails::EmailsSvc;
     pub use super::logs::LogsSvc;
+    pub use super::oauth::OAuthSvc;
     pub use super::receiving::ReceivingSvc;
     pub use super::segments::SegmentsSvc;
     pub use super::templates::TemplateSvc;
@@ -146,6 +148,9 @@ pub mod types {
         UpdateEventResponse,
     };
     pub use super::logs::types::{Log, LogId};
+    pub use super::oauth::types::{
+        ClientId, OAuthGrant, OAuthGrantClient, OAuthGrantId, RevokeOAuthGrantResponse,
+    };
     pub use super::receiving::types::{
         ForwardInboundEmailResponse, ForwardReceivingEmail, GetInboundEmailOptions,
         GetInboundEmailRaw, InboundAttachment, InboundAttachmentId, InboundEmail,

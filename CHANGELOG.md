@@ -8,6 +8,10 @@ and this project adheres to
 
 ## Unreleased
 
+### Added
+
+- `list` and `revoke` oauth endpoints
+
 ### Changed
 
 - `Log.id` is now a new `LogId` type instead of a `String`
