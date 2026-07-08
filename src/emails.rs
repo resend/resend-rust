@@ -541,6 +541,8 @@ pub mod types {
     pub struct Email {
         /// The ID of the email.
         pub id: EmailId,
+        /// RFC Message-ID header value for the email.
+        pub message_id: String,
 
         /// Sender email address.
         pub from: String,
@@ -713,6 +715,7 @@ mod test {
         let email = r#"{
             "object": "email",
             "id": "6757a66c-3a5b-49ee-98cc-fca7a5f423c0",
+            "message_id": "<111-222-333@email.example.com>",
             "to": [
                 "email@gmail.com"
             ],
@@ -731,6 +734,7 @@ mod test {
         let res = serde_json::from_str::<Email>(email);
         assert!(res.is_ok());
         let res = res.unwrap();
+        assert_eq!(res.message_id, "<111-222-333@email.example.com>");
         assert!(res.cc.is_empty());
         assert!(res.bcc.is_empty());
         assert!(res.text.is_none());
@@ -738,6 +742,7 @@ mod test {
         let email = r#"{
             "object": "email",
             "id": "6757a66c-3a5b-49ee-98cc-fca7a5f423c0",
+            "message_id": "<111-222-333@email.example.com>",
             "to": [
                 "email@gmail.com"
             ],
