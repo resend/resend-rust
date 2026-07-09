@@ -542,7 +542,7 @@ pub mod types {
         /// The ID of the email.
         pub id: EmailId,
         /// RFC Message-ID header value for the email.
-        pub message_id: String,
+        pub message_id: Option<String>,
 
         /// Sender email address.
         pub from: String,
@@ -734,7 +734,7 @@ mod test {
         let res = serde_json::from_str::<Email>(email);
         assert!(res.is_ok());
         let res = res.unwrap();
-        assert_eq!(res.message_id, "<111-222-333@email.example.com>");
+        assert_eq!(res.message_id.unwrap(), "<111-222-333@email.example.com>");
         assert!(res.cc.is_empty());
         assert!(res.bcc.is_empty());
         assert!(res.text.is_none());
