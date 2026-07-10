@@ -10,6 +10,7 @@ and this project adheres to
 
 ### Added
 
+- batch send support for `scheduled_at`, `tags`, and `attachments` on [`CreateEmailBaseOptions`](https://docs.rs/resend-rs/latest/resend_rs/types/struct.CreateEmailBaseOptions.html)
 - add `message_id` to `Email` and webhook `EmailBody` types (https://github.com/resend/resend-rust/pull/77)
 
 

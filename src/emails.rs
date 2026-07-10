@@ -160,9 +160,11 @@ pub mod types {
 
     /// All requisite components and associated data to send an email.
     ///
-    /// See [`docs`].
+    /// Used by both the single-send and batch-send endpoints. See [`send_email_docs`]
+    /// and [`batch_email_docs`].
     ///
-    /// [`docs`]: https://resend.com/docs/api-reference/emails/send-email#body-parameters
+    /// [`send_email_docs`]: https://resend.com/docs/api-reference/emails/send-email#body-parameters
+    /// [`batch_email_docs`]: https://resend.com/docs/api-reference/emails/send-batch-emails#body-parameters
     #[must_use]
     #[derive(Debug, Clone, Serialize)]
     pub struct CreateEmailBaseOptions {
