@@ -20,8 +20,8 @@ impl BatchSvc {
     /// Instead of sending one email per HTTP request, we provide a batching endpoint
     /// that permits you to send up to 100 emails in a single API call.
     ///
-    /// Each [`CreateEmailBaseOptions`] in the batch supports `scheduled_at`, `tags`,
-    /// and `attachments`, in addition to the other send-email body parameters.
+    /// Each [`CreateEmailBaseOptions`] in the batch supports `tags`, in addition to
+    /// the other send-email body parameters.
     ///
     /// <https://resend.com/docs/api-reference/emails/send-batch-emails>
     #[maybe_async::maybe_async]
@@ -125,8 +125,8 @@ pub mod types {
 mod test {
     use crate::test::{CLIENT, DebugResult};
     use crate::types::{
-        BatchValidation, CreateAttachment, CreateEmailBaseOptions, CreateTemplateOptions,
-        EmailEvent, EmailTemplate, Tag, Variable, VariableType,
+        BatchValidation, CreateEmailBaseOptions, CreateTemplateOptions, EmailEvent, EmailTemplate,
+        Tag, Variable, VariableType,
     };
 
     #[tokio_shared_rt::test(shared = true)]
@@ -328,7 +328,7 @@ mod test {
     }
 
     #[test]
-    fn serialize_schedule_tags_attachments() {
+    fn serialize_tags() {
         use serde_json::json;
 
         let email = CreateEmailBaseOptions::new(
@@ -337,23 +337,15 @@ mod test {
             "hello world",
         )
         .with_html("<h1>it works!</h1>")
-        .with_tag(Tag::new("category", "confirm_email"))
-        .with_scheduled_at("2025-09-25T11:52:01.858Z")
-        .with_attachment(
-            CreateAttachment::from_content(b"hello".to_vec()).with_filename("test.txt"),
-        );
+        .with_tag(Tag::new("category", "confirm_email"));
 
         let emails = vec![email];
         let value = serde_json::to_value(&emails).unwrap();
 
-        let email = &value[0];
         assert_eq!(
-            email["tags"],
+            value[0]["tags"],
             json!([{"name": "category", "value": "confirm_email"}])
         );
-        assert_eq!(email["scheduled_at"], json!("2025-09-25T11:52:01.858Z"));
-        assert!(email["attachments"].is_array());
-        assert_eq!(email["attachments"][0]["filename"], "test.txt");
     }
 
     #[tokio_shared_rt::test(shared = true)]
@@ -381,105 +373,6 @@ mod test {
 
         let emails = resend.batch.send(emails).await?;
         assert_eq!(emails.len(), 2);
-
-        Ok(())
-    }
-
-    #[tokio_shared_rt::test(shared = true)]
-    #[cfg(not(feature = "blocking"))]
-    async fn schedule() -> DebugResult<()> {
-        use jiff::{Span, Timestamp, Zoned};
-
-        let now_plus_1h = Zoned::now()
-            .checked_add(Span::new().hours(1))
-            .expect("Valid date")
-            .timestamp()
-            .to_string();
-
-        let resend = &*CLIENT;
-        std::thread::sleep(std::time::Duration::from_secs(1));
-
-        let emails = vec![
-            CreateEmailBaseOptions::new(
-                "Acme <onboarding@resend.dev>",
-                ["delivered@resend.dev"],
-                "hello world",
-            )
-            .with_html("<h1>it works!</h1>")
-            .with_scheduled_at(&now_plus_1h),
-            CreateEmailBaseOptions::new(
-                "Acme <onboarding@resend.dev>",
-                ["delivered@resend.dev"],
-                "world hello",
-            )
-            .with_html("<p>it works!</p>")
-            .with_scheduled_at(&now_plus_1h),
-        ];
-
-        let emails = resend.batch.send(emails).await?;
-        assert_eq!(emails.len(), 2);
-        std::thread::sleep(std::time::Duration::from_secs(4));
-
-        for email in emails {
-            let email = resend.emails.get(&email.id).await?;
-            assert_eq!(email.last_event, EmailEvent::Scheduled);
-            assert!(email.scheduled_at.is_some());
-            let time = email
-                .scheduled_at
-                .unwrap()
-                .parse::<Timestamp>()
-                .expect("Valid timestamp");
-            let time_delta = (time - Timestamp::now()).round(jiff::Unit::Hour).unwrap();
-            assert_eq!(
-                time_delta.compare(Span::new().hours(1)).unwrap(),
-                std::cmp::Ordering::Equal
-            );
-
-            let _cancelled = resend.emails.cancel(&email.id).await?;
-        }
-
-        Ok(())
-    }
-
-    #[tokio_shared_rt::test(shared = true)]
-    #[cfg(not(feature = "blocking"))]
-    async fn attachments() -> DebugResult<()> {
-        use crate::list_opts::ListOptions;
-
-        let resend = &*CLIENT;
-        std::thread::sleep(std::time::Duration::from_secs(1));
-
-        let attachment = CreateAttachment::from_content(include_bytes!("../README.md").to_vec())
-            .with_filename("README.md");
-
-        let emails = vec![
-            CreateEmailBaseOptions::new(
-                "Acme <onboarding@resend.dev>",
-                ["delivered@resend.dev"],
-                "hello world",
-            )
-            .with_html("<h1>it works!</h1>")
-            .with_attachment(attachment.clone()),
-            CreateEmailBaseOptions::new(
-                "Acme <onboarding@resend.dev>",
-                ["delivered@resend.dev"],
-                "world hello",
-            )
-            .with_html("<p>it works!</p>")
-            .with_attachment(attachment),
-        ];
-
-        let emails = resend.batch.send(emails).await?;
-        assert_eq!(emails.len(), 2);
-        std::thread::sleep(std::time::Duration::from_secs(1));
-
-        for email in emails {
-            let attachments = resend
-                .emails
-                .list_attachments(&email.id, ListOptions::default())
-                .await?;
-            assert_eq!(attachments.data.len(), 1);
-        }
 
         Ok(())
     }
