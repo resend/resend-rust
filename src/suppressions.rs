@@ -36,6 +36,7 @@ impl SuppressionsSvc {
     /// <https://resend.com/docs/api-reference/suppressions/get-suppression>
     #[maybe_async::maybe_async]
     pub async fn get(&self, id_or_email: &str) -> Result<Suppression> {
+        let id_or_email = urlencoding::encode(id_or_email);
         let path = format!("/suppressions/{id_or_email}");
 
         let request = self.0.build(Method::GET, &path);
@@ -65,6 +66,7 @@ impl SuppressionsSvc {
     /// <https://resend.com/docs/api-reference/suppressions/remove-suppression>
     #[maybe_async::maybe_async]
     pub async fn remove(&self, id_or_email: &str) -> Result<RemoveSuppressionResponse> {
+        let id_or_email = urlencoding::encode(id_or_email);
         let path = format!("/suppressions/{id_or_email}");
 
         let request = self.0.build(Method::DELETE, &path);
