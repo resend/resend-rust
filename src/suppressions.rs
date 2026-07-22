@@ -99,6 +99,7 @@ impl SuppressionsSvc {
     /// You can create those by doing:
     ///
     /// ```rust
+    /// # use resend_rs::types::BatchRemoveSuppressionOptions;
     /// let _tmp = BatchRemoveSuppressionOptions::new().add_emails(vec!["emails"]);
     /// let _tmp = BatchRemoveSuppressionOptions::new().add_ids(vec!["ids"]);
     /// ```
