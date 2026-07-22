@@ -55,6 +55,7 @@ impl ContactsSvc {
     /// <https://resend.com/docs/api-reference/contacts/get-contact>
     #[maybe_async::maybe_async]
     pub async fn get(&self, contact_id_or_email: &str) -> Result<Contact> {
+        let contact_id_or_email = urlencoding::encode(contact_id_or_email);
         let path = format!("/contacts/{contact_id_or_email}");
 
         let request = self.0.build(Method::GET, &path);
@@ -75,6 +76,7 @@ impl ContactsSvc {
         contact_id_or_email: &str,
         update: ContactChanges,
     ) -> Result<UpdateContactResponse> {
+        let contact_id_or_email = urlencoding::encode(contact_id_or_email);
         let path = format!("/contacts/{contact_id_or_email}");
 
         let request = self.0.build(Method::PATCH, &path);
@@ -89,6 +91,7 @@ impl ContactsSvc {
     /// <https://resend.com/docs/api-reference/contacts/delete-contact>
     #[maybe_async::maybe_async]
     pub async fn delete(&self, contact_id_or_email: &str) -> Result<bool> {
+        let contact_id_or_email = urlencoding::encode(contact_id_or_email);
         let path = format!("/contacts/{contact_id_or_email}");
 
         let request = self.0.build(Method::DELETE, &path);
@@ -129,6 +132,7 @@ impl ContactsSvc {
         contact_id_or_email: &str,
         list_opts: ListOptions<T>,
     ) -> Result<ListResponse<ContactTopic>> {
+        let contact_id_or_email = urlencoding::encode(contact_id_or_email);
         let path = format!("/contacts/{contact_id_or_email}/topics");
 
         let request = self.0.build(Method::GET, &path).query(&list_opts);
@@ -147,6 +151,7 @@ impl ContactsSvc {
         contact_id_or_email: &str,
         topics: impl Into<Vec<UpdateContactTopicOptions>>,
     ) -> Result<UpdateContactResponse> {
+        let contact_id_or_email = urlencoding::encode(contact_id_or_email);
         let path = format!("/contacts/{contact_id_or_email}/topics");
 
         let request = self.0.build(Method::PATCH, &path);
@@ -165,6 +170,7 @@ impl ContactsSvc {
         contact_id_or_email: &str,
         segment_id: &str,
     ) -> Result<AddContactSegmentResponse> {
+        let contact_id_or_email = urlencoding::encode(contact_id_or_email);
         let path = format!("/contacts/{contact_id_or_email}/segments/{segment_id}");
 
         let request = self.0.build(Method::POST, &path);
@@ -183,6 +189,7 @@ impl ContactsSvc {
         contact_id_or_email: &str,
         segment_id: &str,
     ) -> Result<RemoveContactSegmentResponse> {
+        let contact_id_or_email = urlencoding::encode(contact_id_or_email);
         let path = format!("/contacts/{contact_id_or_email}/segments/{segment_id}");
 
         let request = self.0.build(Method::DELETE, &path);
@@ -202,6 +209,7 @@ impl ContactsSvc {
         contact_id_or_email: &str,
         list_opts: ListOptions<T>,
     ) -> Result<ListResponse<Segment>> {
+        let contact_id_or_email = urlencoding::encode(contact_id_or_email);
         let path = format!("/contacts/{contact_id_or_email}/segments/");
 
         let request = self.0.build(Method::GET, &path).query(&list_opts);

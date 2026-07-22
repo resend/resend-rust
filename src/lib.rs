@@ -72,6 +72,7 @@ mod oauth;
 pub mod rate_limit;
 mod receiving;
 mod segments;
+mod suppressions;
 mod templates;
 mod topics;
 mod webhooks;
@@ -90,6 +91,7 @@ pub mod services {
     pub use super::oauth::OAuthSvc;
     pub use super::receiving::ReceivingSvc;
     pub use super::segments::SegmentsSvc;
+    pub use super::suppressions::SuppressionsSvc;
     pub use super::templates::TemplateSvc;
     pub use super::topics::TopicsSvc;
 }
@@ -157,6 +159,12 @@ pub mod types {
         InboundEmailHtmlFormat, InboundEmailId,
     };
     pub use super::segments::types::{CreateSegmentResponse, Segment, SegmentId};
+    pub use super::suppressions::types::{
+        AddSuppressionOptions, AddSuppressionResponse, BatchAddSuppressionOptions,
+        BatchAddSuppressionResponse, BatchRemoveSuppressionOptions,
+        BatchRemoveSuppressionsResponse, EmailsSpecified, IdsSpecified, NotSpecified,
+        RemoveSuppressionResponse, Suppression, SuppressionId, SuppressionOrigin,
+    };
     pub use super::templates::types::{
         CreateTemplateOptions, CreateTemplateResponse, DeleteTemplateResponse,
         DuplicateTemplateResponse, PublishTemplateResponse, Template, TemplateEvent, TemplateId,

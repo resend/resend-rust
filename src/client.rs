@@ -12,7 +12,7 @@ use crate::{
     events::EventsSvc,
     logs::LogsSvc,
     oauth::OAuthSvc,
-    services::{AutomationsSvc, ReceivingSvc},
+    services::{AutomationsSvc, ReceivingSvc, SuppressionsSvc},
     webhooks::WebhookSvc,
 };
 use crate::{
@@ -59,6 +59,8 @@ pub struct Resend {
     pub events: EventsSvc,
     /// `Resend` APIs for `/oauth` endpoints.
     pub oauth: OAuthSvc,
+    /// `Resend` APIs for `/suppressions` endpoints.
+    pub suppressions: SuppressionsSvc,
 }
 
 impl Resend {
@@ -114,7 +116,8 @@ impl Resend {
             logs: LogsSvc(Arc::clone(&inner)),
             automations: AutomationsSvc(Arc::clone(&inner)),
             events: EventsSvc(Arc::clone(&inner)),
-            oauth: OAuthSvc(inner),
+            oauth: OAuthSvc(Arc::clone(&inner)),
+            suppressions: SuppressionsSvc(inner),
         }
     }
 
