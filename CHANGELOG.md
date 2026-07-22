@@ -11,6 +11,7 @@ and this project adheres to
 ### Added
 
 - add `message_id` to `Email` and webhook `EmailBody` types (https://github.com/resend/resend-rust/pull/77)
+- `suppressions` endpoints
 
 
 ## [0.28.0] - 2026-07-05
