@@ -515,14 +515,14 @@ mod test {
 
         // List
         let templates = resend.templates.list(ListOptions::default()).await?;
-        assert!(templates.len() == 1);
+        assert_eq!(templates.len(), 1);
 
         // Duplicate
         let duplicate = resend.templates.duplicate(alias).await?;
-        assert!(duplicate.id != template.id);
+        assert_ne!(duplicate.id, template.id);
         std::thread::sleep(std::time::Duration::from_secs(1));
         let templates = resend.templates.list(ListOptions::default()).await?;
-        assert!(templates.len() == 2);
+        assert_eq!(templates.len(), 2);
 
         // Delete
         let deleted = resend.templates.delete(alias).await?;

@@ -220,7 +220,7 @@ mod test {
         std::thread::sleep(std::time::Duration::from_secs(1));
 
         let webhook = resend.webhooks.get(&id).await?;
-        assert!(webhook.events.len() == 3);
+        assert_eq!(webhook.events.len(), 3);
         let webhooks = resend.webhooks.list(ListOptions::default()).await?;
         assert!(!webhooks.is_empty());
 
@@ -231,7 +231,7 @@ mod test {
         let _webhook = resend.webhooks.update(&id, update).await?;
         std::thread::sleep(std::time::Duration::from_secs(1));
         let webhook = resend.webhooks.get(&id).await?;
-        assert!(webhook.events.len() == 2);
+        assert_eq!(webhook.events.len(), 2);
 
         let deleted = resend.webhooks.delete(&id).await?;
         assert!(deleted);

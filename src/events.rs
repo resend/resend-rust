@@ -881,7 +881,7 @@ mod test {
             assert!(email_event.data.tags.is_empty());
 
             let received = email_event.data.received.unwrap();
-            assert!(received.attachments.len() == 1);
+            assert_eq!(received.attachments.len(), 1);
             assert!(received.cc.is_empty());
             assert!(received.bcc.is_empty());
             assert_eq!(received.received_for, vec!["forwarded@example.com"]);
@@ -994,7 +994,7 @@ mod test {
                 contact_event.r#type,
                 ContactEventType::ContactCreated
             ));
-            assert!(contact_event.data.segment_ids.len() == 1);
+            assert_eq!(contact_event.data.segment_ids.len(), 1);
         } else {
             panic!("Wrong parsing");
         }
@@ -1028,7 +1028,7 @@ mod test {
                 contact_event.r#type,
                 ContactEventType::ContactUpdated
             ));
-            assert!(contact_event.data.segment_ids.len() == 1);
+            assert_eq!(contact_event.data.segment_ids.len(), 1);
         } else {
             panic!("Wrong parsing");
         }
@@ -1062,7 +1062,7 @@ mod test {
                 contact_event.r#type,
                 ContactEventType::ContactDeleted
             ));
-            assert!(contact_event.data.segment_ids.len() == 1);
+            assert_eq!(contact_event.data.segment_ids.len(), 1);
         } else {
             panic!("Wrong parsing");
         }
