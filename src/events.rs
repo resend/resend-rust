@@ -1071,45 +1071,44 @@ mod test {
     #[test]
     #[ignore = "JSON outdated"]
     fn domain_created() {
-        let data = r#"
-    {
-      "type": "domain.created",
-      "created_at": "2024-11-17T19:32:22.980Z",
-      "data": {
-        "id": "d91cd9bd-1176-453e-8fc1-35364d380206",
-        "name": "example.com",
-        "status": "not_started",
-        "created_at": "2024-04-26T20:21:26.347412+00:00",
-        "region": "us-east-1",
-        "records": [
-          {
-            "record": "SPF",
-            "name": "send",
-            "type": "MX",
-            "ttl": "Auto",
+        let data = r#"{
+          "type": "domain.created",
+          "created_at": "2026-11-17T19:32:22.980Z",
+          "data": {
+            "id": "d91cd9bd-1176-453e-8fc1-35364d380206",
+            "name": "example.com",
             "status": "not_started",
-            "value": "feedback-smtp.us-east-1.amazonses.com",
-            "priority": 10
-          },
-          {
-            "record": "SPF",
-            "name": "send",
-            "value": "\"v=spf1 include:amazonses.com ~all\"",
-            "type": "TXT",
-            "ttl": "Auto",
-            "status": "not_started"
-          },
-          {
-            "record": "DKIM",
-            "name": "resend._domainkey",
-            "value": "p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDsc4Lh8xilsngyKEgN2S84+21gn+x6SEXtjWvPiAAmnmggr5FWG42WnqczpzQ/mNblqHz4CDwUum6LtY6SdoOlDmrhvp5khA3cd661W9FlK3yp7+jVACQElS7d9O6jv8VsBbVg4COess3gyLE5RyxqF1vYsrEXqyM8TBz1n5AGkQIDAQA2",
-            "type": "TXT",
-            "status": "not_started",
-            "ttl": "Auto"
+            "created_at": "2026-04-26T20:21:26.347Z",
+            "region": "us-east-1",
+            "records": [
+              {
+                "record": "SPF",
+                "name": "send",
+                "type": "MX",
+                "ttl": "Auto",
+                "status": "not_started",
+                "value": "feedback-smtp.us-east-1.amazonses.com",
+                "priority": 10
+              },
+              {
+                "record": "SPF",
+                "name": "send",
+                "value": "\"v=spf1 include:amazonses.com ~all\"",
+                "type": "TXT",
+                "ttl": "Auto",
+                "status": "not_started"
+              },
+              {
+                "record": "DKIM",
+                "name": "resend._domainkey",
+                "value": "p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDsc4Lh8xilsngyKEgN2S84+21gn+x6SEXtjWvPiAAmnmggr5FWG42WnqczpzQ/mNblqHz4CDwUum6LtY6SdoOlDmrhvp5khA3cd661W9FlK3yp7+jVACQElS7d9O6jv8VsBbVg4COess3gyLE5RyxqF1vYsrEXqyM8TBz1n5AGkQIDAQA2",
+                "type": "TXT",
+                "status": "not_started",
+                "ttl": "Auto"
+              }
+            ]
           }
-        ]
-      }
-    }"#;
+        }"#;
 
         let parsed = try_parse_event(data);
         assert!(parsed.is_ok());
@@ -1129,54 +1128,53 @@ mod test {
     #[test]
     #[ignore = "JSON outdated"]
     fn domain_updated() {
-        let data = r#"
-    {
-      "type": "domain.updated",
-      "created_at": "2024-11-17T19:32:22.980Z",
-      "data": {
-        "id": "d91cd9bd-1176-453e-8fc1-35364d380206",
-        "name": "example.com",
-        "status": "not_started",
-        "created_at": "2024-04-26T20:21:26.347412+00:00",
-        "region": "us-east-1",
-        "records": [
-          {
-            "record": "SPF",
-            "name": "send",
-            "type": "MX",
-            "ttl": "Auto",
+        let data = r#"{
+          "type": "domain.updated",
+          "created_at": "2026-11-17T19:32:22.980Z",
+          "data": {
+            "id": "d91cd9bd-1176-453e-8fc1-35364d380206",
+            "name": "example.com",
             "status": "not_started",
-            "value": "feedback-smtp.us-east-1.amazonses.com",
-            "priority": 10
-          },
-          {
-            "record": "SPF",
-            "name": "send",
-            "value": "\"v=spf1 include:amazonses.com ~all\"",
-            "type": "TXT",
-            "ttl": "Auto",
-            "status": "not_started"
-          },
-          {
-            "record": "DKIM",
-            "name": "resend._domainkey",
-            "value": "p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDsc4Lh8xilsngyKEgN2S84+21gn+x6SEXtjWvPiAAmnmggr5FWG42WnqczpzQ/mNblqHz4CDwUum6LtY6SdoOlDmrhvp5khA3cd661W9FlK3yp7+jVACQElS7d9O6jv8VsBbVg4COess3gyLE5RyxqF1vYsrEXqyM8TBz1n5AGkQIDAQA2",
-            "type": "TXT",
-            "status": "not_started",
-            "ttl": "Auto"
-          },
-          {
-            "name": "inbound.yourdomain.tld",
-            "priority": 10,
-            "record": "Receiving MX",
-            "status": "pending",
-            "ttl": "Auto",
-            "type": "MX",
-            "value": "inbound-smtp.us-east-1.amazonaws.com"
+            "created_at": "2026-04-26T20:21:26.347Z",
+            "region": "us-east-1",
+            "records": [
+              {
+                "record": "SPF",
+                "name": "send",
+                "type": "MX",
+                "ttl": "Auto",
+                "status": "not_started",
+                "value": "feedback-smtp.us-east-1.amazonses.com",
+                "priority": 10
+              },
+              {
+                "record": "SPF",
+                "name": "send",
+                "value": "\"v=spf1 include:amazonses.com ~all\"",
+                "type": "TXT",
+                "ttl": "Auto",
+                "status": "not_started"
+              },
+              {
+                "record": "DKIM",
+                "name": "resend._domainkey",
+                "value": "p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDsc4Lh8xilsngyKEgN2S84+21gn+x6SEXtjWvPiAAmnmggr5FWG42WnqczpzQ/mNblqHz4CDwUum6LtY6SdoOlDmrhvp5khA3cd661W9FlK3yp7+jVACQElS7d9O6jv8VsBbVg4COess3gyLE5RyxqF1vYsrEXqyM8TBz1n5AGkQIDAQA2",
+                "type": "TXT",
+                "status": "not_started",
+                "ttl": "Auto"
+              },
+              {
+                "name": "inbound.yourdomain.tld",
+                "priority": 10,
+                "record": "Receiving MX",
+                "status": "pending",
+                "ttl": "Auto",
+                "type": "MX",
+                "value": "inbound-smtp.us-east-1.amazonaws.com"
+              }
+            ]
           }
-        ]
-      }
-    }"#;
+        }"#;
 
         let parsed = try_parse_event(data);
         assert!(parsed.is_ok());
@@ -1196,45 +1194,44 @@ mod test {
     #[test]
     #[ignore = "JSON outdated"]
     fn domain_deleted() {
-        let data = r#"
-    {
-      "type": "domain.deleted",
-      "created_at": "2024-11-17T19:32:22.980Z",
-      "data": {
-        "id": "d91cd9bd-1176-453e-8fc1-35364d380206",
-        "name": "example.com",
-        "status": "not_started",
-        "created_at": "2024-04-26T20:21:26.347412+00:00",
-        "region": "us-east-1",
-        "records": [
-          {
-            "record": "SPF",
-            "name": "send",
-            "type": "MX",
-            "ttl": "Auto",
+        let data = r#"{
+          "type": "domain.deleted",
+          "created_at": "2026-11-17T19:32:22.980Z",
+          "data": {
+            "id": "d91cd9bd-1176-453e-8fc1-35364d380206",
+            "name": "example.com",
             "status": "not_started",
-            "value": "feedback-smtp.us-east-1.amazonses.com",
-            "priority": 10
-          },
-          {
-            "record": "SPF",
-            "name": "send",
-            "value": "\"v=spf1 include:amazonses.com ~all\"",
-            "type": "TXT",
-            "ttl": "Auto",
-            "status": "not_started"
-          },
-          {
-            "record": "DKIM",
-            "name": "resend._domainkey",
-            "value": "p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDsc4Lh8xilsngyKEgN2S84+21gn+x6SEXtjWvPiAAmnmggr5FWG42WnqczpzQ/mNblqHz4CDwUum6LtY6SdoOlDmrhvp5khA3cd661W9FlK3yp7+jVACQElS7d9O6jv8VsBbVg4COess3gyLE5RyxqF1vYsrEXqyM8TBz1n5AGkQIDAQA2",
-            "type": "TXT",
-            "status": "not_started",
-            "ttl": "Auto"
+            "created_at": "2026-04-26T20:21:26.347Z",
+            "region": "us-east-1",
+            "records": [
+              {
+                "record": "SPF",
+                "name": "send",
+                "type": "MX",
+                "ttl": "Auto",
+                "status": "not_started",
+                "value": "feedback-smtp.us-east-1.amazonses.com",
+                "priority": 10
+              },
+              {
+                "record": "SPF",
+                "name": "send",
+                "value": "\"v=spf1 include:amazonses.com ~all\"",
+                "type": "TXT",
+                "ttl": "Auto",
+                "status": "not_started"
+              },
+              {
+                "record": "DKIM",
+                "name": "resend._domainkey",
+                "value": "p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDsc4Lh8xilsngyKEgN2S84+21gn+x6SEXtjWvPiAAmnmggr5FWG42WnqczpzQ/mNblqHz4CDwUum6LtY6SdoOlDmrhvp5khA3cd661W9FlK3yp7+jVACQElS7d9O6jv8VsBbVg4COess3gyLE5RyxqF1vYsrEXqyM8TBz1n5AGkQIDAQA2",
+                "type": "TXT",
+                "status": "not_started",
+                "ttl": "Auto"
+              }
+            ]
           }
-        ]
-      }
-    }"#;
+        }"#;
 
         let parsed = try_parse_event(data);
         assert!(parsed.is_ok());
