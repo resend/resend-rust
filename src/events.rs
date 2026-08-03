@@ -241,6 +241,7 @@ pub enum Event {
     EmailEvent(EmailEvent),
     ContactEvent(ContactEvent),
     DomainEvent(DomainEvent),
+    SuppressionEvent(SuppressionEvent),
 }
 
 /// Represents any [Resend Event Type](https://resend.com/docs/dashboard/webhooks/event-types).
@@ -250,6 +251,7 @@ pub enum EventType {
     EmailEventType(EmailEventType),
     ContactEventType(ContactEventType),
     DomainEventType(DomainEventType),
+    SuppressionEventType(SuppressionEventType),
 }
 
 impl From<EmailEventType> for EventType {
@@ -267,6 +269,12 @@ impl From<ContactEventType> for EventType {
 impl From<DomainEventType> for EventType {
     fn from(value: DomainEventType) -> Self {
         Self::DomainEventType(value)
+    }
+}
+
+impl From<SuppressionEventType> for EventType {
+    fn from(value: SuppressionEventType) -> Self {
+        Self::SuppressionEventType(value)
     }
 }
 
@@ -292,6 +300,14 @@ pub struct DomainEvent {
     pub r#type: DomainEventType,
     pub created_at: String,
     pub data: Domain,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SuppressionEvent {
+    #[serde(rename = "type")]
+    pub r#type: SuppressionEventType,
+    pub created_at: String,
+    pub data: SuppressionBody,
 }
 
 #[derive(Debug, Copy, Clone, Deserialize, Serialize)]
@@ -341,6 +357,15 @@ pub enum DomainEventType {
     DomainUpdated,
     #[serde(rename = "domain.deleted")]
     DomainDeleted,
+}
+
+#[derive(Debug, Copy, Clone, Deserialize, Serialize)]
+#[cfg_attr(test, derive(strum::EnumCount))]
+pub enum SuppressionEventType {
+    #[serde(rename = "suppression.added")]
+    SuppressionAdded,
+    #[serde(rename = "suppression.removed")]
+    SuppressionRemoved,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -430,13 +455,30 @@ pub struct ContactBody {
     pub unsubscribed: bool,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SuppressionBody {
+    pub id: String,
+    pub email: String,
+    pub origin: SuppressionOriginType,
+    pub source_id: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SuppressionOriginType {
+    Bounce,
+    Complaint,
+    Manual,
+}
+
 #[allow(clippy::unwrap_used)]
 #[cfg(test)]
 mod test {
     use crate::{
         events::{
-            ContactEventType, DomainEventType, EmailEventType, Event, try_parse_event,
-            try_parse_event_type,
+            ContactEventType, DomainEventType, EmailEventType, Event, SuppressionEventType,
+            try_parse_event, try_parse_event_type,
         },
         list_opts::ListOptions,
         test::CLIENT,
@@ -1209,6 +1251,64 @@ mod test {
         }
     }
 
+    #[test]
+    fn suppression_added() {
+        let data = r#"{
+          "type": "suppression.added",
+          "created_at": "2026-11-17T19:32:22.980Z",
+          "data": {
+            "id": "e169aa45-1ecf-4183-9955-b1499d5701d3",
+            "email": "steve.wozniak@gmail.com",
+            "origin": "bounce",
+            "source_id": "4ef9a417-02e9-4d39-ad75-9611e0fcc33c",
+            "created_at": "2026-11-17T19:32:22.980Z"
+          }
+        }"#;
+
+        let parsed = try_parse_event(data);
+        assert!(parsed.is_ok());
+        let parsed = parsed.unwrap();
+
+        if let Event::SuppressionEvent(contact_event) = parsed {
+            assert!(matches!(
+                contact_event.r#type,
+                SuppressionEventType::SuppressionAdded
+            ));
+            assert!(contact_event.data.source_id.is_some());
+        } else {
+            panic!("Wrong parsing");
+        }
+    }
+
+    #[test]
+    fn suppression_removed() {
+        let data = r#"{
+          "type": "suppression.removed",
+          "created_at": "2026-11-17T19:32:22.980Z",
+          "data": {
+            "id": "e169aa45-1ecf-4183-9955-b1499d5701d3",
+            "email": "steve.wozniak@gmail.com",
+            "origin": "manual",
+            "source_id": null,
+            "created_at": "2026-11-15T08:12:45.120Z"
+          }
+        }"#;
+
+        let parsed = try_parse_event(data);
+        assert!(parsed.is_ok());
+        let parsed = parsed.unwrap();
+
+        if let Event::SuppressionEvent(contact_event) = parsed {
+            assert!(matches!(
+                contact_event.r#type,
+                SuppressionEventType::SuppressionRemoved
+            ));
+            assert!(contact_event.data.source_id.is_none());
+        } else {
+            panic!("Wrong parsing");
+        }
+    }
+
     /// Similar to the test in `error.rs`
     #[allow(clippy::unwrap_used)]
     #[tokio_shared_rt::test(shared = true)]
@@ -1224,7 +1324,10 @@ mod test {
         let selector =
             scraper::Selector::parse("#content > div > div > div > span > a > code").unwrap();
 
-        let expected = EmailEventType::COUNT + ContactEventType::COUNT + DomainEventType::COUNT;
+        let expected = EmailEventType::COUNT
+            + ContactEventType::COUNT
+            + DomainEventType::COUNT
+            + SuppressionEventType::COUNT;
         let actual = fragment
             .select(&selector)
             .map(|el| el.inner_html())
@@ -1236,7 +1339,7 @@ mod test {
             assert!(parsed.is_ok(), "Could not parse: {el}");
         }
 
-        assert!(expected == actual.len());
+        assert_eq!(expected, actual.len());
 
         Ok(())
     }
