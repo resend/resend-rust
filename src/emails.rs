@@ -876,7 +876,7 @@ mod test {
         // There now should be more
         assert!(list.has_more);
         // There should be 3 emails due to the limit we set
-        assert!(list.data.len() == 3);
+        assert_eq!(list.data.len(), 3);
 
         Ok(())
     }
@@ -906,7 +906,7 @@ mod test {
             .emails
             .list_attachments(email_id, ListOptions::default())
             .await?;
-        assert!(attachments.data.len() == 1);
+        assert_eq!(attachments.data.len(), 1);
         let attachment_id = &attachments.data.first().unwrap().id;
 
         let _attachment = resend

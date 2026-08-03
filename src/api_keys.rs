@@ -191,7 +191,7 @@ mod test {
 
         // List.
         let api_keys = resend.api_keys.list(ListOptions::default()).await?;
-        assert!(api_keys_amt == api_keys.len() + 1);
+        assert_eq!(api_keys_amt, api_keys.len() + 1);
 
         Ok(())
     }

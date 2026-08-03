@@ -229,19 +229,19 @@ mod test {
         let res = send_with_retry_opts(f, &opts, &mut run_count).await;
 
         assert!(res.is_err());
-        assert!(run_count == 3);
+        assert_eq!(run_count, 3);
 
         run_count = 0;
         opts.max_retries = 2;
         let res = send_with_retry_opts(f, &opts, &mut run_count).await;
         assert!(res.is_err());
-        assert!(run_count == 2);
+        assert_eq!(run_count, 2);
 
         run_count = 0;
         opts.max_retries = 0;
         let res = send_with_retry_opts(f, &opts, &mut run_count).await;
         assert!(res.is_err());
-        assert!(run_count == 0);
+        assert_eq!(run_count, 0);
     }
 
     #[tokio_shared_rt::test(shared = true)]
@@ -255,6 +255,6 @@ mod test {
         let res = send_with_retry_opts(f, &opts, &mut retry_count).await;
 
         assert!(res.is_ok());
-        assert!(retry_count == 0);
+        assert_eq!(retry_count, 0);
     }
 }

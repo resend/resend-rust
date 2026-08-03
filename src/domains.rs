@@ -715,7 +715,7 @@ mod test {
 
         // List.
         let list = resend.domains.list(ListOptions::default()).await?;
-        assert!(list.len() == 1);
+        assert_eq!(list.len(), 1);
 
         // Get
         let domain = resend.domains.get(&domain.id).await?;

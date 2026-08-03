@@ -241,6 +241,7 @@ pub enum Event {
     EmailEvent(EmailEvent),
     ContactEvent(ContactEvent),
     DomainEvent(DomainEvent),
+    SuppressionEvent(SuppressionEvent),
 }
 
 /// Represents any [Resend Event Type](https://resend.com/docs/dashboard/webhooks/event-types).
@@ -250,6 +251,7 @@ pub enum EventType {
     EmailEventType(EmailEventType),
     ContactEventType(ContactEventType),
     DomainEventType(DomainEventType),
+    SuppressionEventType(SuppressionEventType),
 }
 
 impl From<EmailEventType> for EventType {
@@ -267,6 +269,12 @@ impl From<ContactEventType> for EventType {
 impl From<DomainEventType> for EventType {
     fn from(value: DomainEventType) -> Self {
         Self::DomainEventType(value)
+    }
+}
+
+impl From<SuppressionEventType> for EventType {
+    fn from(value: SuppressionEventType) -> Self {
+        Self::SuppressionEventType(value)
     }
 }
 
@@ -292,6 +300,14 @@ pub struct DomainEvent {
     pub r#type: DomainEventType,
     pub created_at: String,
     pub data: Domain,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SuppressionEvent {
+    #[serde(rename = "type")]
+    pub r#type: SuppressionEventType,
+    pub created_at: String,
+    pub data: SuppressionBody,
 }
 
 #[derive(Debug, Copy, Clone, Deserialize, Serialize)]
@@ -341,6 +357,15 @@ pub enum DomainEventType {
     DomainUpdated,
     #[serde(rename = "domain.deleted")]
     DomainDeleted,
+}
+
+#[derive(Debug, Copy, Clone, Deserialize, Serialize)]
+#[cfg_attr(test, derive(strum::EnumCount))]
+pub enum SuppressionEventType {
+    #[serde(rename = "suppression.added")]
+    SuppressionAdded,
+    #[serde(rename = "suppression.removed")]
+    SuppressionRemoved,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -430,13 +455,30 @@ pub struct ContactBody {
     pub unsubscribed: bool,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SuppressionBody {
+    pub id: String,
+    pub email: String,
+    pub origin: SuppressionOriginType,
+    pub source_id: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SuppressionOriginType {
+    Bounce,
+    Complaint,
+    Manual,
+}
+
 #[allow(clippy::unwrap_used)]
 #[cfg(test)]
 mod test {
     use crate::{
         events::{
-            ContactEventType, DomainEventType, EmailEventType, Event, try_parse_event,
-            try_parse_event_type,
+            ContactEventType, DomainEventType, EmailEventType, Event, SuppressionEventType,
+            try_parse_event, try_parse_event_type,
         },
         list_opts::ListOptions,
         test::CLIENT,
@@ -839,7 +881,7 @@ mod test {
             assert!(email_event.data.tags.is_empty());
 
             let received = email_event.data.received.unwrap();
-            assert!(received.attachments.len() == 1);
+            assert_eq!(received.attachments.len(), 1);
             assert!(received.cc.is_empty());
             assert!(received.bcc.is_empty());
             assert_eq!(received.received_for, vec!["forwarded@example.com"]);
@@ -952,7 +994,7 @@ mod test {
                 contact_event.r#type,
                 ContactEventType::ContactCreated
             ));
-            assert!(contact_event.data.segment_ids.len() == 1);
+            assert_eq!(contact_event.data.segment_ids.len(), 1);
         } else {
             panic!("Wrong parsing");
         }
@@ -986,7 +1028,7 @@ mod test {
                 contact_event.r#type,
                 ContactEventType::ContactUpdated
             ));
-            assert!(contact_event.data.segment_ids.len() == 1);
+            assert_eq!(contact_event.data.segment_ids.len(), 1);
         } else {
             panic!("Wrong parsing");
         }
@@ -1020,7 +1062,7 @@ mod test {
                 contact_event.r#type,
                 ContactEventType::ContactDeleted
             ));
-            assert!(contact_event.data.segment_ids.len() == 1);
+            assert_eq!(contact_event.data.segment_ids.len(), 1);
         } else {
             panic!("Wrong parsing");
         }
@@ -1029,45 +1071,44 @@ mod test {
     #[test]
     #[ignore = "JSON outdated"]
     fn domain_created() {
-        let data = r#"
-    {
-      "type": "domain.created",
-      "created_at": "2024-11-17T19:32:22.980Z",
-      "data": {
-        "id": "d91cd9bd-1176-453e-8fc1-35364d380206",
-        "name": "example.com",
-        "status": "not_started",
-        "created_at": "2024-04-26T20:21:26.347412+00:00",
-        "region": "us-east-1",
-        "records": [
-          {
-            "record": "SPF",
-            "name": "send",
-            "type": "MX",
-            "ttl": "Auto",
+        let data = r#"{
+          "type": "domain.created",
+          "created_at": "2026-11-17T19:32:22.980Z",
+          "data": {
+            "id": "d91cd9bd-1176-453e-8fc1-35364d380206",
+            "name": "example.com",
             "status": "not_started",
-            "value": "feedback-smtp.us-east-1.amazonses.com",
-            "priority": 10
-          },
-          {
-            "record": "SPF",
-            "name": "send",
-            "value": "\"v=spf1 include:amazonses.com ~all\"",
-            "type": "TXT",
-            "ttl": "Auto",
-            "status": "not_started"
-          },
-          {
-            "record": "DKIM",
-            "name": "resend._domainkey",
-            "value": "p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDsc4Lh8xilsngyKEgN2S84+21gn+x6SEXtjWvPiAAmnmggr5FWG42WnqczpzQ/mNblqHz4CDwUum6LtY6SdoOlDmrhvp5khA3cd661W9FlK3yp7+jVACQElS7d9O6jv8VsBbVg4COess3gyLE5RyxqF1vYsrEXqyM8TBz1n5AGkQIDAQA2",
-            "type": "TXT",
-            "status": "not_started",
-            "ttl": "Auto"
+            "created_at": "2026-04-26T20:21:26.347Z",
+            "region": "us-east-1",
+            "records": [
+              {
+                "record": "SPF",
+                "name": "send",
+                "type": "MX",
+                "ttl": "Auto",
+                "status": "not_started",
+                "value": "feedback-smtp.us-east-1.amazonses.com",
+                "priority": 10
+              },
+              {
+                "record": "SPF",
+                "name": "send",
+                "value": "\"v=spf1 include:amazonses.com ~all\"",
+                "type": "TXT",
+                "ttl": "Auto",
+                "status": "not_started"
+              },
+              {
+                "record": "DKIM",
+                "name": "resend._domainkey",
+                "value": "p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDsc4Lh8xilsngyKEgN2S84+21gn+x6SEXtjWvPiAAmnmggr5FWG42WnqczpzQ/mNblqHz4CDwUum6LtY6SdoOlDmrhvp5khA3cd661W9FlK3yp7+jVACQElS7d9O6jv8VsBbVg4COess3gyLE5RyxqF1vYsrEXqyM8TBz1n5AGkQIDAQA2",
+                "type": "TXT",
+                "status": "not_started",
+                "ttl": "Auto"
+              }
+            ]
           }
-        ]
-      }
-    }"#;
+        }"#;
 
         let parsed = try_parse_event(data);
         assert!(parsed.is_ok());
@@ -1087,54 +1128,53 @@ mod test {
     #[test]
     #[ignore = "JSON outdated"]
     fn domain_updated() {
-        let data = r#"
-    {
-      "type": "domain.updated",
-      "created_at": "2024-11-17T19:32:22.980Z",
-      "data": {
-        "id": "d91cd9bd-1176-453e-8fc1-35364d380206",
-        "name": "example.com",
-        "status": "not_started",
-        "created_at": "2024-04-26T20:21:26.347412+00:00",
-        "region": "us-east-1",
-        "records": [
-          {
-            "record": "SPF",
-            "name": "send",
-            "type": "MX",
-            "ttl": "Auto",
+        let data = r#"{
+          "type": "domain.updated",
+          "created_at": "2026-11-17T19:32:22.980Z",
+          "data": {
+            "id": "d91cd9bd-1176-453e-8fc1-35364d380206",
+            "name": "example.com",
             "status": "not_started",
-            "value": "feedback-smtp.us-east-1.amazonses.com",
-            "priority": 10
-          },
-          {
-            "record": "SPF",
-            "name": "send",
-            "value": "\"v=spf1 include:amazonses.com ~all\"",
-            "type": "TXT",
-            "ttl": "Auto",
-            "status": "not_started"
-          },
-          {
-            "record": "DKIM",
-            "name": "resend._domainkey",
-            "value": "p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDsc4Lh8xilsngyKEgN2S84+21gn+x6SEXtjWvPiAAmnmggr5FWG42WnqczpzQ/mNblqHz4CDwUum6LtY6SdoOlDmrhvp5khA3cd661W9FlK3yp7+jVACQElS7d9O6jv8VsBbVg4COess3gyLE5RyxqF1vYsrEXqyM8TBz1n5AGkQIDAQA2",
-            "type": "TXT",
-            "status": "not_started",
-            "ttl": "Auto"
-          },
-          {
-            "name": "inbound.yourdomain.tld",
-            "priority": 10,
-            "record": "Receiving MX",
-            "status": "pending",
-            "ttl": "Auto",
-            "type": "MX",
-            "value": "inbound-smtp.us-east-1.amazonaws.com"
+            "created_at": "2026-04-26T20:21:26.347Z",
+            "region": "us-east-1",
+            "records": [
+              {
+                "record": "SPF",
+                "name": "send",
+                "type": "MX",
+                "ttl": "Auto",
+                "status": "not_started",
+                "value": "feedback-smtp.us-east-1.amazonses.com",
+                "priority": 10
+              },
+              {
+                "record": "SPF",
+                "name": "send",
+                "value": "\"v=spf1 include:amazonses.com ~all\"",
+                "type": "TXT",
+                "ttl": "Auto",
+                "status": "not_started"
+              },
+              {
+                "record": "DKIM",
+                "name": "resend._domainkey",
+                "value": "p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDsc4Lh8xilsngyKEgN2S84+21gn+x6SEXtjWvPiAAmnmggr5FWG42WnqczpzQ/mNblqHz4CDwUum6LtY6SdoOlDmrhvp5khA3cd661W9FlK3yp7+jVACQElS7d9O6jv8VsBbVg4COess3gyLE5RyxqF1vYsrEXqyM8TBz1n5AGkQIDAQA2",
+                "type": "TXT",
+                "status": "not_started",
+                "ttl": "Auto"
+              },
+              {
+                "name": "inbound.yourdomain.tld",
+                "priority": 10,
+                "record": "Receiving MX",
+                "status": "pending",
+                "ttl": "Auto",
+                "type": "MX",
+                "value": "inbound-smtp.us-east-1.amazonaws.com"
+              }
+            ]
           }
-        ]
-      }
-    }"#;
+        }"#;
 
         let parsed = try_parse_event(data);
         assert!(parsed.is_ok());
@@ -1154,45 +1194,44 @@ mod test {
     #[test]
     #[ignore = "JSON outdated"]
     fn domain_deleted() {
-        let data = r#"
-    {
-      "type": "domain.deleted",
-      "created_at": "2024-11-17T19:32:22.980Z",
-      "data": {
-        "id": "d91cd9bd-1176-453e-8fc1-35364d380206",
-        "name": "example.com",
-        "status": "not_started",
-        "created_at": "2024-04-26T20:21:26.347412+00:00",
-        "region": "us-east-1",
-        "records": [
-          {
-            "record": "SPF",
-            "name": "send",
-            "type": "MX",
-            "ttl": "Auto",
+        let data = r#"{
+          "type": "domain.deleted",
+          "created_at": "2026-11-17T19:32:22.980Z",
+          "data": {
+            "id": "d91cd9bd-1176-453e-8fc1-35364d380206",
+            "name": "example.com",
             "status": "not_started",
-            "value": "feedback-smtp.us-east-1.amazonses.com",
-            "priority": 10
-          },
-          {
-            "record": "SPF",
-            "name": "send",
-            "value": "\"v=spf1 include:amazonses.com ~all\"",
-            "type": "TXT",
-            "ttl": "Auto",
-            "status": "not_started"
-          },
-          {
-            "record": "DKIM",
-            "name": "resend._domainkey",
-            "value": "p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDsc4Lh8xilsngyKEgN2S84+21gn+x6SEXtjWvPiAAmnmggr5FWG42WnqczpzQ/mNblqHz4CDwUum6LtY6SdoOlDmrhvp5khA3cd661W9FlK3yp7+jVACQElS7d9O6jv8VsBbVg4COess3gyLE5RyxqF1vYsrEXqyM8TBz1n5AGkQIDAQA2",
-            "type": "TXT",
-            "status": "not_started",
-            "ttl": "Auto"
+            "created_at": "2026-04-26T20:21:26.347Z",
+            "region": "us-east-1",
+            "records": [
+              {
+                "record": "SPF",
+                "name": "send",
+                "type": "MX",
+                "ttl": "Auto",
+                "status": "not_started",
+                "value": "feedback-smtp.us-east-1.amazonses.com",
+                "priority": 10
+              },
+              {
+                "record": "SPF",
+                "name": "send",
+                "value": "\"v=spf1 include:amazonses.com ~all\"",
+                "type": "TXT",
+                "ttl": "Auto",
+                "status": "not_started"
+              },
+              {
+                "record": "DKIM",
+                "name": "resend._domainkey",
+                "value": "p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDsc4Lh8xilsngyKEgN2S84+21gn+x6SEXtjWvPiAAmnmggr5FWG42WnqczpzQ/mNblqHz4CDwUum6LtY6SdoOlDmrhvp5khA3cd661W9FlK3yp7+jVACQElS7d9O6jv8VsBbVg4COess3gyLE5RyxqF1vYsrEXqyM8TBz1n5AGkQIDAQA2",
+                "type": "TXT",
+                "status": "not_started",
+                "ttl": "Auto"
+              }
+            ]
           }
-        ]
-      }
-    }"#;
+        }"#;
 
         let parsed = try_parse_event(data);
         assert!(parsed.is_ok());
@@ -1204,6 +1243,64 @@ mod test {
                 DomainEventType::DomainDeleted
             ));
             assert!(domain_event.data.records.is_some_and(|r| r.len() == 3));
+        } else {
+            panic!("Wrong parsing");
+        }
+    }
+
+    #[test]
+    fn suppression_added() {
+        let data = r#"{
+          "type": "suppression.added",
+          "created_at": "2026-11-17T19:32:22.980Z",
+          "data": {
+            "id": "e169aa45-1ecf-4183-9955-b1499d5701d3",
+            "email": "steve.wozniak@gmail.com",
+            "origin": "bounce",
+            "source_id": "4ef9a417-02e9-4d39-ad75-9611e0fcc33c",
+            "created_at": "2026-11-17T19:32:22.980Z"
+          }
+        }"#;
+
+        let parsed = try_parse_event(data);
+        assert!(parsed.is_ok());
+        let parsed = parsed.unwrap();
+
+        if let Event::SuppressionEvent(contact_event) = parsed {
+            assert!(matches!(
+                contact_event.r#type,
+                SuppressionEventType::SuppressionAdded
+            ));
+            assert!(contact_event.data.source_id.is_some());
+        } else {
+            panic!("Wrong parsing");
+        }
+    }
+
+    #[test]
+    fn suppression_removed() {
+        let data = r#"{
+          "type": "suppression.removed",
+          "created_at": "2026-11-17T19:32:22.980Z",
+          "data": {
+            "id": "e169aa45-1ecf-4183-9955-b1499d5701d3",
+            "email": "steve.wozniak@gmail.com",
+            "origin": "manual",
+            "source_id": null,
+            "created_at": "2026-11-15T08:12:45.120Z"
+          }
+        }"#;
+
+        let parsed = try_parse_event(data);
+        assert!(parsed.is_ok());
+        let parsed = parsed.unwrap();
+
+        if let Event::SuppressionEvent(contact_event) = parsed {
+            assert!(matches!(
+                contact_event.r#type,
+                SuppressionEventType::SuppressionRemoved
+            ));
+            assert!(contact_event.data.source_id.is_none());
         } else {
             panic!("Wrong parsing");
         }
@@ -1224,7 +1321,10 @@ mod test {
         let selector =
             scraper::Selector::parse("#content > div > div > div > span > a > code").unwrap();
 
-        let expected = EmailEventType::COUNT + ContactEventType::COUNT + DomainEventType::COUNT;
+        let expected = EmailEventType::COUNT
+            + ContactEventType::COUNT
+            + DomainEventType::COUNT
+            + SuppressionEventType::COUNT;
         let actual = fragment
             .select(&selector)
             .map(|el| el.inner_html())
@@ -1236,7 +1336,7 @@ mod test {
             assert!(parsed.is_ok(), "Could not parse: {el}");
         }
 
-        assert!(expected == actual.len());
+        assert_eq!(expected, actual.len());
 
         Ok(())
     }
