@@ -8,6 +8,10 @@ and this project adheres to
 
 <!--## Unreleased-->
 
+### Added
+
+- added support for `SuppressionEvent`s
+
 ## [0.28.0] - 2026-07-27
 
 ### Added
