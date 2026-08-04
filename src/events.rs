@@ -1069,7 +1069,6 @@ mod test {
     }
 
     #[test]
-    #[ignore = "JSON outdated"]
     fn domain_created() {
         let data = r#"{
           "type": "domain.created",
@@ -1080,6 +1079,10 @@ mod test {
             "status": "not_started",
             "created_at": "2026-04-26T20:21:26.347Z",
             "region": "us-east-1",
+            "capabilities": {
+              "sending": "enabled",
+              "receiving": "disabled"
+            },
             "records": [
               {
                 "record": "SPF",
@@ -1126,7 +1129,6 @@ mod test {
     }
 
     #[test]
-    #[ignore = "JSON outdated"]
     fn domain_updated() {
         let data = r#"{
           "type": "domain.updated",
@@ -1137,6 +1139,10 @@ mod test {
             "status": "not_started",
             "created_at": "2026-04-26T20:21:26.347Z",
             "region": "us-east-1",
+            "capabilities": {
+              "sending": "enabled",
+              "receiving": "enabled"
+            },
             "records": [
               {
                 "record": "SPF",
@@ -1192,7 +1198,6 @@ mod test {
     }
 
     #[test]
-    #[ignore = "JSON outdated"]
     fn domain_deleted() {
         let data = r#"{
           "type": "domain.deleted",
@@ -1203,6 +1208,10 @@ mod test {
             "status": "not_started",
             "created_at": "2026-04-26T20:21:26.347Z",
             "region": "us-east-1",
+            "capabilities": {
+              "sending": "enabled",
+              "receiving": "disabled"
+            },
             "records": [
               {
                 "record": "SPF",
