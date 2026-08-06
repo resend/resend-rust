@@ -471,19 +471,26 @@ pub enum SuppressionOriginType {
 #[allow(clippy::unwrap_used)]
 #[cfg(test)]
 mod test {
+    use crate::types::SendEventOptions;
+    #[cfg(not(feature = "blocking"))]
+    use crate::{
+        events::try_parse_event_type,
+        list_opts::ListOptions,
+        test::{CLIENT, DebugResult},
+        types::{CreateContactOptions, CreateEventOptions},
+    };
+    #[cfg(not(feature = "blocking"))]
+    use strum::EnumCount;
+
     use crate::{
         events::{
             ContactEventType, DomainEventType, EmailEventType, Event, SuppressionEventType,
-            try_parse_event, try_parse_event_type,
+            try_parse_event,
         },
-        list_opts::ListOptions,
-        test::CLIENT,
-        types::{ContactIdOrEmail, CreateContactOptions, CreateEventOptions},
+        types::ContactIdOrEmail,
     };
-    use crate::{test::DebugResult, types::SendEventOptions};
 
     use serde_json::json;
-    use strum::EnumCount;
 
     #[test]
     fn serialize_send() {
@@ -552,7 +559,6 @@ mod test {
         Ok(())
     }
 
-    #[cfg(not(feature = "blocking"))]
     #[test]
     fn email_sent() {
         let data = r#"

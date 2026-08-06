@@ -686,10 +686,11 @@ pub mod types {
 #[cfg(test)]
 #[allow(clippy::needless_return)]
 mod test {
-    use crate::domains::types::DeleteDomainResponse;
-    use crate::list_opts::ListOptions;
+    #[cfg(not(feature = "blocking"))]
     use crate::{
+        domains::types::DeleteDomainResponse,
         domains::types::{CreateDomainOptions, DomainChanges, Tls},
+        list_opts::ListOptions,
         test::{CLIENT, DebugResult, retry},
     };
 

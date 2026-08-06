@@ -189,14 +189,16 @@ pub mod types {
 
 #[cfg(test)]
 mod test {
-    use crate::types::{
-        CreateWebhookOptions, CreateWebhookResponse, UpdateWebhookOptions, WebhookStatus,
-    };
     use crate::{
         events::EmailEventType,
+        types::Webhook,
+        types::{CreateWebhookOptions, CreateWebhookResponse},
+    };
+    #[cfg(not(feature = "blocking"))]
+    use crate::{
         list_opts::ListOptions,
         test::{CLIENT, DebugResult},
-        types::Webhook,
+        types::{UpdateWebhookOptions, WebhookStatus},
     };
 
     #[tokio_shared_rt::test(shared = true)]

@@ -473,8 +473,14 @@ pub mod types {
 mod test {
     use crate::{
         automations::types::{SendEmailStepConfig, TriggerStepConfig},
-        test::{CLIENT, DebugResult},
         types::{Automation, AutomationStatus, Connection, CreateAutomationOptions, Step},
+    };
+
+    #[cfg(not(feature = "blocking"))]
+    use crate::{
+        list_opts::ListOptions,
+        test::{CLIENT, DebugResult},
+        types::UpdateAutomationOptions,
     };
 
     #[test]
@@ -552,8 +558,6 @@ mod test {
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> DebugResult<()> {
-        use crate::{list_opts::ListOptions, types::UpdateAutomationOptions};
-
         let resend = &*CLIENT;
 
         // Create

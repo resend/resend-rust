@@ -454,10 +454,13 @@ pub mod types {
 #[allow(clippy::unwrap_used)]
 #[allow(clippy::needless_return)]
 mod test {
+    #[cfg(not(feature = "blocking"))]
     use crate::{
         test::{CLIENT, DebugResult},
-        types::{CreateTemplateOptions, Template},
+        types::CreateTemplateOptions,
     };
+
+    use crate::types::Template;
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]

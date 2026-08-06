@@ -308,7 +308,7 @@ mod test {
     pub(crate) static CLIENT: LazyLock<Resend> = LazyLock::new(Resend::default);
 
     // <https://stackoverflow.com/a/77859502/12756474>
-    #[allow(clippy::redundant_pub_crate)]
+    #[allow(dead_code, clippy::redundant_pub_crate)]
     pub(crate) async fn retry<O, E, F>(
         mut f: F,
         retries: i32,

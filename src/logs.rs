@@ -69,8 +69,11 @@ pub mod types {
 #[cfg(test)]
 #[allow(clippy::needless_return, clippy::unwrap_used)]
 mod test {
-    use crate::list_opts::ListOptions;
-    use crate::test::{CLIENT, DebugResult};
+    #[cfg(not(feature = "blocking"))]
+    use crate::{
+        list_opts::ListOptions,
+        test::{CLIENT, DebugResult},
+    };
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]

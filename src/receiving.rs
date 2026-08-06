@@ -346,11 +346,13 @@ pub mod types {
 #[allow(clippy::unwrap_used)]
 #[allow(clippy::needless_return)]
 mod test {
+    #[cfg(not(feature = "blocking"))]
     use crate::{
-        list_opts::{ListOptions, ListResponse},
+        list_opts::ListOptions,
         test::{CLIENT, DebugResult},
-        types::{ForwardReceivingEmail, InboundEmail},
+        types::ForwardReceivingEmail,
     };
+    use crate::{list_opts::ListResponse, types::InboundEmail};
 
     #[ignore = "At the moment, we can't programmatically send inbound emails and since said inbound emails are only retained for 2 weeks, this cannot be automatically tested."]
     #[tokio_shared_rt::test(shared = true)]

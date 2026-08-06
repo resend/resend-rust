@@ -361,8 +361,9 @@ pub mod types {
 #[cfg(test)]
 #[allow(clippy::needless_return, clippy::indexing_slicing)]
 mod test {
-    use crate::list_opts::ListOptions;
+    #[cfg(not(feature = "blocking"))]
     use crate::{
+        list_opts::ListOptions,
         test::{CLIENT, DebugResult},
         types::{
             CreateBroadcastOptions, CreateContactOptions, SendBroadcastOptions,

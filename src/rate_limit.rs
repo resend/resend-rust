@@ -208,7 +208,9 @@ macro_rules! retry_opts {
 #[cfg(test)]
 #[allow(clippy::needless_return)]
 mod test {
+    #[cfg(not(feature = "blocking"))]
     use super::{RetryOptions, send_with_retry_opts};
+    #[cfg(not(feature = "blocking"))]
     use crate::Error;
 
     #[tokio_shared_rt::test(shared = true)]

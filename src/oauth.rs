@@ -80,13 +80,14 @@ pub mod types {
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod test {
+    #[cfg(not(feature = "blocking"))]
     use crate::{
-        list_opts::{ListOptions, ListResponse},
-        types::OAuthGrant,
+        list_opts::ListOptions,
+        test::{CLIENT, DebugResult},
     };
     use crate::{
-        test::{CLIENT, DebugResult},
-        types::RevokeOAuthGrantResponse,
+        list_opts::ListResponse,
+        types::{OAuthGrant, RevokeOAuthGrantResponse},
     };
 
     #[tokio_shared_rt::test(shared = true)]

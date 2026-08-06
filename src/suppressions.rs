@@ -294,9 +294,10 @@ pub mod types {
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod test {
+    #[cfg(not(feature = "blocking"))]
+    use crate::test::{CLIENT, DebugResult};
     use crate::{
         list_opts::ListResponse,
-        test::{CLIENT, DebugResult},
         types::{
             AddSuppressionResponse, BatchAddSuppressionResponse, BatchRemoveSuppressionsResponse,
             RemoveSuppressionResponse, Suppression,

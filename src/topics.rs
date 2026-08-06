@@ -236,10 +236,12 @@ pub mod types {
 #[allow(clippy::unwrap_used)]
 #[allow(clippy::needless_return)]
 mod test {
-    use crate::list_opts::ListOptions;
-    use crate::test::{CLIENT, DebugResult};
-    use crate::types::{
-        CreateTopicOptions, SubscriptionType, Topic, TopicVisibility, UpdateTopicOptions,
+    use crate::types::Topic;
+    #[cfg(not(feature = "blocking"))]
+    use crate::{
+        list_opts::ListOptions,
+        test::{CLIENT, DebugResult},
+        types::{CreateTopicOptions, SubscriptionType, TopicVisibility, UpdateTopicOptions},
     };
 
     #[tokio_shared_rt::test(shared = true)]

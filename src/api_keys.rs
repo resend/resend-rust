@@ -162,9 +162,12 @@ pub mod types {
 #[cfg(test)]
 #[allow(clippy::needless_return)]
 mod test {
-    use crate::list_opts::ListOptions;
-    use crate::test::{CLIENT, DebugResult};
-    use crate::types::CreateApiKeyOptions;
+    #[cfg(not(feature = "blocking"))]
+    use crate::{
+        list_opts::ListOptions,
+        test::{CLIENT, DebugResult},
+        types::CreateApiKeyOptions,
+    };
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]

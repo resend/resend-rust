@@ -667,14 +667,19 @@ where
 #[allow(clippy::unwrap_used)]
 #[allow(clippy::needless_return)]
 mod test {
-    use crate::types::{
-        CreateAttachment, CreateEmailBaseOptions, CreateTemplateOptions, Email, EmailTemplate, Tag,
-        UpdateEmailOptions, Variable, VariableType,
-    };
+    #[cfg(not(feature = "blocking"))]
     use crate::{
         list_opts::ListOptions,
-        test::{CLIENT, DebugResult},
+        types::{
+            CreateAttachment, CreateTemplateOptions, EmailTemplate, UpdateEmailOptions, Variable,
+            VariableType,
+        },
     };
+    use crate::{
+        test::{CLIENT, DebugResult},
+        types::{CreateEmailBaseOptions, Email, Tag},
+    };
+    #[cfg(not(feature = "blocking"))]
     use jiff::{Span, Timestamp, Zoned};
 
     #[tokio_shared_rt::test(shared = true)]
@@ -771,7 +776,7 @@ mod test {
             .with_text("Hello World!")
             .with_tag(Tag::new("category", "confirm_email"));
 
-        let _ = resend.emails.send(email)?;
+        let _email = resend.emails.send(email)?;
 
         std::thread::sleep(std::time::Duration::from_millis(1100));
 

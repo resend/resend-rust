@@ -1002,12 +1002,14 @@ pub mod types {
 mod test {
     use std::collections::HashMap;
 
-    use crate::test::{CLIENT, DebugResult};
-    use crate::types::{
-        ContactChanges, ContactProperty, CreateContactOptions, CreateTopicOptions,
-        SubscriptionType, UpdateContactTopicOptions,
+    #[cfg(not(feature = "blocking"))]
+    use crate::{
+        list_opts::ListOptions,
+        test::{CLIENT, DebugResult},
+        types::{ContactChanges, CreateTopicOptions, SubscriptionType, UpdateContactTopicOptions},
     };
-    use crate::{list_opts::ListOptions, types::Contact};
+
+    use crate::types::{Contact, ContactProperty, CreateContactOptions};
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
