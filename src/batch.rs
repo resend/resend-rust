@@ -163,8 +163,10 @@ mod test {
     #[cfg(not(feature = "blocking"))]
     #[allow(clippy::unwrap_used, clippy::indexing_slicing)]
     async fn permissive_error() -> DebugResult<()> {
+        use crate::test::wait_for_email_event;
+
         let resend = &*CLIENT;
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
 
         let emails = vec![
             CreateEmailBaseOptions::new(
@@ -192,9 +194,8 @@ mod test {
 
         // There should be one error but apparently the errors array is empty
         // check with a get instead
-        std::thread::sleep(std::time::Duration::from_secs(4));
         let failed_id = &emails.data[1].id;
-        let status = resend.emails.get(failed_id).await?;
+        let status = wait_for_email_event(resend, failed_id, EmailEvent::Failed).await?;
         assert_eq!(status.last_event, EmailEvent::Failed);
 
         Ok(())

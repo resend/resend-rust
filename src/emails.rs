@@ -684,6 +684,48 @@ mod test {
     };
     use jiff::{Span, Timestamp, Zoned};
 
+    /// Polls until the email's `scheduled_at` is `hours` out from now.
+    ///
+    /// Scheduling and rescheduling are both applied asynchronously, and the email
+    /// stays [`EmailEvent::Scheduled`] across a reschedule, so the event alone cannot
+    /// tell us the new time has landed.
+    ///
+    /// [`EmailEvent::Scheduled`]: crate::types::EmailEvent::Scheduled
+    #[cfg(not(feature = "blocking"))]
+    async fn wait_for_scheduled_at(
+        resend: &crate::Resend,
+        email_id: &str,
+        hours: i64,
+    ) -> Result<Email, crate::Error> {
+        use crate::Error;
+
+        let f = async || {
+            let email = resend.emails.get(email_id).await?;
+            let raw = email.scheduled_at.clone().ok_or_else(|| {
+                Error::Other(format!("email {email_id}: `scheduled_at` was null"))
+            })?;
+            let time = raw
+                .parse::<Timestamp>()
+                .map_err(|e| Error::Other(format!("unparseable `scheduled_at` {raw}: {e}")))?;
+            let delta = (time - Timestamp::now())
+                .round(jiff::Unit::Hour)
+                .map_err(|e| Error::Other(e.to_string()))?;
+            let ordering = delta
+                .compare(Span::new().hours(hours))
+                .map_err(|e| Error::Other(e.to_string()))?;
+
+            if ordering == std::cmp::Ordering::Equal {
+                Ok(email)
+            } else {
+                Err(Error::Other(format!(
+                    "email {email_id}: `scheduled_at` is {raw}, not {hours}h out"
+                )))
+            }
+        };
+
+        crate::test::retry(f, 30, std::time::Duration::from_secs(2)).await
+    }
+
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> DebugResult<()> {
@@ -789,6 +831,7 @@ mod test {
     #[cfg(not(feature = "blocking"))]
     async fn schedule_email() -> DebugResult<()> {
         use crate::emails::types::EmailEvent;
+        use crate::test::wait_for_email_event;
 
         let now_plus_1h = Zoned::now()
             .checked_add(Span::new().hours(1))
@@ -812,50 +855,29 @@ mod test {
         let email = CreateEmailBaseOptions::new(from, to, subject)
             .with_text("Hello World!")
             .with_scheduled_at(&now_plus_1h);
-        let email = resend.emails.send(email).await?;
-        std::thread::sleep(std::time::Duration::from_secs(4));
+        let email_id = resend.emails.send(email).await?.id;
 
-        // Get
-        let email = resend.emails.get(&email.id).await?;
+        // Get. A newly created email is `Queued` until Resend processes it, so wait
+        // for the transition rather than assuming a fixed delay is long enough.
+        let email = wait_for_email_event(resend, &email_id, EmailEvent::Scheduled).await?;
         assert_eq!(email.last_event, EmailEvent::Scheduled);
+        let email = wait_for_scheduled_at(resend, &email_id, 1).await?;
         assert!(email.scheduled_at.is_some());
-        let time = email
-            .scheduled_at
-            .unwrap()
-            .parse::<Timestamp>()
-            .expect("Valid timestamp");
-        let time_delta = (time - Timestamp::now()).round(jiff::Unit::Hour).unwrap();
-        assert_eq!(
-            time_delta.compare(Span::new().hours(1)).unwrap(),
-            std::cmp::Ordering::Equal
-        );
 
         // Update
         let changes = UpdateEmailOptions::new().with_scheduled_at(&now_plus_2h);
-        let email = resend.emails.update(&email.id, changes).await?;
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        let _updated = resend.emails.update(&email_id, changes).await?;
 
         // Get
-        let email = resend.emails.get(&email.id).await?;
+        let email = wait_for_scheduled_at(resend, &email_id, 2).await?;
         assert_eq!(email.last_event, EmailEvent::Scheduled);
         assert!(email.scheduled_at.is_some());
-        let time = email
-            .scheduled_at
-            .unwrap()
-            .parse::<Timestamp>()
-            .expect("Valid timestamp");
-        let time_delta = (time - Timestamp::now()).round(jiff::Unit::Hour).unwrap();
-        assert_eq!(
-            time_delta.compare(Span::new().hours(2)).unwrap(),
-            std::cmp::Ordering::Equal
-        );
 
         // Cancel
-        let _cancelled = resend.emails.cancel(&email.id).await?;
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        let _cancelled = resend.emails.cancel(&email_id).await?;
 
         // Get again, make sure it was cancelled
-        let email = resend.emails.get(&email.id).await?;
+        let email = wait_for_email_event(resend, &email_id, EmailEvent::Canceled).await?;
         assert_eq!(email.last_event, EmailEvent::Canceled);
 
         Ok(())

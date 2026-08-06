@@ -332,4 +332,34 @@ mod test {
             }
         }
     }
+
+    /// Polls `emails.get` until `last_event` reaches `expected`.
+    ///
+    /// Email state is eventually consistent: a freshly created email reports
+    /// [`EmailEvent::Queued`] until Resend actually attempts delivery, so sleeping a
+    /// fixed amount and asserting once is a race. Busier or slower CI runners lose
+    /// that race regularly, which is what this replaces.
+    ///
+    /// [`EmailEvent::Queued`]: crate::types::EmailEvent::Queued
+    #[allow(clippy::redundant_pub_crate)]
+    #[cfg(not(feature = "blocking"))]
+    pub(crate) async fn wait_for_email_event(
+        resend: &Resend,
+        email_id: &str,
+        expected: crate::types::EmailEvent,
+    ) -> Result<crate::types::Email, Error> {
+        let f = async || {
+            let email = resend.emails.get(email_id).await?;
+            if email.last_event == expected {
+                Ok(email)
+            } else {
+                Err(Error::Other(format!(
+                    "email {email_id}: expected `{expected:?}`, still `{:?}`",
+                    email.last_event
+                )))
+            }
+        };
+
+        retry(f, 30, std::time::Duration::from_secs(2)).await
+    }
 }
