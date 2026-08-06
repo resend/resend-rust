@@ -49,13 +49,8 @@ jobs:
       - name: Run clippy (rustls-tls)
         run: cargo clippy --all-targets --no-default-features --features rustls-tls -- -Dwarnings
 
-      # TODO: add `--all-targets` here too. It currently reports 40 findings: 36 are
-      # async-only test imports left unused once `blocking` cfgs the async tests out,
-      # and `examples/custom-config.rs` does not compile at all under `blocking`
-      # because it awaits an API that the feature turns synchronous. Both need gating
-      # behind `cfg(not(feature = "blocking"))` first.
       - name: Run clippy (blocking)
-        run: cargo clippy --features blocking -- -Dwarnings
+        run: cargo clippy --all-targets --features blocking -- -Dwarnings
 
       - name: Run fmt
         run: cargo fmt --check
