@@ -21,7 +21,6 @@ impl TemplateSvc {
     ///
     /// <https://resend.com/docs/api-reference/templates/create-template>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn create(&self, template: CreateTemplateOptions) -> Result<CreateTemplateResponse> {
         let request = self.0.build(Method::POST, "/templates");
         let response = self.0.send(request.json(&template)).await?;
@@ -48,7 +47,6 @@ impl TemplateSvc {
     ///
     /// <https://resend.com/docs/api-reference/templates/update-template>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn update(
         &self,
         id_or_alias: &str,
@@ -111,7 +109,6 @@ impl TemplateSvc {
     ///
     /// <https://resend.com/docs/api-reference/templates/list-templates>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn list<T>(&self, list_opts: ListOptions<T>) -> Result<ListResponse<Template>> {
         let request = self.0.build(Method::GET, "/templates").query(&list_opts);
         let response = self.0.send(request).await?;
@@ -247,7 +244,6 @@ pub mod types {
         ///
         /// Each template may contain up to 20 variables.
         #[inline]
-        #[allow(clippy::needless_pass_by_value)]
         pub fn with_variable(mut self, variable: Variable) -> Self {
             let variables = self.variables.get_or_insert_with(Vec::new);
             variables.push(variable);
@@ -258,7 +254,6 @@ pub mod types {
         ///
         /// Each template may contain up to 20 variables.
         #[inline]
-        #[allow(clippy::needless_pass_by_value)]
         pub fn with_variables(mut self, variables: &[Variable]) -> Self {
             let variables_vec = self.variables.get_or_insert_with(Vec::new);
             variables_vec.extend_from_slice(variables);
@@ -289,7 +284,6 @@ pub mod types {
         ///
         /// If `object` type is provided, you must include a fallback.
         #[inline]
-        #[allow(clippy::needless_pass_by_value)]
         pub fn with_fallback(mut self, fallback: impl Into<serde_json::Value>) -> Self {
             self.fallback_value = Some(fallback.into());
             self
@@ -415,7 +409,6 @@ pub mod types {
         }
 
         #[inline]
-        #[allow(clippy::needless_pass_by_value)]
         pub fn with_variable(mut self, variable: Variable) -> Self {
             let variables_vec = self.variables.get_or_insert_with(Vec::new);
             variables_vec.push(variable);
@@ -423,7 +416,6 @@ pub mod types {
         }
 
         #[inline]
-        #[allow(clippy::needless_pass_by_value)]
         pub fn with_variables(mut self, variables: &[Variable]) -> Self {
             let variables_vec = self.variables.get_or_insert_with(Vec::new);
             variables_vec.extend_from_slice(variables);

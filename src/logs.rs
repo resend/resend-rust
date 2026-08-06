@@ -33,7 +33,6 @@ impl LogsSvc {
     ///
     /// <https://resend.com/docs/api-reference/logs/list-logs>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn list<T>(&self, list_opts: ListOptions<T>) -> Result<ListResponse<Log>> {
         let request = self.0.build(Method::GET, "/logs").query(&list_opts);
         let response = self.0.send(request).await?;

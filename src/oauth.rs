@@ -19,7 +19,6 @@ impl OAuthSvc {
     ///
     /// <https://resend.com/docs/api-reference/oauth/list-grants>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn list<T>(&self, list_opts: ListOptions<T>) -> Result<ListResponse<OAuthGrant>> {
         let request = self.0.build(Method::GET, "/oauth/grants").query(&list_opts);
         let response = self.0.send(request).await?;

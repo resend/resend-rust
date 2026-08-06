@@ -35,8 +35,6 @@ impl ContactsSvc {
     ///
     /// <https://resend.com/docs/api-reference/contacts/create-contact>
     #[maybe_async::maybe_async]
-    // Reasoning for allow: https://github.com/resend/resend-rust/pull/1#issuecomment-2081646115
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn create(&self, contact: CreateContactOptions) -> Result<ContactId> {
         let path = contact.audience_id.as_ref().map_or_else(
             || "/contacts".to_string(),
@@ -69,8 +67,6 @@ impl ContactsSvc {
     ///
     /// <https://resend.com/docs/api-reference/contacts/update-contact>
     #[maybe_async::maybe_async]
-    // Reasoning for allow: https://github.com/resend/resend-rust/pull/1#issuecomment-2081646115
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn update(
         &self,
         contact_id_or_email: &str,
@@ -107,7 +103,6 @@ impl ContactsSvc {
     ///
     /// <https://resend.com/docs/api-reference/contacts/list-contacts>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn list<T>(
         &self,
         audience: &str,
@@ -126,7 +121,6 @@ impl ContactsSvc {
     ///
     /// <https://resend.com/docs/api-reference/contacts/get-contact-topic>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn get_contact_topics<T>(
         &self,
         contact_id_or_email: &str,
@@ -203,7 +197,6 @@ impl ContactsSvc {
     ///
     /// <https://resend.com/docs/api-reference/contacts/list-contact-segments>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn list_contact_segment<T>(
         &self,
         contact_id_or_email: &str,
@@ -223,7 +216,6 @@ impl ContactsSvc {
     ///
     /// <https://resend.com/docs/api-reference/contact-properties/create-contact-property>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn create_property(
         &self,
         contact_property: CreateContactPropertyOptions,
@@ -255,7 +247,6 @@ impl ContactsSvc {
     ///
     /// <https://resend.com/docs/api-reference/contact-properties/update-contact-property>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn update_property(
         &self,
         contact_property_id: &str,
@@ -293,7 +284,6 @@ impl ContactsSvc {
     ///
     /// <https://resend.com/docs/api-reference/contact-properties/list-contact-properties>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn list_properties<T>(
         &self,
         list_opts: ListOptions<T>,
@@ -316,7 +306,6 @@ impl ContactsSvc {
     ///
     /// <https://resend.com/docs/api-reference/contacts/create-contact-import>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn create_import(
         &self,
         mut file: File,
@@ -401,7 +390,6 @@ impl ContactsSvc {
     ///
     /// <https://resend.com/docs/api-reference/contacts/list-contact-imports>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn list_imports<T>(
         &self,
         list_opts: ListOptions<T>,
@@ -557,7 +545,6 @@ pub mod types {
 
         /// Adds a topic subscription for the contact.
         #[inline]
-        #[allow(clippy::needless_pass_by_value)]
         pub fn with_topic(mut self, topic: UpdateContactTopicOptions) -> Self {
             let topics = self.topics.get_or_insert_with(Vec::new);
             topics.push(topic);
@@ -566,7 +553,6 @@ pub mod types {
 
         /// Adds multiple topic subscriptions for the contact.
         #[inline]
-        #[allow(clippy::needless_pass_by_value)]
         pub fn with_topics(mut self, topics: &[UpdateContactTopicOptions]) -> Self {
             let topics_vec = self.topics.get_or_insert_with(Vec::new);
             topics_vec.extend_from_slice(topics);
@@ -855,7 +841,6 @@ pub mod types {
 
         /// Adds a topic subscription for the contact import.
         #[inline]
-        #[allow(clippy::needless_pass_by_value)]
         pub fn with_topic(mut self, topic: ContactImportTopic) -> Self {
             let topics = self.topics.get_or_insert_with(Vec::new);
             topics.push(topic);
@@ -864,7 +849,6 @@ pub mod types {
 
         /// Adds multiple topic subscriptions for the contact import.
         #[inline]
-        #[allow(clippy::needless_pass_by_value)]
         pub fn with_topics(mut self, topics: &[ContactImportTopic]) -> Self {
             let topics_vec = self.topics.get_or_insert_with(Vec::new);
             topics_vec.extend_from_slice(topics);
@@ -920,7 +904,6 @@ pub mod types {
 
         /// Adds a custom property.
         #[inline]
-        #[allow(clippy::needless_pass_by_value)]
         pub fn with_property(mut self, key: &str, value: ContactImportPropertyMapping) -> Self {
             let properties = self.properties.get_or_insert_with(HashMap::new);
             let _old = properties.insert(key.to_owned(), value);

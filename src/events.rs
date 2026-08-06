@@ -29,7 +29,6 @@ impl EventsSvc {
     ///
     /// <https://resend.com/docs/api-reference/events/create-event>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn create(&self, event: CreateEventOptions) -> Result<CreateEventResponse> {
         let request = self.0.build(Method::POST, "/events");
         let response = self.0.send(request.json(&event)).await?;
@@ -42,7 +41,6 @@ impl EventsSvc {
     ///
     /// <https://resend.com/docs/api-reference/events/send-event>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn send(&self, opts: SendEventOptions) -> Result<SendEventResponse> {
         let request = self.0.build(Method::POST, "/events/send");
         let response = self.0.send(request.json(&opts)).await?;
@@ -69,7 +67,6 @@ impl EventsSvc {
     ///
     /// <https://resend.com/docs/api-reference/events/list-events>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn list<T>(
         &self,
         list_opts: ListOptions<T>,
@@ -85,7 +82,6 @@ impl EventsSvc {
     ///
     /// <https://resend.com/docs/api-reference/events/update-event>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn update(
         &self,
         event_id: &str,

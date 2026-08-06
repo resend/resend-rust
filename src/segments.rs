@@ -49,7 +49,6 @@ impl SegmentsSvc {
     ///
     /// <https://resend.com/docs/api-reference/segments/delete-segment>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn delete(&self, id: &str) -> Result<bool> {
         let path = format!("/segments/{id}");
 
@@ -66,7 +65,6 @@ impl SegmentsSvc {
     ///
     /// <https://resend.com/docs/api-reference/segments/list-segments>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn list<T>(&self, list_opts: ListOptions<T>) -> Result<ListResponse<Segment>> {
         let request = self.0.build(Method::GET, "/segments").query(&list_opts);
         let response = self.0.send(request).await?;

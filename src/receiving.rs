@@ -26,7 +26,6 @@ impl ReceivingSvc {
     ///
     /// <https://resend.com/docs/api-reference/emails/retrieve-received-email>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn get(&self, email_id: &str, opts: GetInboundEmailOptions) -> Result<InboundEmail> {
         let path = format!("/emails/receiving/{email_id}");
 
@@ -41,7 +40,6 @@ impl ReceivingSvc {
     ///
     /// <https://resend.com/docs/api-reference/emails/list-received-emails>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn list<T>(&self, list_opts: ListOptions<T>) -> Result<ListResponse<InboundEmail>> {
         let request = self
             .0
@@ -71,7 +69,6 @@ impl ReceivingSvc {
     ///
     /// <https://resend.com/docs/api-reference/attachments/list-received-email-attachments>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn list_attachments<T>(
         &self,
         email_id: &str,

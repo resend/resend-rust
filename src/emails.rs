@@ -25,8 +25,6 @@ impl EmailsSvc {
     ///
     /// <https://resend.com/docs/api-reference/emails/send-email>
     #[maybe_async::maybe_async]
-    // Reasoning for allow: https://github.com/resend/resend-rust/pull/1#issuecomment-2081646115
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn send(
         &self,
         email: impl Into<Idempotent<CreateEmailBaseOptions>>,
@@ -63,8 +61,6 @@ impl EmailsSvc {
     ///
     /// <https://resend.com/docs/api-reference/emails/update-email>
     #[maybe_async::maybe_async]
-    // Reasoning for allow: https://github.com/resend/resend-rust/pull/1#issuecomment-2081646115
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn update(
         &self,
         email_id: &str,
@@ -99,8 +95,6 @@ impl EmailsSvc {
     ///
     /// <https://resend.com/docs/api-reference/emails/list-emails>
     #[maybe_async::maybe_async]
-    // Reasoning for allow: https://github.com/resend/resend-rust/pull/1#issuecomment-2081646115
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn list<T>(&self, list_opts: ListOptions<T>) -> Result<ListResponse<Email>> {
         let request = self.0.build(Method::GET, "/emails").query(&list_opts);
         let response = self.0.send(request).await?;
@@ -127,7 +121,6 @@ impl EmailsSvc {
     ///
     /// <https://resend.com/docs/api-reference/attachments/list-sent-email-attachments>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn list_attachments<T>(
         &self,
         email_id: &str,

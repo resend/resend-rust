@@ -21,7 +21,6 @@ impl BroadcastsSvc {
     ///
     /// <https://resend.com/docs/api-reference/broadcasts/create-broadcast>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn create(
         &self,
         broadcast: CreateBroadcastOptions,
@@ -37,7 +36,6 @@ impl BroadcastsSvc {
     ///
     /// <https://resend.com/docs/api-reference/broadcasts/send-broadcast>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn send(&self, broadcast: SendBroadcastOptions) -> Result<SendBroadcastResponse> {
         let path = format!("/broadcasts/{}/send", broadcast.broadcast_id);
 
@@ -54,7 +52,6 @@ impl BroadcastsSvc {
     ///
     /// <https://resend.com/docs/api-reference/broadcasts/list-broadcasts>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn list<T>(&self, list_opts: ListOptions<T>) -> Result<ListResponse<Broadcast>> {
         let request = self.0.build(Method::GET, "/broadcasts").query(&list_opts);
         let response = self.0.send(request).await?;
@@ -67,7 +64,6 @@ impl BroadcastsSvc {
     ///
     /// <https://resend.com/docs/api-reference/broadcasts/get-broadcast>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn get(&self, broadcast_id: &str) -> Result<Broadcast> {
         let path = format!("/broadcasts/{broadcast_id}");
 
@@ -82,7 +78,6 @@ impl BroadcastsSvc {
     ///
     /// <https://resend.com/docs/api-reference/broadcasts/delete-broadcast>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn delete(&self, broadcast_id: &str) -> Result<bool> {
         let path = format!("/broadcasts/{broadcast_id}");
 
@@ -95,7 +90,6 @@ impl BroadcastsSvc {
 
     /// Update a broadcast to send to your audience.
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn update(
         &self,
         broadcast_id: &str,
