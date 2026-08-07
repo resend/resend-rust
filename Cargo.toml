@@ -24,6 +24,96 @@ blocking = ["reqwest/blocking", "maybe-async/is_sync"]
 native-tls = ["reqwest/native-tls"]
 rustls-tls = ["reqwest/rustls"]
 
+# Lint policy for this package.
+#
+# This previously lived in `.cargo/config.toml` as `[target.'cfg(all())'] rustflags`.
+# That location has two problems: Cargo silently ignores config-file rustflags whenever
+# the `RUSTFLAGS` environment variable is set (so the policy could vanish with no
+# warning), and the flags were applied to every dependency as well as this crate.
+# The `[lints]` table is scoped to this package and cannot be clobbered by the
+# environment.
+#
+# Lint groups carry `priority = -1` so that the individual entries below them win.
+
+[lints.rust]
+unsafe_code = "forbid"
+
+future_incompatible = { level = "deny", priority = -1 }
+keyword_idents = { level = "warn", priority = -1 }
+let_underscore = { level = "warn", priority = -1 }
+nonstandard_style = { level = "warn", priority = -1 }
+rust_2018_idioms = { level = "warn", priority = -1 }
+unused = { level = "warn", priority = -1 }
+
+absolute_paths_not_starting_with_crate = "warn"
+macro_use_extern_crate = "warn"
+meta_variable_misuse = "warn"
+missing_copy_implementations = "warn"
+missing_debug_implementations = "warn"
+non_ascii_idents = "warn"
+single_use_lifetimes = "warn"
+trivial_casts = "warn"
+trivial_numeric_casts = "warn"
+unreachable_pub = "warn"
+unstable_features = "warn"
+unused_import_braces = "warn"
+unused_lifetimes = "warn"
+unused_qualifications = "warn"
+unused_results = "warn"
+variant_size_differences = "warn"
+
+ambiguous_glob_reexports = "deny"
+clashing_extern_declarations = "deny"
+const_item_mutation = "deny"
+dangling_pointers_from_temporaries = "deny"
+drop_bounds = "deny"
+hidden_glob_reexports = "deny"
+improper_ctypes = "deny"
+improper_ctypes_definitions = "deny"
+invalid_from_utf8 = "deny"
+invalid_nan_comparisons = "deny"
+invalid_reference_casting = "deny"
+invalid_value = "deny"
+opaque_hidden_inferred_bound = "deny"
+overlapping_range_endpoints = "deny"
+suspicious_double_ref_op = "deny"
+unconditional_recursion = "deny"
+unexpected_cfgs = "deny"
+unnameable_test_items = "deny"
+unsafe_op_in_unsafe_fn = "deny"
+unstable_syntax_pre_expansion = "deny"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+
+clone_on_ref_ptr = "warn"
+dbg_macro = "warn"
+exit = "warn"
+float_cmp_const = "warn"
+indexing_slicing = "warn"
+lossy_float_literal = "warn"
+map_err_ignore = "warn"
+mem_forget = "warn"
+mutex_integer = "warn"
+ptr_as_ptr = "warn"
+rc_mutex = "warn"
+rest_pat_in_fully_bound_structs = "warn"
+unwrap_used = "warn"
+verbose_file_reads = "warn"
+
+missing_const_for_fn = "allow"
+missing_errors_doc = "allow"
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+string_add = "allow"
+string_add_assign = "allow"
+# The public API deliberately takes owned options structs by value; see
+# https://github.com/resend/resend-rust/pull/1#issuecomment-2081646115
+# This was previously suppressed with 68 individual `#[allow]` attributes.
+needless_pass_by_value = "allow"
+
 [dependencies]
 reqwest = { version = "0.13", default-features = false, features = [
   "json",

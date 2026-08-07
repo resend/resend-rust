@@ -20,7 +20,6 @@ impl TopicsSvc {
     ///
     /// <https://resend.com/docs/api-reference/topics/create-topic>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn create(&self, topic: CreateTopicOptions) -> Result<CreateTopicResponse> {
         let request = self.0.build(Method::POST, "/topics");
         let response = self.0.send(request.json(&topic)).await?;
@@ -47,7 +46,6 @@ impl TopicsSvc {
     ///
     /// <https://resend.com/docs/api-reference/topics/update-topic>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn update(
         &self,
         topic_id: &str,
@@ -82,7 +80,6 @@ impl TopicsSvc {
     ///
     /// <https://resend.com/docs/api-reference/topics/list-topics>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn list<T>(&self, list_opts: ListOptions<T>) -> Result<ListResponse<Topic>> {
         let request = self.0.build(Method::GET, "/topics").query(&list_opts);
         let response = self.0.send(request).await?;
@@ -239,10 +236,12 @@ pub mod types {
 #[allow(clippy::unwrap_used)]
 #[allow(clippy::needless_return)]
 mod test {
-    use crate::list_opts::ListOptions;
-    use crate::test::{CLIENT, DebugResult};
-    use crate::types::{
-        CreateTopicOptions, SubscriptionType, Topic, TopicVisibility, UpdateTopicOptions,
+    use crate::types::Topic;
+    #[cfg(not(feature = "blocking"))]
+    use crate::{
+        list_opts::ListOptions,
+        test::{CLIENT, DebugResult},
+        types::{CreateTopicOptions, SubscriptionType, TopicVisibility, UpdateTopicOptions},
     };
 
     #[tokio_shared_rt::test(shared = true)]

@@ -25,8 +25,6 @@ impl EmailsSvc {
     ///
     /// <https://resend.com/docs/api-reference/emails/send-email>
     #[maybe_async::maybe_async]
-    // Reasoning for allow: https://github.com/resend/resend-rust/pull/1#issuecomment-2081646115
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn send(
         &self,
         email: impl Into<Idempotent<CreateEmailBaseOptions>>,
@@ -63,8 +61,6 @@ impl EmailsSvc {
     ///
     /// <https://resend.com/docs/api-reference/emails/update-email>
     #[maybe_async::maybe_async]
-    // Reasoning for allow: https://github.com/resend/resend-rust/pull/1#issuecomment-2081646115
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn update(
         &self,
         email_id: &str,
@@ -99,8 +95,6 @@ impl EmailsSvc {
     ///
     /// <https://resend.com/docs/api-reference/emails/list-emails>
     #[maybe_async::maybe_async]
-    // Reasoning for allow: https://github.com/resend/resend-rust/pull/1#issuecomment-2081646115
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn list<T>(&self, list_opts: ListOptions<T>) -> Result<ListResponse<Email>> {
         let request = self.0.build(Method::GET, "/emails").query(&list_opts);
         let response = self.0.send(request).await?;
@@ -127,7 +121,6 @@ impl EmailsSvc {
     ///
     /// <https://resend.com/docs/api-reference/attachments/list-sent-email-attachments>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn list_attachments<T>(
         &self,
         email_id: &str,
@@ -674,14 +667,19 @@ where
 #[allow(clippy::unwrap_used)]
 #[allow(clippy::needless_return)]
 mod test {
-    use crate::types::{
-        CreateAttachment, CreateEmailBaseOptions, CreateTemplateOptions, Email, EmailTemplate, Tag,
-        UpdateEmailOptions, Variable, VariableType,
-    };
+    #[cfg(not(feature = "blocking"))]
     use crate::{
         list_opts::ListOptions,
-        test::{CLIENT, DebugResult},
+        types::{
+            CreateAttachment, CreateTemplateOptions, EmailTemplate, UpdateEmailOptions, Variable,
+            VariableType,
+        },
     };
+    use crate::{
+        test::{CLIENT, DebugResult},
+        types::{CreateEmailBaseOptions, Email, Tag},
+    };
+    #[cfg(not(feature = "blocking"))]
     use jiff::{Span, Timestamp, Zoned};
 
     #[tokio_shared_rt::test(shared = true)]
@@ -778,7 +776,7 @@ mod test {
             .with_text("Hello World!")
             .with_tag(Tag::new("category", "confirm_email"));
 
-        let _ = resend.emails.send(email)?;
+        let _email = resend.emails.send(email)?;
 
         std::thread::sleep(std::time::Duration::from_millis(1100));
 

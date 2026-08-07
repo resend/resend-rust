@@ -19,7 +19,6 @@ impl OAuthSvc {
     ///
     /// <https://resend.com/docs/api-reference/oauth/list-grants>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn list<T>(&self, list_opts: ListOptions<T>) -> Result<ListResponse<OAuthGrant>> {
         let request = self.0.build(Method::GET, "/oauth/grants").query(&list_opts);
         let response = self.0.send(request).await?;
@@ -81,13 +80,14 @@ pub mod types {
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod test {
+    #[cfg(not(feature = "blocking"))]
     use crate::{
-        list_opts::{ListOptions, ListResponse},
-        types::OAuthGrant,
+        list_opts::ListOptions,
+        test::{CLIENT, DebugResult},
     };
     use crate::{
-        test::{CLIENT, DebugResult},
-        types::RevokeOAuthGrantResponse,
+        list_opts::ListResponse,
+        types::{OAuthGrant, RevokeOAuthGrantResponse},
     };
 
     #[tokio_shared_rt::test(shared = true)]

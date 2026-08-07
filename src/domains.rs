@@ -21,8 +21,6 @@ impl DomainsSvc {
     ///
     /// <https://resend.com/docs/api-reference/domains/create-domain>
     #[maybe_async::maybe_async]
-    // Reasoning for allow: https://github.com/resend/resend-rust/pull/1#issuecomment-2081646115
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn create(&self, domain: CreateDomainOptions) -> Result<Domain> {
         let request = self.0.build(Method::POST, "/domains");
         let response = self.0.send(request.json(&domain)).await?;
@@ -63,7 +61,6 @@ impl DomainsSvc {
     ///
     /// <https://resend.com/docs/api-reference/domains/update-domain>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn update(
         &self,
         domain_id: &str,
@@ -84,7 +81,6 @@ impl DomainsSvc {
     ///
     /// <https://resend.com/docs/api-reference/domains/list-domains>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn list<T>(&self, list_opts: ListOptions<T>) -> Result<ListResponse<Domain>> {
         let request = self.0.build(Method::GET, "/domains").query(&list_opts);
         let response = self.0.send(request).await?;
@@ -99,7 +95,6 @@ impl DomainsSvc {
     ///
     /// <https://resend.com/docs/api-reference/domains/delete-domain>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn delete(&self, domain_id: &str) -> Result<DeleteDomainResponse> {
         let path = format!("/domains/{domain_id}");
 
@@ -114,7 +109,6 @@ impl DomainsSvc {
     ///
     /// <https://resend.com/docs/api-reference/domains/claim-domain>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn claim(&self, domain_claim: CreateDomainClaimOptions) -> Result<DomainClaim> {
         let request = self.0.build(Method::POST, "/domains/claim");
         let response = self.0.send(request.json(&domain_claim)).await?;
@@ -692,10 +686,11 @@ pub mod types {
 #[cfg(test)]
 #[allow(clippy::needless_return)]
 mod test {
-    use crate::domains::types::DeleteDomainResponse;
-    use crate::list_opts::ListOptions;
+    #[cfg(not(feature = "blocking"))]
     use crate::{
+        domains::types::DeleteDomainResponse,
         domains::types::{CreateDomainOptions, DomainChanges, Tls},
+        list_opts::ListOptions,
         test::{CLIENT, DebugResult, retry},
     };
 

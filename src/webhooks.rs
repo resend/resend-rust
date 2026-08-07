@@ -20,7 +20,6 @@ impl WebhookSvc {
     ///
     /// <https://resend.com/docs/api-reference/webhooks/create-webhook>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn create(&self, webhook: CreateWebhookOptions) -> Result<CreateWebhookResponse> {
         let request = self.0.build(Method::POST, "/webhooks");
         let response = self.0.send(request.json(&webhook)).await?;
@@ -33,7 +32,6 @@ impl WebhookSvc {
     ///
     /// <https://resend.com/docs/api-reference/webhooks/get-webhook>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn get(&self, webhook_id: &str) -> Result<Webhook> {
         let path = format!("/webhooks/{webhook_id}");
 
@@ -46,7 +44,6 @@ impl WebhookSvc {
 
     /// Update an existing webhook configuration.
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn update(
         &self,
         webhook_id: &str,
@@ -65,7 +62,6 @@ impl WebhookSvc {
     ///
     /// <https://resend.com/docs/api-reference/webhooks/list-webhooks>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn list<T>(&self, list_opts: ListOptions<T>) -> Result<ListResponse<Webhook>> {
         let request = self.0.build(Method::GET, "/webhooks").query(&list_opts);
         let response = self.0.send(request).await?;
@@ -78,7 +74,6 @@ impl WebhookSvc {
     ///
     /// <https://resend.com/docs/api-reference/webhooks/delete-webhook>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn delete(&self, webhook_id: &str) -> Result<bool> {
         let path = format!("/webhooks/{webhook_id}");
 
@@ -194,14 +189,16 @@ pub mod types {
 
 #[cfg(test)]
 mod test {
-    use crate::types::{
-        CreateWebhookOptions, CreateWebhookResponse, UpdateWebhookOptions, WebhookStatus,
-    };
     use crate::{
         events::EmailEventType,
+        types::Webhook,
+        types::{CreateWebhookOptions, CreateWebhookResponse},
+    };
+    #[cfg(not(feature = "blocking"))]
+    use crate::{
         list_opts::ListOptions,
         test::{CLIENT, DebugResult},
-        types::Webhook,
+        types::{UpdateWebhookOptions, WebhookStatus},
     };
 
     #[tokio_shared_rt::test(shared = true)]

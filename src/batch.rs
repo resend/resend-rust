@@ -120,10 +120,13 @@ pub mod types {
 
 #[cfg(test)]
 mod test {
-    use crate::test::{CLIENT, DebugResult};
-    use crate::types::{
-        BatchValidation, CreateEmailBaseOptions, CreateTemplateOptions, EmailEvent, EmailTemplate,
-        Variable, VariableType,
+    #[cfg(not(feature = "blocking"))]
+    use crate::{
+        test::{CLIENT, DebugResult},
+        types::{
+            BatchValidation, CreateEmailBaseOptions, CreateTemplateOptions, EmailEvent,
+            EmailTemplate, Variable, VariableType,
+        },
     };
 
     #[tokio_shared_rt::test(shared = true)]

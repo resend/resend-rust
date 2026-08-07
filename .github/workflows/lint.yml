@@ -20,7 +20,9 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    # Three feature configurations now build instead of one, and the rustls path
+    # additionally compiles aws-lc-rs, which is slow on a cold cache.
+    timeout-minutes: 25
 
     steps:
       - name: Checkout
@@ -36,8 +38,19 @@ jobs:
           rustup component add clippy
           rustup component add rustfmt
 
-      - name: Run clippy
-        run: cargo clippy --all-features -- -Dwarnings
+      # `blocking` is not an additive feature: `maybe-async/is_sync` rewrites the
+      # whole API from async to sync. `--all-features` therefore lints a hybrid
+      # configuration that is never shipped, while leaving the async API that
+      # almost every user consumes unlinted. Lint each supported configuration
+      # explicitly instead, and include tests and examples via `--all-targets`.
+      - name: Run clippy (async)
+        run: cargo clippy --all-targets -- -Dwarnings
+
+      - name: Run clippy (rustls-tls)
+        run: cargo clippy --all-targets --no-default-features --features rustls-tls -- -Dwarnings
+
+      - name: Run clippy (blocking)
+        run: cargo clippy --all-targets --features blocking -- -Dwarnings
 
       - name: Run fmt
         run: cargo fmt --check

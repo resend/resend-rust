@@ -21,7 +21,6 @@ impl AutomationsSvc {
     ///
     /// <https://resend.com/docs/api-reference/automations/create-automation>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn create(
         &self,
         automation: CreateAutomationOptions,
@@ -37,7 +36,6 @@ impl AutomationsSvc {
     ///
     /// <https://resend.com/docs/api-reference/automations/update-automation>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn update(
         &self,
         automation_id: &str,
@@ -70,7 +68,6 @@ impl AutomationsSvc {
     ///
     /// <https://resend.com/docs/api-reference/automations/list-automations>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn list<T>(
         &self,
         list_opts: ListOptions<T>,
@@ -114,7 +111,6 @@ impl AutomationsSvc {
     ///
     /// <https://resend.com/docs/api-reference/automations/list-automation-runs>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn list_runs<T>(
         &self,
         automation_id: &str,
@@ -477,8 +473,14 @@ pub mod types {
 mod test {
     use crate::{
         automations::types::{SendEmailStepConfig, TriggerStepConfig},
-        test::{CLIENT, DebugResult},
         types::{Automation, AutomationStatus, Connection, CreateAutomationOptions, Step},
+    };
+
+    #[cfg(not(feature = "blocking"))]
+    use crate::{
+        list_opts::ListOptions,
+        test::{CLIENT, DebugResult},
+        types::UpdateAutomationOptions,
     };
 
     #[test]
@@ -556,8 +558,6 @@ mod test {
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> DebugResult<()> {
-        use crate::{list_opts::ListOptions, types::UpdateAutomationOptions};
-
         let resend = &*CLIENT;
 
         // Create

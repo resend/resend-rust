@@ -4,15 +4,21 @@
 //! RESEND_API_KEY=re_your_api_key cargo run --example custom-config
 //! ```
 
-use anyhow::Context;
-use resend_rs::types::CreateEmailBaseOptions;
-use resend_rs::{Config, Resend};
-use std::time::Duration;
+#[cfg(feature = "blocking")]
+fn main() {
+    panic!("This example is meant for async mode.");
+}
 
-const EMAIL_SEND_TIMEOUT: Duration = Duration::from_secs(10);
-
+#[cfg(not(feature = "blocking"))]
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    use anyhow::Context;
+    use resend_rs::types::CreateEmailBaseOptions;
+    use resend_rs::{Config, Resend};
+    use std::time::Duration;
+
+    const EMAIL_SEND_TIMEOUT: Duration = Duration::from_secs(10);
+
     let api_key = std::env::var("RESEND_API_KEY").context(
         "RESEND_API_KEY is expected in the environment for this example to run properly",
     )?;

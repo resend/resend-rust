@@ -33,7 +33,6 @@ impl LogsSvc {
     ///
     /// <https://resend.com/docs/api-reference/logs/list-logs>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn list<T>(&self, list_opts: ListOptions<T>) -> Result<ListResponse<Log>> {
         let request = self.0.build(Method::GET, "/logs").query(&list_opts);
         let response = self.0.send(request).await?;
@@ -70,8 +69,11 @@ pub mod types {
 #[cfg(test)]
 #[allow(clippy::needless_return, clippy::unwrap_used)]
 mod test {
-    use crate::list_opts::ListOptions;
-    use crate::test::{CLIENT, DebugResult};
+    #[cfg(not(feature = "blocking"))]
+    use crate::{
+        list_opts::ListOptions,
+        test::{CLIENT, DebugResult},
+    };
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]

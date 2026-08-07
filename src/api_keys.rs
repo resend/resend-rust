@@ -18,8 +18,6 @@ impl ApiKeysSvc {
     ///
     /// <https://resend.com/docs/api-reference/api-keys/create-api-key>
     #[maybe_async::maybe_async]
-    // Reasoning for allow: https://github.com/resend/resend-rust/pull/1#issuecomment-2081646115
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn create(&self, api_key: CreateApiKeyOptions) -> Result<ApiKeyToken> {
         let request = self.0.build(Method::POST, "/api-keys");
         let response = self.0.send(request.json(&api_key)).await?;
@@ -34,7 +32,6 @@ impl ApiKeysSvc {
     ///
     /// <https://resend.com/docs/api-reference/api-keys/list-api-keys>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn list<T>(&self, list_opts: ListOptions<T>) -> Result<ListResponse<ApiKey>> {
         let request = self.0.build(Method::GET, "/api-keys").query(&list_opts);
         let response = self.0.send(request).await?;
@@ -47,7 +44,6 @@ impl ApiKeysSvc {
     ///
     /// <https://resend.com/docs/api-reference/api-keys/delete-api-key>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn delete(&self, api_key_id: &str) -> Result<()> {
         let path = format!("/api-keys/{api_key_id}");
 
@@ -166,9 +162,12 @@ pub mod types {
 #[cfg(test)]
 #[allow(clippy::needless_return)]
 mod test {
-    use crate::list_opts::ListOptions;
-    use crate::test::{CLIENT, DebugResult};
-    use crate::types::CreateApiKeyOptions;
+    #[cfg(not(feature = "blocking"))]
+    use crate::{
+        list_opts::ListOptions,
+        test::{CLIENT, DebugResult},
+        types::CreateApiKeyOptions,
+    };
 
     #[tokio_shared_rt::test(shared = true)]
     #[cfg(not(feature = "blocking"))]

@@ -22,7 +22,6 @@ impl SuppressionsSvc {
     ///
     /// <https://resend.com/docs/api-reference/suppressions/add-suppression>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn add(&self, opts: AddSuppressionOptions) -> Result<AddSuppressionResponse> {
         let request = self.0.build(Method::POST, "/suppressions");
         let response = self.0.send(request.json(&opts)).await?;
@@ -52,7 +51,6 @@ impl SuppressionsSvc {
     ///
     /// <https://resend.com/docs/api-reference/suppressions/list-suppressions>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn list<T>(&self, list_opts: ListOptions<T>) -> Result<ListResponse<Suppression>> {
         let request = self.0.build(Method::GET, "/suppressions").query(&list_opts);
         let response = self.0.send(request).await?;
@@ -80,7 +78,6 @@ impl SuppressionsSvc {
     ///
     /// <https://resend.com/docs/api-reference/suppressions/add-suppressions>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value)]
     pub async fn batch_add(
         &self,
         opts: BatchAddSuppressionOptions,
@@ -108,7 +105,7 @@ impl SuppressionsSvc {
     ///
     /// <https://resend.com/docs/api-reference/suppressions/remove-suppressions>
     #[maybe_async::maybe_async]
-    #[allow(clippy::needless_pass_by_value, private_bounds)]
+    #[allow(private_bounds)]
     pub async fn batch_remove<M: SpecifiedMarker>(
         &self,
         ids_or_emails: BatchRemoveSuppressionOptions<M>,
@@ -297,9 +294,10 @@ pub mod types {
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod test {
+    #[cfg(not(feature = "blocking"))]
+    use crate::test::{CLIENT, DebugResult};
     use crate::{
         list_opts::ListResponse,
-        test::{CLIENT, DebugResult},
         types::{
             AddSuppressionResponse, BatchAddSuppressionResponse, BatchRemoveSuppressionsResponse,
             RemoveSuppressionResponse, Suppression,
