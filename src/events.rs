@@ -194,7 +194,7 @@ pub mod types {
 ///     "created_at": "2024-02-22T23:41:12.126Z",
 ///     "data": {
 ///       "broadcast_id": "8b146471-e88e-4322-86af-016cd36fd216",
-///       "created_at": "2024-02-22T23:41:11.894719+00:00",
+///       "created_at": "2024-02-22T23:41:11.894Z",
 ///       "email_id": "56761188-7520-42d8-8898-ff6fc54ce618",
 ///       "message_id": "<111-222-333@email.example.com>",
 ///       "from": "Acme <onboarding@resend.dev>",
@@ -565,7 +565,7 @@ mod test {
       "created_at": "2024-02-22T23:41:12.126Z",
       "data": {
         "broadcast_id": "8b146471-e88e-4322-86af-016cd36fd216",
-        "created_at": "2024-02-22T23:41:11.894719+00:00",
+        "created_at": "2024-02-22T23:41:11.894Z",
         "email_id": "56761188-7520-42d8-8898-ff6fc54ce618",
         "message_id": "<111-222-333@email.example.com>",
         "from": "Acme <onboarding@resend.dev>",
@@ -601,7 +601,7 @@ mod test {
       "created_at": "2024-02-22T23:41:12.126Z",
       "data": {
         "broadcast_id": "8b146471-e88e-4322-86af-016cd36fd216",
-        "created_at": "2024-02-22T23:41:11.894719+00:00",
+        "created_at": "2024-02-22T23:41:11.894Z",
         "email_id": "56761188-7520-42d8-8898-ff6fc54ce618",
         "message_id": "<111-222-333@email.example.com>",
         "from": "Acme <onboarding@resend.dev>",
@@ -633,7 +633,7 @@ mod test {
       "created_at": "2024-02-22T23:41:12.126Z",
       "data": {
         "broadcast_id": "8b146471-e88e-4322-86af-016cd36fd216",
-        "created_at": "2024-02-22T23:41:11.894719+00:00",
+        "created_at": "2024-02-22T23:41:11.894Z",
         "email_id": "56761188-7520-42d8-8898-ff6fc54ce618",
         "message_id": "<111-222-333@email.example.com>",
         "from": "Acme <onboarding@resend.dev>",
@@ -668,7 +668,7 @@ mod test {
       "created_at": "2024-02-22T23:41:12.126Z",
       "data": {
         "broadcast_id": "8b146471-e88e-4322-86af-016cd36fd216",
-        "created_at": "2024-02-22T23:41:11.894719+00:00",
+        "created_at": "2024-02-22T23:41:11.894Z",
         "email_id": "56761188-7520-42d8-8898-ff6fc54ce618",
         "message_id": "<111-222-333@email.example.com>",
         "from": "Acme <onboarding@resend.dev>",
@@ -703,7 +703,7 @@ mod test {
       "created_at": "2024-11-22T23:41:12.126Z",
       "data": {
         "broadcast_id": "8b146471-e88e-4322-86af-016cd36fd216",
-        "created_at": "2024-11-22T23:41:11.894719+00:00",
+        "created_at": "2024-11-22T23:41:11.894Z",
         "email_id": "56761188-7520-42d8-8898-ff6fc54ce618",
         "message_id": "<111-222-333@email.example.com>",
         "from": "Acme <onboarding@resend.dev>",
@@ -741,7 +741,7 @@ mod test {
       "created_at": "2024-02-22T23:41:12.126Z",
       "data": {
         "broadcast_id": "8b146471-e88e-4322-86af-016cd36fd216",
-        "created_at": "2024-02-22T23:41:11.894719+00:00",
+        "created_at": "2024-02-22T23:41:11.894Z",
         "email_id": "56761188-7520-42d8-8898-ff6fc54ce618",
         "message_id": "<111-222-333@email.example.com>",
         "from": "Acme <onboarding@resend.dev>",
@@ -773,7 +773,7 @@ mod test {
       "created_at": "2024-11-22T23:41:12.126Z",
       "data": {
         "broadcast_id": "8b146471-e88e-4322-86af-016cd36fd216",
-        "created_at": "2024-11-22T23:41:11.894719+00:00",
+        "created_at": "2024-11-22T23:41:11.894Z",
         "email_id": "56761188-7520-42d8-8898-ff6fc54ce618",
         "message_id": "<111-222-333@email.example.com>",
         "from": "Acme <onboarding@resend.dev>",
@@ -813,7 +813,7 @@ mod test {
       "created_at": "2024-11-22T23:41:12.126Z",
       "data": {
         "broadcast_id": "8b146471-e88e-4322-86af-016cd36fd216",
-        "created_at": "2024-11-22T23:41:11.894719+00:00",
+        "created_at": "2024-11-22T23:41:11.894Z",
         "email_id": "56761188-7520-42d8-8898-ff6fc54ce618",
         "message_id": "<111-222-333@email.example.com>",
         "from": "Acme <onboarding@resend.dev>",
@@ -850,7 +850,7 @@ mod test {
       "created_at": "2024-02-22T23:41:12.126Z",
       "data": {
         "email_id": "56761188-7520-42d8-8898-ff6fc54ce618",
-        "created_at": "2024-02-22T23:41:11.894719+00:00",
+        "created_at": "2024-02-22T23:41:11.894Z",
         "from": "Acme <onboarding@resend.dev>",
         "to": ["delivered@resend.dev"],
         "bcc": [],
@@ -898,7 +898,7 @@ mod test {
       "created_at": "2024-02-22T23:41:12.126Z",
       "data": {
         "broadcast_id": "8b146471-e88e-4322-86af-016cd36fd216",
-        "created_at": "2024-02-22T23:41:11.894719+00:00",
+        "created_at": "2024-02-22T23:41:11.894Z",
         "email_id": "56761188-7520-42d8-8898-ff6fc54ce618",
         "message_id": "<111-222-333@email.example.com>",
         "from": "Acme <onboarding@resend.dev>",
@@ -932,7 +932,7 @@ mod test {
       "created_at": "2024-11-22T23:41:12.126Z",
       "data": {
         "broadcast_id": "8b146471-e88e-4322-86af-016cd36fd216",
-        "created_at": "2024-11-22T23:41:11.894719+00:00",
+        "created_at": "2024-11-22T23:41:11.894Z",
         "email_id": "56761188-7520-42d8-8898-ff6fc54ce618",
         "message_id": "<111-222-333@email.example.com>",
         "from": "Acme <onboarding@resend.dev>",
@@ -1010,7 +1010,7 @@ mod test {
         "id": "e169aa45-1ecf-4183-9955-b1499d5701d3",
         "audience_id": "78261eea-8f8b-4381-83c6-79fa7120f1cf",
         "segment_ids": ["78261eea-8f8b-4381-83c6-79fa7120f1cf"],
-        "created_at": "2024-10-10T15:11:94.110Z",
+        "created_at": "2024-10-10T15:11:54.110Z",
         "updated_at": "2024-10-11T23:47:56.678Z",
         "email": "steve.wozniak@gmail.com",
         "first_name": "Steve",
@@ -1044,7 +1044,7 @@ mod test {
         "id": "e169aa45-1ecf-4183-9955-b1499d5701d3",
         "audience_id": "78261eea-8f8b-4381-83c6-79fa7120f1cf",
         "segment_ids": ["78261eea-8f8b-4381-83c6-79fa7120f1cf"],
-        "created_at": "2024-11-10T15:11:94.110Z",
+        "created_at": "2024-11-10T15:11:54.110Z",
         "updated_at": "2024-11-17T19:32:22.980Z",
         "email": "steve.wozniak@gmail.com",
         "first_name": "Steve",

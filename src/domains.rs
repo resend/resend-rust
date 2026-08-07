@@ -470,7 +470,7 @@ pub mod types {
         /// The status of the domain.
         pub status: DomainStatus,
 
-        /// The date and time the domain was created in ISO8601 format.
+        /// The date and time the domain was created.
         pub created_at: String,
         /// The region where the domain is hosted.
         pub region: Region,
@@ -793,7 +793,7 @@ mod test {
             "id": "fd61172c-cafc-40f5-b049-b45947779a29",
             "name": "resend.com",
             "status": "partially_verified",
-            "created_at": "2023-06-21T06:10:36.144Z",
+            "created_at": "2023-06-21 06:10:36.144+00",
             "region": "us-east-1",
             "capabilities": { "sending": "enabled", "receiving": "disabled" }
         }"#;
@@ -811,7 +811,7 @@ mod test {
             "id": "fd61172c-cafc-40f5-b049-b45947779a29",
             "name": "resend.com",
             "status": "partially_failed",
-            "created_at": "2023-06-21T06:10:36.144Z",
+            "created_at": "2023-06-21 06:10:36.144+00",
             "region": "us-east-1",
             "capabilities": { "sending": "enabled", "receiving": "enabled" }
         }"#;

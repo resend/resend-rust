@@ -268,7 +268,7 @@ mod test {
         let webhook = r#"{
   "object": "webhook",
   "id": "4dd369bc-aa82-4ff3-97de-514ae3000ee0",
-  "created_at": "2023-08-22T15:28:00.000Z",
+  "created_at": "2023-08-22 15:28:00+00",
   "status": "enabled",
   "endpoint": "https://webhook.example.com/handler",
   "events": ["email.sent", "email.received"],

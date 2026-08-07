@@ -594,7 +594,7 @@ pub mod types {
         pub last_name: String,
         /// Indicates if the contact is unsubscribed.
         pub unsubscribed: bool,
-        /// Timestamp indicating when the contact was created in ISO8601 format.
+        /// Timestamp indicating when the contact was created.
         pub created_at: String,
         /// Custom properties for the contact.
         #[serde(default)]
@@ -1344,7 +1344,7 @@ mod test {
   "key": "company_name",
   "type": "string",
   "fallback_value": "Acme Corp",
-  "created_at": "2023-04-08T00:11:13.110779+00:00"
+  "created_at": "2023-04-08 00:11:13.110779+00"
 }"#;
 
         let res = serde_json::from_str::<ContactProperty>(contact_property);

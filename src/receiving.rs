@@ -451,7 +451,7 @@ mod test {
       "message_id": "<111-222-333@email.provider.example.com>",
       "raw": {
         "download_url": "https://example.com/emails/raw/abc123?signature=xyz789",
-        "expires_at": "2023-04-08T00:13:52.669661+00:00"
+        "expires_at": "2023-04-08 00:13:52.669661+00"
       },
       "attachments": [
         {

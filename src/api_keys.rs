@@ -157,7 +157,7 @@ pub mod types {
         pub id: ApiKeyId,
         /// The name of the API key.
         pub name: String,
-        /// The date and time the API key was created in ISO8601 format.
+        /// The date and time the API key was created.
         pub created_at: String,
         pub last_used_at: Option<String>,
     }
