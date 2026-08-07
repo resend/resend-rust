@@ -382,6 +382,7 @@ mod test {
     }
 
     #[tokio_shared_rt::test(shared = true)]
+    #[serial_test::serial]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> DebugResult<()> {
         use crate::{

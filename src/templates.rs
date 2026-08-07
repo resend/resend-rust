@@ -463,6 +463,7 @@ mod test {
     use crate::types::Template;
 
     #[tokio_shared_rt::test(shared = true)]
+    #[serial_test::serial]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> DebugResult<()> {
         use crate::{list_opts::ListOptions, types::UpdateTemplateOptions};

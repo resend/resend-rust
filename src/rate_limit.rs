@@ -214,6 +214,7 @@ mod test {
     use crate::Error;
 
     #[tokio_shared_rt::test(shared = true)]
+    #[serial_test::serial]
     #[cfg(not(feature = "blocking"))]
     async fn test_retry_count_err() {
         let mut run_count = 0u32;
@@ -247,6 +248,7 @@ mod test {
     }
 
     #[tokio_shared_rt::test(shared = true)]
+    #[serial_test::serial]
     #[cfg(not(feature = "blocking"))]
     async fn test_retry_count_ok() {
         let mut retry_count = 0u32;

@@ -374,6 +374,7 @@ mod test {
     use super::types::Broadcast;
 
     #[tokio_shared_rt::test(shared = true)]
+    #[serial_test::serial]
     #[cfg(not(feature = "blocking"))]
     #[ignore = "Can no longer send broadcasts from the resend.dev domain"]
     async fn create_send_broadcast() -> DebugResult<()> {
@@ -419,6 +420,7 @@ mod test {
     }
 
     #[tokio_shared_rt::test(shared = true)]
+    #[serial_test::serial]
     #[cfg(not(feature = "blocking"))]
     #[ignore = "Can no longer send broadcasts from the resend.dev domain"]
     async fn list_get_broadcast() -> DebugResult<()> {
@@ -455,6 +457,7 @@ mod test {
     }
 
     #[tokio_shared_rt::test(shared = true)]
+    #[serial_test::serial]
     #[cfg(not(feature = "blocking"))]
     #[ignore = "Can no longer send broadcasts from the resend.dev domain"]
     async fn update_broadcast() -> DebugResult<()> {

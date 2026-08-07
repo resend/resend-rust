@@ -130,6 +130,7 @@ mod test {
     };
 
     #[tokio_shared_rt::test(shared = true)]
+    #[serial_test::serial]
     #[cfg(not(feature = "blocking"))]
     #[allow(clippy::unwrap_used, clippy::indexing_slicing)]
     async fn strict_error() -> DebugResult<()> {
@@ -163,6 +164,7 @@ mod test {
     }
 
     #[tokio_shared_rt::test(shared = true)]
+    #[serial_test::serial]
     #[cfg(not(feature = "blocking"))]
     #[allow(clippy::unwrap_used, clippy::indexing_slicing)]
     async fn permissive_error() -> DebugResult<()> {
@@ -204,6 +206,7 @@ mod test {
     }
 
     #[tokio_shared_rt::test(shared = true)]
+    #[serial_test::serial]
     #[cfg(not(feature = "blocking"))]
     #[allow(clippy::unwrap_used, clippy::indexing_slicing)]
     async fn permissive_ok() -> DebugResult<()> {
@@ -241,6 +244,7 @@ mod test {
     }
 
     #[tokio_shared_rt::test(shared = true)]
+    #[serial_test::serial]
     #[cfg(not(feature = "blocking"))]
     #[allow(clippy::unwrap_used, clippy::indexing_slicing)]
     async fn strict_ok() -> DebugResult<()> {
@@ -272,6 +276,7 @@ mod test {
     }
 
     #[tokio_shared_rt::test(shared = true)]
+    #[serial_test::serial]
     #[cfg(not(feature = "blocking"))]
     async fn template() -> DebugResult<()> {
         use std::collections::HashMap;

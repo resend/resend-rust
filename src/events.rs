@@ -506,6 +506,7 @@ mod test {
     }
 
     #[tokio_shared_rt::test(shared = true)]
+    #[serial_test::serial]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> DebugResult<()> {
         use crate::types::UpdateEventOptions;
@@ -1320,6 +1321,7 @@ mod test {
     /// Similar to the test in `error.rs`
     #[allow(clippy::unwrap_used)]
     #[tokio_shared_rt::test(shared = true)]
+    #[serial_test::serial]
     #[cfg(not(feature = "blocking"))]
     async fn events_up_to_date() -> DebugResult<()> {
         let response = reqwest::get("https://resend.com/docs/dashboard/webhooks/event-types")

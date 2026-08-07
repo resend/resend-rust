@@ -245,6 +245,7 @@ mod test {
     };
 
     #[tokio_shared_rt::test(shared = true)]
+    #[serial_test::serial]
     #[cfg(not(feature = "blocking"))]
     #[ignore = "Flaky backend"]
     async fn all() -> DebugResult<()> {
