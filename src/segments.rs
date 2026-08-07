@@ -111,7 +111,7 @@ pub mod types {
         // pub object: String,
         /// The name of the segment.
         pub name: String,
-        /// The date that the object was created in ISO8601 format.
+        /// The date that the object was created.
         pub created_at: String,
     }
 

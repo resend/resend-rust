@@ -539,10 +539,10 @@ mod test {
   "id": "34a080c9-b17d-4187-ad80-5af20266e535",
   "alias": "reset-password",
   "name": "reset-password",
-  "created_at": "2023-10-06T23:47:56.678Z",
-  "updated_at": "2023-10-06T23:47:56.678Z",
+  "created_at": "2023-10-06 23:47:56.678+00",
+  "updated_at": "2023-10-06 23:47:56.678+00",
   "status": "published",
-  "published_at": "2023-10-06T23:47:56.678Z",
+  "published_at": "2023-10-06 23:47:56.678+00",
   "from": "John Doe <john.doe@example.com>",
   "subject": "Hello, world!",
   "reply_to": null,
@@ -554,8 +554,8 @@ mod test {
       "key": "user_name",
       "type": "string",
       "fallback_value": "John Doe",
-      "created_at": "2023-10-06T23:47:56.678Z",
-      "updated_at": "2023-10-06T23:47:56.678Z"
+      "created_at": "2023-10-06 23:47:56.678+00",
+      "updated_at": "2023-10-06 23:47:56.678+00"
     }
   ]
 }"#;
@@ -571,10 +571,10 @@ mod test {
   "id": "34a080c9-b17d-4187-ad80-5af20266e535",
   "alias": "reset-password",
   "name": "reset-password",
-  "created_at": "2023-10-06T23:47:56.678Z",
-  "updated_at": "2023-10-06T23:47:56.678Z",
+  "created_at": "2023-10-06 23:47:56.678+00",
+  "updated_at": "2023-10-06 23:47:56.678+00",
   "status": "published",
-  "published_at": "2023-10-06T23:47:56.678Z",
+  "published_at": "2023-10-06 23:47:56.678+00",
   "from": "John Doe <john.doe@example.com>",
   "subject": "Hello, world!",
   "reply_to": null,

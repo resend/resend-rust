@@ -544,7 +544,7 @@ pub mod types {
         /// The subject line of the email.
         pub subject: String,
 
-        /// The date and time the email was created in ISO8601 format.
+        /// The date and time the email was created.
         pub created_at: String,
         /// The HTML body of the email.
         pub html: Option<String>,
@@ -562,8 +562,7 @@ pub mod types {
         /// The status of the email.
         pub last_event: EmailEvent,
 
-        /// Schedule email to be sent later. The date should be in ISO 8601 format
-        /// (e.g: `2024-08-05T11:52:01.858Z`).
+        /// The scheduled send time of the email.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub scheduled_at: Option<String>,
     }
