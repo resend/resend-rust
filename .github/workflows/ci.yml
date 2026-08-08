@@ -30,7 +30,7 @@ jobs:
           targets: x86_64-unknown-linux-gnu
 
       - name: Use cached dependencies
-        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
           key: "ubuntu-24.04-x86_64-unknown-linux-gnu-${{ hashFiles('**/Cargo.lock') }}"
 
@@ -56,7 +56,7 @@ jobs:
           targets: aarch64-unknown-linux-gnu
 
       - name: Use cached dependencies
-        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
           key: "ubuntu-24.04-aarch64-unknown-linux-gnu-${{ hashFiles('**/Cargo.lock') }}"
 
@@ -82,7 +82,7 @@ jobs:
           targets: x86_64-apple-darwin
 
       - name: Use cached dependencies
-        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
           key: "macos-15-x86_64-apple-darwin-${{ hashFiles('**/Cargo.lock') }}"
 
@@ -109,7 +109,7 @@ jobs:
           targets: x86_64-pc-windows-msvc
 
       - name: Use cached dependencies
-        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
           key: "windows-2022-x86_64-pc-windows-msvc-${{ hashFiles('**/Cargo.lock') }}"
 
