@@ -315,6 +315,7 @@ mod test {
     /// [all Resend errors]: https://resend.com/docs/api-reference/errors
     #[allow(clippy::unwrap_used)]
     #[tokio_shared_rt::test(shared = true)]
+    #[serial_test::serial]
     #[cfg(not(feature = "blocking"))]
     async fn errors_up_to_date() {
         use strum::EnumCount;

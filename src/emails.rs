@@ -682,6 +682,7 @@ mod test {
     use jiff::{Span, Timestamp, Zoned};
 
     #[tokio_shared_rt::test(shared = true)]
+    #[serial_test::serial]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> DebugResult<()> {
         let from = "Acme <onboarding@resend.dev>";
@@ -783,6 +784,7 @@ mod test {
     }
 
     #[tokio_shared_rt::test(shared = true)]
+    #[serial_test::serial]
     #[cfg(not(feature = "blocking"))]
     async fn schedule_email() -> DebugResult<()> {
         use crate::emails::types::EmailEvent;
@@ -859,6 +861,7 @@ mod test {
     }
 
     #[tokio_shared_rt::test(shared = true)]
+    #[serial_test::serial]
     #[cfg(not(feature = "blocking"))]
     async fn list_emails() -> DebugResult<()> {
         let resend = &*CLIENT;
@@ -879,6 +882,7 @@ mod test {
     }
 
     #[tokio_shared_rt::test(shared = true)]
+    #[serial_test::serial]
     #[cfg(not(feature = "blocking"))]
     async fn attachments() -> DebugResult<()> {
         let resend = &*CLIENT;
@@ -915,6 +919,7 @@ mod test {
     }
 
     #[tokio_shared_rt::test(shared = true)]
+    #[serial_test::serial]
     #[cfg(not(feature = "blocking"))]
     async fn template() -> DebugResult<()> {
         use std::collections::HashMap;

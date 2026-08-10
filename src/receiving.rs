@@ -356,6 +356,7 @@ mod test {
 
     #[ignore = "At the moment, we can't programmatically send inbound emails and since said inbound emails are only retained for 2 weeks, this cannot be automatically tested."]
     #[tokio_shared_rt::test(shared = true)]
+    #[serial_test::serial]
     #[cfg(not(feature = "blocking"))]
     async fn all() -> DebugResult<()> {
         use crate::types::GetInboundEmailOptions;
