@@ -472,6 +472,13 @@ pub mod types {
         pub records: Option<Vec<DomainRecord>>,
 
         pub capabilities: DomainCapabilities,
+
+        /// Whether open tracking is enabled for this domain.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub open_tracking: Option<bool>,
+        /// Whether click tracking is enabled for this domain.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub click_tracking: Option<bool>,
     }
 
     #[must_use]
@@ -778,6 +785,27 @@ mod test {
         assert_eq!(records.len(), 2);
         assert!(matches!(records[0], DomainRecord::TrackingRecord(_)));
         assert!(matches!(records[1], DomainRecord::TrackingCaaRecord(_)));
+    }
+
+    #[test]
+    fn deserialize_domain_with_tracking_fields() {
+        use crate::domains::types::Domain;
+
+        let json = r#"{
+            "object": "domain",
+            "id": "fd61172c-cafc-40f5-b049-b45947779a29",
+            "name": "resend.com",
+            "status": "verified",
+            "created_at": "2023-06-21 06:10:36.144+00",
+            "region": "us-east-1",
+            "capabilities": { "sending": "enabled", "receiving": "disabled" },
+            "open_tracking": true,
+            "click_tracking": false
+        }"#;
+
+        let domain: Domain = serde_json::from_str(json).expect("domain deserializes");
+        assert_eq!(domain.open_tracking, Some(true));
+        assert_eq!(domain.click_tracking, Some(false));
     }
 
     #[test]
