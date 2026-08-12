@@ -11,6 +11,8 @@ and this project adheres to
 ### Added
 
 - added support for `SuppressionEvent`s
+- `broadcasts::cancel` method
+- `domain.open_tracking` and `domain.click_tracking` fields
 
 ### Changed
 
