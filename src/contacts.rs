@@ -1035,7 +1035,6 @@ mod test {
     #[tokio_shared_rt::test(shared = true)]
     #[serial_test::serial]
     #[cfg(not(feature = "blocking"))]
-    #[ignore = "Flaky backend"]
     async fn all() -> DebugResult<()> {
         let resend = &*CLIENT;
         let audience = "test_contacts";
@@ -1128,7 +1127,6 @@ mod test {
         Ok(())
     }
 
-    #[ignore = "Flaky backend"]
     #[tokio_shared_rt::test(shared = true)]
     #[serial_test::serial]
     #[cfg(not(feature = "blocking"))]
@@ -1165,7 +1163,6 @@ mod test {
     #[tokio_shared_rt::test(shared = true)]
     #[serial_test::serial]
     #[cfg(not(feature = "blocking"))]
-    #[ignore = "Flaky backend"]
     async fn segments() -> DebugResult<()> {
         let resend = &*CLIENT;
 
@@ -1213,7 +1210,6 @@ mod test {
     #[tokio_shared_rt::test(shared = true)]
     #[serial_test::serial]
     #[cfg(not(feature = "blocking"))]
-    #[ignore = "Flaky backend"]
     async fn properties() -> DebugResult<()> {
         use crate::{
             contacts::types::ContactPropertyChanges,
@@ -1261,7 +1257,6 @@ mod test {
     #[tokio_shared_rt::test(shared = true)]
     #[serial_test::serial]
     #[cfg(not(feature = "blocking"))]
-    #[ignore = "Flaky backend"]
     async fn contact_import() -> DebugResult<()> {
         use crate::{
             contacts::types::{
