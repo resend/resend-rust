@@ -7,8 +7,8 @@ use crate::{Config, Result, list_opts::ListResponse};
 use crate::{
     list_opts::ListOptions,
     types::{
-        Broadcast, CreateBroadcastOptions, CreateBroadcastResponse, RemoveBroadcastResponse,
-        SendBroadcastOptions, SendBroadcastResponse,
+        Broadcast, CancelBroadcastResponse, CreateBroadcastOptions, CreateBroadcastResponse,
+        RemoveBroadcastResponse, SendBroadcastOptions, SendBroadcastResponse,
     },
 };
 
@@ -70,6 +70,17 @@ impl BroadcastsSvc {
         let request = self.0.build(Method::GET, &path);
         let response = self.0.send(request).await?;
         let content = response.json::<Broadcast>().await?;
+
+        Ok(content)
+    }
+
+    #[maybe_async::maybe_async]
+    pub async fn cancel(&self, broadcast_id: &str) -> Result<CancelBroadcastResponse> {
+        let path = format!("/broadcasts/{broadcast_id}/cancel");
+
+        let request = self.0.build(Method::POST, &path);
+        let response = self.0.send(request).await?;
+        let content = response.json::<CancelBroadcastResponse>().await?;
 
         Ok(content)
     }
@@ -349,6 +360,11 @@ pub mod types {
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct CancelBroadcastResponse {
+        pub id: BroadcastId,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct RemoveBroadcastResponse {
         /// The ID of the broadcast.
         #[allow(dead_code)]
@@ -371,7 +387,7 @@ mod test {
         },
     };
 
-    use super::types::Broadcast;
+    use super::types::{Broadcast, CancelBroadcastResponse};
 
     #[tokio_shared_rt::test(shared = true)]
     #[serial_test::serial]
@@ -514,5 +530,16 @@ mod test {
 }"#;
 
         let _parsed = serde_json::from_str::<Broadcast>(data).expect("Parsing failed");
+    }
+
+    #[test]
+    fn parse_cancel_broadcast_response_test() {
+        let data = r#"{
+    "object": "broadcast",
+    "id": "498ee8e4-7aa2-4eb5-9f04-4194848049d1"
+}"#;
+
+        let _parsed =
+            serde_json::from_str::<CancelBroadcastResponse>(data).expect("Parsing failed");
     }
 }
