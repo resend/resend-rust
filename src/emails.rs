@@ -1,17 +1,14 @@
 use std::sync::Arc;
 
 use reqwest::Method;
-use serde::{Deserialize, Deserializer};
 
 use crate::{
     Config, Result,
-    list_opts::{ListOptions, ListResponse},
-    types::Attachment,
-};
-use crate::{
     idempotent::Idempotent,
+    list_opts::{ListOptions, ListResponse},
+    serde_utils::parse_nullable_vec,
     types::{
-        CancelScheduleResponse, CreateEmailBaseOptions, CreateEmailResponse, Email,
+        Attachment, CancelScheduleResponse, CreateEmailBaseOptions, CreateEmailResponse, Email,
         UpdateEmailOptions, UpdateEmailResponse,
     },
 };
@@ -606,7 +603,7 @@ pub mod types {
         pub filename: Option<String>,
         pub size: u32,
         pub content_type: String,
-        pub content_disposition: ContentDisposition,
+        pub content_disposition: Option<ContentDisposition>,
         pub content_id: Option<String>,
         pub download_url: String,
         pub expires_at: String,
@@ -649,17 +646,6 @@ pub mod types {
             self
         }
     }
-}
-
-/// Turns:
-/// - `null` -> `[]`
-/// - `["text"]` -> `["text"]`
-fn parse_nullable_vec<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let opt = Option::deserialize(deserializer)?;
-    Ok(opt.unwrap_or_else(Vec::new))
 }
 
 #[cfg(test)]

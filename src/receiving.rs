@@ -195,9 +195,10 @@ impl ReceivingSvc {
 
 #[allow(unreachable_pub)]
 pub mod types {
+    use serde::{Deserialize, Serialize};
     use std::collections::HashMap;
 
-    use serde::{Deserialize, Serialize};
+    use crate::serde_utils::{parse_nullable_hashmap, parse_nullable_vec};
 
     crate::define_id_type!(InboundEmailId);
     crate::define_id_type!(InboundAttachmentId);
@@ -255,17 +256,17 @@ pub mod types {
         pub from: String,
         pub created_at: String,
         pub subject: String,
-        #[serde(default)]
+        #[serde(default, deserialize_with = "parse_nullable_vec")]
         pub bcc: Vec<String>,
-        #[serde(default)]
+        #[serde(default, deserialize_with = "parse_nullable_vec")]
         pub cc: Vec<String>,
-        #[serde(default)]
+        #[serde(default, deserialize_with = "parse_nullable_vec")]
         pub reply_to: Vec<String>,
         #[serde(default)]
         pub received_for: Vec<String>,
         pub html: Option<String>,
         pub text: Option<String>,
-        #[serde(default)]
+        #[serde(default, deserialize_with = "parse_nullable_hashmap")]
         pub headers: HashMap<String, String>,
         pub message_id: String,
         pub raw: Option<Raw>,
@@ -410,7 +411,7 @@ mod test {
       "from": "sender@example.com",
       "created_at": "2025-10-09 14:37:40.951732+00",
       "subject": "Hello World",
-      "bcc": [],
+      "bcc": null,
       "cc": [],
       "reply_to": [],
       "message_id": "<111-222-333@email.provider.example.com>",
@@ -444,10 +445,12 @@ mod test {
       "from": "sender@example.com",
       "created_at": "2025-10-09 14:37:40.951732+00",
       "subject": "Hello World",
-      "bcc": [],
+      "bcc": null,
       "cc": [],
       "reply_to": [],
       "received_for": ["forwarded@example.com"],
+      "html": null,
+      "headers": null,
       "message_id": "<111-222-333@email.provider.example.com>",
       "raw": {
         "download_url": "https://example.com/emails/raw/abc123?signature=xyz789",

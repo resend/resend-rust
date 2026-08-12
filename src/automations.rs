@@ -147,8 +147,6 @@ impl AutomationsSvc {
 
 #[allow(unreachable_pub)]
 pub mod types {
-    use std::collections::HashMap;
-
     use serde::{Deserialize, Serialize};
     use serde_json::Value;
 
@@ -438,14 +436,26 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct AutomationRun {
-        id: AutomationRunId,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        started_at: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        completed_at: Option<String>,
-        created_at: String,
-        status: AutomationRunStatus,
-        trigger: Option<AutomationRunTrigger>,
+        pub id: AutomationRunId,
+        pub status: AutomationRunStatus,
+        pub started_at: Option<String>,
+        pub completed_at: Option<String>,
+        pub created_at: String,
+        pub steps: Vec<AutomationRunStep>,
+    }
+
+    #[must_use]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct AutomationRunStep {
+        pub key: String,
+        #[serde(rename = "type")]
+        pub r#type: AutomationRunStepType,
+        pub status: AutomationRunStatus,
+        pub started_at: Option<String>,
+        pub completed_at: Option<String>,
+        pub output: Value,
+        pub error: Value,
+        pub created_at: String,
     }
 
     #[must_use]
@@ -459,11 +469,17 @@ pub mod types {
     }
 
     #[must_use]
-    #[derive(Debug, Clone, Serialize, Deserialize)]
-    pub struct AutomationRunTrigger {
-        event_name: String,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        payload: Option<HashMap<String, Value>>,
+    #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+    #[serde(rename_all = "snake_case")]
+    pub enum AutomationRunStepType {
+        Trigger,
+        SendEmail,
+        Delay,
+        WaitForEvent,
+        Condition,
+        ContactUpdate,
+        ContactDelete,
+        AddToSegment,
     }
 }
 
@@ -473,7 +489,9 @@ pub mod types {
 mod test {
     use crate::{
         automations::types::{SendEmailStepConfig, TriggerStepConfig},
-        types::{Automation, AutomationStatus, Connection, CreateAutomationOptions, Step},
+        types::{
+            Automation, AutomationRun, AutomationStatus, Connection, CreateAutomationOptions, Step,
+        },
     };
 
     #[cfg(not(feature = "blocking"))]
@@ -516,7 +534,7 @@ mod test {
             }],
         };
 
-        println!("{}", serde_json::to_string(&tmp).unwrap());
+        let _res = serde_json::to_string(&tmp).unwrap();
     }
 
     #[test]
@@ -553,6 +571,43 @@ mod test {
           }"#;
 
         let _res = serde_json::from_str::<Automation>(tmp).unwrap();
+    }
+
+    #[test]
+    fn deserialize_get2() {
+        let tmp = r#"{
+          "object": "automation_run",
+          "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+          "status": "completed",
+          "started_at": "2026-10-01 12:00:00.000000+00",
+          "completed_at": "2026-10-01 12:05:00.000000+00",
+          "created_at": "2026-10-01 12:00:00.000000+00",
+          "steps": [
+            {
+              "key": "start",
+              "type": "trigger",
+              "status": "completed",
+              "started_at": "2026-10-01 12:00:00.000000+00",
+              "completed_at": "2026-10-01 12:00:01.000000+00",
+              "output": null,
+              "error": null,
+              "created_at": "2026-10-01 12:00:00.000000+00"
+            },
+            {
+              "key": "welcome",
+              "type": "send_email",
+              "status": "completed",
+              "started_at": "2026-10-01 12:00:01.000000+00",
+              "completed_at": "2026-10-01 12:00:02.000000+00",
+              "output": null,
+              "error": null,
+              "created_at": "2026-10-01 12:00:01.000000+00"
+            }
+          ]
+        }"#;
+
+        let res = serde_json::from_str::<AutomationRun>(tmp).unwrap();
+        assert_eq!(res.steps.len(), 2);
     }
 
     #[tokio_shared_rt::test(shared = true)]

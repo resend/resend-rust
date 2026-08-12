@@ -333,3 +333,33 @@ mod test {
         }
     }
 }
+
+#[allow(unreachable_pub)]
+pub(crate) mod serde_utils {
+    use serde::{Deserialize, Deserializer};
+    use std::collections::HashMap;
+
+    /// Turns:
+    /// - `null` -> `[]`
+    /// - `["text"]` -> `["text"]`
+    pub fn parse_nullable_vec<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let opt = Option::deserialize(deserializer)?;
+        Ok(opt.unwrap_or_else(Vec::new))
+    }
+
+    /// Turns:
+    /// - `null` -> `HashMap::new()`
+    /// - `{"key": "value"}` -> `{"key": "value"}`
+    pub fn parse_nullable_hashmap<'de, D>(
+        deserializer: D,
+    ) -> Result<HashMap<String, String>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let opt = Option::deserialize(deserializer)?;
+        Ok(opt.unwrap_or_else(HashMap::new))
+    }
+}

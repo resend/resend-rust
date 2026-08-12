@@ -121,7 +121,7 @@ pub mod types {
     use ecow::EcoString;
     use serde::{Deserialize, Serialize};
 
-    use crate::types::SegmentId;
+    use crate::types::{SegmentId, TopicId};
 
     /// Details of a new `Broadcast`.
     #[must_use]
@@ -346,7 +346,9 @@ pub mod types {
     pub struct Broadcast {
         pub id: BroadcastId,
         pub name: String,
-        pub audience_id: SegmentId,
+        #[deprecated(note = "Deprecated: use `segment_id` instead.")]
+        pub audience_id: Option<SegmentId>,
+        pub segment_id: Option<SegmentId>,
         pub status: String,
         pub created_at: String,
         pub scheduled_at: Option<String>,
@@ -357,6 +359,7 @@ pub mod types {
         pub preview_text: Option<String>,
         pub text: Option<String>,
         pub html: Option<String>,
+        pub topic_id: Option<TopicId>,
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]

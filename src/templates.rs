@@ -309,7 +309,8 @@ pub mod types {
         pub published_at: Option<String>,
         pub from: Option<String>,
         pub subject: Option<String>,
-        pub reply_to: Option<Vec<String>>,
+        #[serde(default, deserialize_with = "crate::serde_utils::parse_nullable_vec")]
+        pub reply_to: Vec<String>,
         pub html: Option<String>,
         pub text: Option<String>,
         #[serde(deserialize_with = "parse_nullable_vec")]

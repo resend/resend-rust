@@ -501,8 +501,7 @@ mod test {
               "plan": "pro"
             }),
         };
-        let res = serde_json::to_string(&opts).unwrap();
-        println!("{res}");
+        let _res = serde_json::to_string(&opts).unwrap();
     }
 
     #[tokio_shared_rt::test(shared = true)]

@@ -4,6 +4,7 @@ use reqwest::Method;
 
 use crate::{
     Config, Result,
+    events::EventType,
     list_opts::{ListOptions, ListResponse},
     types::{
         CreateWebhookOptions, CreateWebhookResponse, DeleteWebhookResponse, UpdateWebhookOptions,
@@ -89,7 +90,7 @@ impl WebhookSvc {
 pub mod types {
     use serde::{Deserialize, Serialize};
 
-    use crate::events::EventType;
+    use crate::{events::EventType, webhooks::parse_nullable_vec};
 
     crate::define_id_type!(WebhookId);
 
@@ -126,7 +127,7 @@ pub mod types {
         pub created_at: String,
         pub status: String,
         pub endpoint: String,
-        #[serde(default)]
+        #[serde(default, deserialize_with = "parse_nullable_vec")]
         pub events: Vec<EventType>,
     }
 
@@ -185,6 +186,16 @@ pub mod types {
         /// Indicates whether the webhook was deleted successfully.
         pub deleted: bool,
     }
+}
+
+use serde::{Deserialize, Deserializer};
+
+fn parse_nullable_vec<'de, D>(deserializer: D) -> Result<Vec<EventType>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let opt = Option::deserialize(deserializer)?;
+    Ok(opt.unwrap_or_else(Vec::new))
 }
 
 #[cfg(test)]
