@@ -12,6 +12,10 @@ and this project adheres to
 
 - added support for `SuppressionEvent`s
 
+### Changed
+
+- `Contact` first and last name fields are now optional
+
 ## [0.29.0] - 2026-07-27
 
 ### Added

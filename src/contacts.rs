@@ -575,16 +575,16 @@ pub mod types {
         /// Email address of the contact.
         pub email: String,
         /// First name of the contact.
-        pub first_name: String,
+        pub first_name: Option<String>,
         /// Last name of the contact.
-        pub last_name: String,
+        pub last_name: Option<String>,
         /// Indicates if the contact is unsubscribed.
         pub unsubscribed: bool,
         /// Timestamp indicating when the contact was created.
         pub created_at: String,
         /// Custom properties for the contact.
         #[serde(default)]
-        properties: Option<HashMap<String, ContactPropertyResponse>>,
+        pub properties: Option<HashMap<String, ContactPropertyResponse>>,
     }
 
     /// List of changes to apply to a [`Contact`].
@@ -1339,13 +1339,13 @@ mod test {
 
     #[test]
     fn deserialize_test2() {
-        let contact_property = r#"{
+        let contact = r#"{
           "object": "contact",
-          "id": "257d6d3b-e796-464d-ba7d-8ccabc58d16d",
+          "id": "e169aa45-1ecf-4183-9955-b1499d5701d3",
           "email": "steve.wozniak@gmail.com",
           "first_name": "Steve",
           "last_name": "Wozniak",
-          "created_at": "2025-07-21 23:58:57.096708+00",
+          "created_at": "2026-10-06 23:47:56.678+00",
           "unsubscribed": false,
           "properties": {
             "key": {
@@ -1355,7 +1355,29 @@ mod test {
           }
         }"#;
 
-        let res = serde_json::from_str::<Contact>(contact_property);
+        let res = serde_json::from_str::<Contact>(contact);
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    fn deserialize_test3() {
+        let contact = r#"{
+        "object": "contact",
+        "id": "e169aa45-1ecf-4183-9955-b1499d5701d3",
+        "email": "steve.wozniak@gmail.com",
+        "first_name": null,
+        "last_name": null,
+        "created_at": "2026-10-06 23:47:56.678+00",
+        "unsubscribed": false,
+        "properties": {
+          "key": {
+            "value": "value",
+            "type": "string"
+          }
+        }
+      }"#;
+
+        let res = serde_json::from_str::<Contact>(contact);
         assert!(res.is_ok());
     }
 
