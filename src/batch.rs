@@ -197,7 +197,7 @@ mod test {
 
         // There should be one error but apparently the errors array is empty
         // check with a get instead
-        std::thread::sleep(std::time::Duration::from_secs(4));
+        std::thread::sleep(std::time::Duration::from_secs(5));
         let failed_id = &emails.data[1].id;
         let status = resend.emails.get(failed_id).await?;
         assert_eq!(status.last_event, EmailEvent::Failed);

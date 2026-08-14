@@ -812,7 +812,7 @@ mod test {
             .with_text("Hello World!")
             .with_scheduled_at(&now_plus_1h);
         let email = resend.emails.send(email).await?;
-        std::thread::sleep(std::time::Duration::from_secs(4));
+        std::thread::sleep(std::time::Duration::from_secs(5));
 
         // Get
         let email = resend.emails.get(&email.id).await?;
