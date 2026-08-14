@@ -106,9 +106,9 @@ pub mod types {
         AddToSegmentStepConfig, Automation, AutomationId, AutomationMinimal, AutomationRun,
         AutomationRunId, AutomationStatus, AutomationTemplate, Connection, ConnectionType,
         CreateAutomationOptions, CreateAutomationResponse, DelayStepConfig,
-        DeleteAutomationResponse, SendEmailStepConfig, Step, StopAutomationResponse,
-        TriggerStepConfig, UpdateAutomationOptions, UpdateAutomationResponse,
-        WaitForEventStepConfig,
+        DeleteAutomationResponse, DuplicateAutomationResponse, SendEmailStepConfig, Step,
+        StopAutomationResponse, TriggerStepConfig, UpdateAutomationOptions,
+        UpdateAutomationResponse, WaitForEventStepConfig,
     };
     pub use super::batch::types::{
         BatchValidation, PermissiveBatchErrors, SendEmailBatchPermissiveResponse,

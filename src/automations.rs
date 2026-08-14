@@ -7,8 +7,8 @@ use crate::{
     list_opts::{ListOptions, ListResponse},
     types::{
         Automation, AutomationMinimal, AutomationRun, CreateAutomationOptions,
-        CreateAutomationResponse, DeleteAutomationResponse, StopAutomationResponse,
-        UpdateAutomationOptions, UpdateAutomationResponse,
+        CreateAutomationResponse, DeleteAutomationResponse, DuplicateAutomationResponse,
+        StopAutomationResponse, UpdateAutomationOptions, UpdateAutomationResponse,
     },
 };
 
@@ -89,6 +89,20 @@ impl AutomationsSvc {
         let request = self.0.build(Method::POST, &path);
         let response = self.0.send(request).await?;
         let content = response.json::<StopAutomationResponse>().await?;
+
+        Ok(content)
+    }
+
+    /// Duplicate an existing automation.
+    ///
+    /// <https://resend.com/docs/api-reference/automations/duplicate-automation>
+    #[maybe_async::maybe_async]
+    pub async fn duplicate(&self, automation_id: &str) -> Result<DuplicateAutomationResponse> {
+        let path = format!("/automations/{automation_id}/duplicate");
+
+        let request = self.0.build(Method::POST, &path);
+        let response = self.0.send(request).await?;
+        let content = response.json::<DuplicateAutomationResponse>().await?;
 
         Ok(content)
     }
@@ -429,6 +443,12 @@ pub mod types {
         pub status: AutomationStatus,
     }
 
+    #[must_use]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct DuplicateAutomationResponse {
+        pub id: AutomationId,
+    }
+
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct DeleteAutomationResponse {
         pub id: AutomationId,
@@ -593,6 +613,12 @@ mod test {
             .list_runs(&automation.id, None, ListOptions::default())
             .await?;
         assert!(runs.data.is_empty());
+
+        // Duplicate
+        let duplicated = resend.automations.duplicate(&automation.id).await?;
+        std::thread::sleep(std::time::Duration::from_secs(2));
+        let deleted = resend.automations.delete(&duplicated.id).await?;
+        assert!(deleted.deleted);
 
         // Stop
         let automation = resend.automations.stop(&automation.id).await?;
