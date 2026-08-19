@@ -141,7 +141,7 @@ pub mod types {
     pub use super::emails::types::{
         Attachment, CancelScheduleResponse, ContentDisposition, ContentOrPath, CreateAttachment,
         CreateEmailBaseOptions, CreateEmailResponse, Email, EmailEvent, EmailId, EmailTemplate,
-        Tag, UpdateEmailOptions, UpdateEmailResponse,
+        ShareEmailOptions, ShareEmailResponse, Tag, UpdateEmailOptions, UpdateEmailResponse,
     };
     pub use super::error::types::{ErrorKind, ErrorResponse};
     pub use super::events::types::{
