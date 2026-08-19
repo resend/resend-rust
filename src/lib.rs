@@ -141,8 +141,10 @@ pub mod types {
     };
     pub use super::emails::types::{
         Attachment, CancelScheduleResponse, ContentDisposition, ContentOrPath, CreateAttachment,
-        CreateEmailBaseOptions, CreateEmailResponse, Email, EmailEvent, EmailId, EmailTemplate,
-        ShareEmailOptions, ShareEmailResponse, Tag, UpdateEmailOptions, UpdateEmailResponse,
+        CreateEmailBaseOptions, CreateEmailResponse, Dimension, Email, EmailEvent, EmailId,
+        EmailMetrics, EmailMetricsDataPoint, EmailTemplate, GetEmailMetricsOptions, Metric,
+        MetricsGranularity, ShareEmailOptions, ShareEmailResponse, Tag, UpdateEmailOptions,
+        UpdateEmailResponse,
     };
     pub use super::error::types::{ErrorKind, ErrorResponse};
     pub use super::events::types::{
