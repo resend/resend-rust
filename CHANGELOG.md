@@ -8,6 +8,12 @@ and this project adheres to
 
 <!--## Unreleased-->
 
+## [0.30.1] - 2026-08-20
+
+### Added
+
+- automations duplicate endpoint
+
 ## [0.30.0] - 2026-08-14
 
 ### Added
@@ -575,6 +581,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+[0.30.1]: https://crates.io/crates/resend-rs/0.30.1
 [0.30.0]: https://crates.io/crates/resend-rs/0.30.0
 [0.29.0]: https://crates.io/crates/resend-rs/0.29.0
 [0.28.0]: https://crates.io/crates/resend-rs/0.28.0
