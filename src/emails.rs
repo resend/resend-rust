@@ -12,7 +12,7 @@ use crate::{
     idempotent::Idempotent,
     types::{
         CancelScheduleResponse, CreateEmailBaseOptions, CreateEmailResponse, Email,
-        UpdateEmailOptions, UpdateEmailResponse,
+        ShareEmailOptions, ShareEmailResponse, UpdateEmailOptions, UpdateEmailResponse,
     },
 };
 
@@ -85,6 +85,21 @@ impl EmailsSvc {
         let request = self.0.build(Method::POST, &path);
         let response = self.0.send(request).await?;
         let content = response.json::<CancelScheduleResponse>().await?;
+
+        Ok(content)
+    }
+
+    #[maybe_async::maybe_async]
+    pub async fn share(
+        &self,
+        email_id: &str,
+        options: ShareEmailOptions,
+    ) -> Result<ShareEmailResponse> {
+        let path = format!("/emails/{email_id}/share");
+
+        let request = self.0.build(Method::POST, &path);
+        let response = self.0.send(request.json(&options)).await?;
+        let content = response.json::<ShareEmailResponse>().await?;
 
         Ok(content)
     }
@@ -398,6 +413,34 @@ pub mod types {
         pub id: EmailId,
     }
 
+    #[must_use]
+    #[derive(Debug, Default, Clone, Serialize)]
+    pub struct ShareEmailOptions {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        expires_in: Option<String>,
+    }
+
+    impl ShareEmailOptions {
+        #[inline]
+        pub fn new() -> Self {
+            Self::default()
+        }
+
+        #[inline]
+        pub fn with_expires_in(mut self, expires_in: &str) -> Self {
+            self.expires_in = Some(expires_in.to_owned());
+            self
+        }
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct ShareEmailResponse {
+        /// The ID of the shared email.
+        pub id: EmailId,
+        /// The shareable link to the email.
+        pub url: String,
+    }
+
     /// Name and value of the attached [`Email`] tag.
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -670,13 +713,13 @@ mod test {
     use crate::{
         list_opts::ListOptions,
         types::{
-            CreateAttachment, CreateTemplateOptions, EmailTemplate, UpdateEmailOptions, Variable,
-            VariableType,
+            CreateAttachment, CreateTemplateOptions, EmailTemplate, ShareEmailOptions,
+            UpdateEmailOptions, Variable, VariableType,
         },
     };
     use crate::{
         test::{CLIENT, DebugResult},
-        types::{CreateEmailBaseOptions, Email, Tag},
+        types::{CreateEmailBaseOptions, Email, ShareEmailResponse, Tag},
     };
     #[cfg(not(feature = "blocking"))]
     use jiff::{Span, Timestamp, Zoned};
@@ -762,6 +805,17 @@ mod test {
         assert!(!res.cc.is_empty());
         assert!(!res.bcc.is_empty());
         assert!(res.text.is_some());
+    }
+
+    #[test]
+    fn parse_share_email_response_test() {
+        let data = r#"{
+            "object": "email",
+            "id": "6757a66c-3a5b-49ee-98cc-fca7a5f423c0",
+            "url": "https://resend.com/share/6757a66c-3a5b-49ee-98cc-fca7a5f423c0"
+        }"#;
+
+        let _parsed = serde_json::from_str::<ShareEmailResponse>(data).expect("Parsing failed");
     }
 
     #[test]
@@ -856,6 +910,65 @@ mod test {
         // Get again, make sure it was cancelled
         let email = resend.emails.get(&email.id).await?;
         assert_eq!(email.last_event, EmailEvent::Canceled);
+
+        Ok(())
+    }
+
+    #[tokio_shared_rt::test(shared = true)]
+    #[serial_test::serial]
+    #[cfg(not(feature = "blocking"))]
+    async fn share_email() -> DebugResult<()> {
+        let from = "Acme <onboarding@resend.dev>";
+        let to = ["delivered@resend.dev"];
+        let subject = "Hello World!";
+
+        let resend = &*CLIENT;
+
+        let email = CreateEmailBaseOptions::new(from, to, subject).with_text("Hello World!");
+        let email = resend.emails.send(email).await?;
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
+        let shared = resend
+            .emails
+            .share(&email.id, ShareEmailOptions::new())
+            .await?;
+        assert_eq!(shared.id, email.id);
+        assert!(!shared.url.is_empty());
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
+        let shared = resend
+            .emails
+            .share(&email.id, ShareEmailOptions::new().with_expires_in("10m"))
+            .await?;
+        assert_eq!(shared.id, email.id);
+        assert!(!shared.url.is_empty());
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
+        let shared = resend
+            .emails
+            .share(&email.id, ShareEmailOptions::new().with_expires_in("72h"))
+            .await;
+        assert!(shared.is_err());
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
+        let shared = resend
+            .emails
+            .share(
+                &email.id,
+                ShareEmailOptions::new().with_expires_in("not-a-duration"),
+            )
+            .await;
+        assert!(matches!(shared, Err(crate::Error::Resend(_))));
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
+        let shared = resend
+            .emails
+            .share(
+                "00000000-0000-0000-0000-000000000000",
+                ShareEmailOptions::new(),
+            )
+            .await;
+        assert!(matches!(shared, Err(crate::Error::Resend(_))));
 
         Ok(())
     }
