@@ -6,7 +6,7 @@ use reqwest::Method;
 use crate::{Config, Result};
 use crate::{
     list_opts::{ListOptions, ListResponse},
-    types::{ApiKey, ApiKeyToken, CreateApiKeyOptions},
+    types::{ApiKey, ApiKeyToken, CreateApiKeyOptions, UpdateApiKeyOptions, UpdateApiKeyResponse},
 };
 
 /// `Resend` APIs for `/api-keys` endpoints.
@@ -36,6 +36,27 @@ impl ApiKeysSvc {
         let request = self.0.build(Method::GET, "/api-keys").query(&list_opts);
         let response = self.0.send(request).await?;
         let content = response.json::<ListResponse<ApiKey>>().await?;
+
+        Ok(content)
+    }
+
+    /// Updates an existing API key.
+    ///
+    /// Only the name of the API key can be changed. Permission and domain access are fixed at
+    /// creation time and cannot be widened after the fact.
+    ///
+    /// <https://resend.com/docs/api-reference/api-keys/update-api-key>
+    #[maybe_async::maybe_async]
+    pub async fn update(
+        &self,
+        api_key_id: &str,
+        changes: UpdateApiKeyOptions,
+    ) -> Result<UpdateApiKeyResponse> {
+        let path = format!("/api-keys/{api_key_id}");
+
+        let request = self.0.build(Method::PATCH, &path);
+        let response = self.0.send(request.json(&changes)).await?;
+        let content = response.json::<UpdateApiKeyResponse>().await?;
 
         Ok(content)
     }
@@ -135,6 +156,35 @@ pub mod types {
         SendingAccess,
     }
 
+    /// Changes to apply to an existing [`ApiKey`].
+    ///
+    /// Only the name can be changed. `permission` and `domain_id` are deliberately not
+    /// patchable through this endpoint.
+    #[must_use]
+    #[derive(Debug, Clone, Serialize)]
+    pub struct UpdateApiKeyOptions {
+        /// The API key name.
+        name: String,
+    }
+
+    impl UpdateApiKeyOptions {
+        /// Creates a new [`UpdateApiKeyOptions`].
+        #[inline]
+        pub fn new(name: &str) -> Self {
+            Self {
+                name: name.to_owned(),
+            }
+        }
+    }
+
+    /// ID of the updated [`ApiKey`].
+    #[must_use]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct UpdateApiKeyResponse {
+        /// The ID of the updated API key.
+        pub id: ApiKeyId,
+    }
+
     /// Token and ID of the newly created [`ApiKey`].
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -166,7 +216,7 @@ mod test {
     use crate::{
         list_opts::ListOptions,
         test::{CLIENT, DebugResult},
-        types::CreateApiKeyOptions,
+        types::{CreateApiKeyOptions, UpdateApiKeyOptions},
     };
 
     #[tokio_shared_rt::test(shared = true)]
@@ -185,6 +235,10 @@ mod test {
         // List.
         let api_keys = resend.api_keys.list(ListOptions::default()).await?;
         let api_keys_amt = api_keys.len();
+
+        let update = UpdateApiKeyOptions::new("test_renamed");
+        let response = resend.api_keys.update(&id, update).await?;
+        assert_eq!(response.id, id);
 
         // Delete.
         resend.api_keys.delete(&id).await?;

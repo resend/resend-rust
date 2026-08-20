@@ -100,7 +100,8 @@ pub mod types {
     //! Request and response types.
 
     pub use super::api_keys::types::{
-        ApiKey, ApiKeyId, ApiKeyToken, CreateApiKeyOptions, Permission,
+        ApiKey, ApiKeyId, ApiKeyToken, CreateApiKeyOptions, Permission, UpdateApiKeyOptions,
+        UpdateApiKeyResponse,
     };
     pub use super::automations::types::{
         AddToSegmentStepConfig, Automation, AutomationId, AutomationMinimal, AutomationRun,
