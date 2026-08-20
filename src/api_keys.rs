@@ -236,7 +236,6 @@ mod test {
         let api_keys = resend.api_keys.list(ListOptions::default()).await?;
         let api_keys_amt = api_keys.len();
 
-        // Update.
         let update = UpdateApiKeyOptions::new("test_renamed");
         let response = resend.api_keys.update(&id, update).await?;
         assert_eq!(response.id, id);
