@@ -958,7 +958,7 @@ mod test {
                 ShareEmailOptions::new().with_expires_in("not-a-duration"),
             )
             .await;
-        assert!(shared.is_err());
+        assert!(matches!(shared, Err(crate::Error::Resend(_))));
         std::thread::sleep(std::time::Duration::from_secs(1));
 
         let shared = resend
@@ -968,7 +968,7 @@ mod test {
                 ShareEmailOptions::new(),
             )
             .await;
-        assert!(shared.is_err());
+        assert!(matches!(shared, Err(crate::Error::Resend(_))));
 
         Ok(())
     }
