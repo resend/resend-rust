@@ -1,14 +1,15 @@
 use std::sync::Arc;
 
 use reqwest::Method;
-use types::{UpdateBroadcastOptions, UpdateBroadcastResponse};
+use types::{ListRecipientsOptions, UpdateBroadcastOptions, UpdateBroadcastResponse};
 
 use crate::{Config, Result, list_opts::ListResponse};
 use crate::{
     list_opts::ListOptions,
     types::{
-        Broadcast, CancelBroadcastResponse, CreateBroadcastOptions, CreateBroadcastResponse,
-        RemoveBroadcastResponse, SendBroadcastOptions, SendBroadcastResponse,
+        Broadcast, BroadcastRecipient, CancelBroadcastResponse, CreateBroadcastOptions,
+        CreateBroadcastResponse, RemoveBroadcastResponse, SendBroadcastOptions,
+        SendBroadcastResponse,
     },
 };
 
@@ -114,6 +115,27 @@ impl BroadcastsSvc {
 
         Ok(content)
     }
+
+    /// Retrieve the recipients of a broadcast for a given event type, such as who opened,
+    /// clicked, or bounced.
+    ///
+    /// - Default limit: 20
+    ///
+    /// <https://resend.com/docs/api-reference/broadcasts/list-broadcast-recipients>
+    #[maybe_async::maybe_async]
+    pub async fn recipients<T>(
+        &self,
+        broadcast_id: &str,
+        list_opts: ListRecipientsOptions<T>,
+    ) -> Result<ListResponse<BroadcastRecipient>> {
+        let path = format!("/broadcasts/{broadcast_id}/recipients");
+
+        let request = self.0.build(Method::GET, &path).query(&list_opts);
+        let response = self.0.send(request).await?;
+        let content = response.json::<ListResponse<BroadcastRecipient>>().await?;
+
+        Ok(content)
+    }
 }
 
 #[allow(unreachable_pub)]
@@ -121,7 +143,10 @@ pub mod types {
     use ecow::EcoString;
     use serde::{Deserialize, Serialize};
 
-    use crate::types::SegmentId;
+    use crate::{
+        list_opts::{ListAfter, ListBefore, ListOptions, TimeNotSpecified},
+        types::{ContactId, SegmentId},
+    };
 
     /// Details of a new `Broadcast`.
     #[must_use]
@@ -372,6 +397,167 @@ pub mod types {
         /// The deleted attribute indicates that the corresponding broadcast has been deleted.
         pub deleted: bool,
     }
+
+    /// The recipient event type to filter by when listing [`BroadcastRecipient`]s.
+    #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone, Copy)]
+    #[must_use]
+    #[serde(rename_all = "snake_case")]
+    pub enum BroadcastRecipientEventType {
+        Sent,
+        Delivered,
+        Opened,
+        Clicked,
+        Bounced,
+        Complained,
+        Unsubscribed,
+        Suppressed,
+    }
+
+    /// The classification of a bounce for a [`BroadcastRecipient`].
+    #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone, Copy)]
+    #[must_use]
+    #[serde(rename_all = "snake_case")]
+    pub enum BroadcastRecipientBounceType {
+        Permanent,
+        Transient,
+        Undetermined,
+    }
+
+    /// Query parameters for [`crate::broadcasts::BroadcastsSvc::recipients`].
+    ///
+    /// `before` and `after` are mutually exclusive; use [`ListRecipientsOptions::list_before`] or
+    /// [`ListRecipientsOptions::list_after`] to pick one, same as [`ListOptions`].
+    ///
+    /// <https://resend.com/docs/api-reference/broadcasts/list-broadcast-recipients>
+    ///
+    /// ## Example
+    ///
+    /// ```
+    /// # use resend_rs::types::{BroadcastRecipientEventType, ListRecipientsOptions};
+    /// let list_opts =
+    ///   ListRecipientsOptions::new(BroadcastRecipientEventType::Clicked).with_limit(10);
+    /// ```
+    #[must_use]
+    #[derive(Debug, Clone, Serialize)]
+    // The `List` parameter only ever reaches the wire through `pagination`'s own (bound-free)
+    // `Serialize` impl, so it never needs to implement `Serialize` itself; the phantom marker
+    // types (e.g. `TimeNotSpecified`) intentionally don't.
+    #[serde(bound(serialize = ""))]
+    pub struct ListRecipientsOptions<List = TimeNotSpecified> {
+        #[serde(rename = "type")]
+        r#type: BroadcastRecipientEventType,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        email: Option<String>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        bounce_type: Option<BroadcastRecipientBounceType>,
+
+        #[serde(flatten)]
+        pagination: ListOptions<List>,
+    }
+
+    impl ListRecipientsOptions<TimeNotSpecified> {
+        /// Creates a new [`ListRecipientsOptions`], filtering recipients by the given event
+        /// `type`.
+        pub fn new(event_type: BroadcastRecipientEventType) -> Self {
+            Self {
+                r#type: event_type,
+                email: None,
+                bounce_type: None,
+                pagination: ListOptions::default(),
+            }
+        }
+
+        /// The id before which we'll retrieve the items. This id will *not* be included in the
+        /// list.
+        #[inline]
+        pub fn list_before(self, id: &str) -> ListRecipientsOptions<ListBefore> {
+            ListRecipientsOptions {
+                r#type: self.r#type,
+                email: self.email,
+                bounce_type: self.bounce_type,
+                pagination: self.pagination.list_before(id),
+            }
+        }
+
+        /// The id after which we'll retrieve the items. This id will *not* be included in the
+        /// list.
+        #[inline]
+        pub fn list_after(self, id: &str) -> ListRecipientsOptions<ListAfter> {
+            ListRecipientsOptions {
+                r#type: self.r#type,
+                email: self.email,
+                bounce_type: self.bounce_type,
+                pagination: self.pagination.list_after(id),
+            }
+        }
+    }
+
+    impl<T> ListRecipientsOptions<T> {
+        /// Number of recipients to retrieve.
+        ///
+        /// - min: 1
+        /// - max: 100
+        /// - default: 20
+        #[inline]
+        pub fn with_limit(mut self, limit: u8) -> Self {
+            self.pagination = self.pagination.with_limit(limit);
+            self
+        }
+
+        /// Filters recipients whose email contains this value.
+        #[inline]
+        pub fn with_email(mut self, email: &str) -> Self {
+            self.email = Some(email.to_owned());
+            self
+        }
+
+        /// Filters bounced recipients by bounce type.
+        ///
+        /// Only meaningful when `type` is [`BroadcastRecipientEventType::Bounced`].
+        #[inline]
+        pub fn with_bounce_type(mut self, bounce_type: BroadcastRecipientBounceType) -> Self {
+            self.bounce_type = Some(bounce_type);
+            self
+        }
+    }
+
+    /// A link clicked by a [`BroadcastRecipient`]. Only present when `type` is `clicked`.
+    #[must_use]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct BroadcastRecipientClickedLink {
+        /// The clicked URL.
+        pub url: String,
+        /// The number of times this recipient clicked this URL.
+        pub clicks: u32,
+    }
+
+    /// A single recipient of a broadcast, matching the requested event `type`.
+    ///
+    /// <https://resend.com/docs/api-reference/broadcasts/list-broadcast-recipients>
+    #[must_use]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct BroadcastRecipient {
+        /// Opaque cursor identifying this row, used only for pagination. This does not identify
+        /// any entity in Resend; use [`BroadcastRecipient::contact_id`] to reference the contact.
+        pub id: String,
+        /// The ID of the contact associated with this recipient. `None` if the recipient's email
+        /// no longer maps to a contact.
+        pub contact_id: Option<ContactId>,
+        /// The recipient's email address.
+        pub email: String,
+        /// The number of times this recipient triggered the event. Only present when the
+        /// requested `type` is `opened` or `clicked`.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub count: Option<u32>,
+        /// The type of bounce. Only present when the requested `type` is `bounced`.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub bounce_type: Option<BroadcastRecipientBounceType>,
+        /// The links this recipient clicked. Only present when the requested `type` is `clicked`.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub clicked_links: Option<Vec<BroadcastRecipientClickedLink>>,
+    }
 }
 
 #[cfg(test)]
@@ -387,7 +573,10 @@ mod test {
         },
     };
 
-    use super::types::{Broadcast, CancelBroadcastResponse};
+    use super::types::{
+        Broadcast, BroadcastRecipient, BroadcastRecipientEventType, CancelBroadcastResponse,
+        ListRecipientsOptions,
+    };
 
     #[tokio_shared_rt::test(shared = true)]
     #[serial_test::serial]
@@ -541,5 +730,136 @@ mod test {
 
         let _parsed =
             serde_json::from_str::<CancelBroadcastResponse>(data).expect("Parsing failed");
+    }
+
+    #[test]
+    fn parse_recipients_response_sent_test() {
+        let data = r#"{
+    "object": "list",
+    "has_more": false,
+    "data": [
+        {
+            "id": "b2Zmc2V0OjA",
+            "contact_id": "e169aa45-1ecf-4183-9955-b1499d5701d3",
+            "email": "steve.wozniak@gmail.com"
+        },
+        {
+            "id": "b2Zmc2V0OjE",
+            "contact_id": null,
+            "email": "dana@example.com"
+        }
+    ]
+}"#;
+
+        let parsed =
+            serde_json::from_str::<crate::list_opts::ListResponse<BroadcastRecipient>>(data)
+                .expect("Parsing failed");
+
+        assert!(!parsed.has_more);
+        assert_eq!(parsed.len(), 2);
+        assert_eq!(
+            parsed[0].contact_id.as_deref(),
+            Some("e169aa45-1ecf-4183-9955-b1499d5701d3")
+        );
+        assert!(parsed[1].contact_id.is_none());
+        assert!(parsed[0].count.is_none());
+        assert!(parsed[0].bounce_type.is_none());
+        assert!(parsed[0].clicked_links.is_none());
+    }
+
+    #[test]
+    fn parse_recipients_response_opened_test() {
+        let data = r#"{
+    "id": "b2Zmc2V0OjA",
+    "contact_id": "e169aa45-1ecf-4183-9955-b1499d5701d3",
+    "email": "steve.wozniak@gmail.com",
+    "count": 3
+}"#;
+
+        let parsed = serde_json::from_str::<BroadcastRecipient>(data).expect("Parsing failed");
+
+        assert_eq!(parsed.count, Some(3));
+        assert!(parsed.bounce_type.is_none());
+        assert!(parsed.clicked_links.is_none());
+    }
+
+    #[test]
+    fn parse_recipients_response_clicked_test() {
+        let data = r#"{
+    "id": "b2Zmc2V0OjA",
+    "contact_id": "e169aa45-1ecf-4183-9955-b1499d5701d3",
+    "email": "carter@example.com",
+    "count": 3,
+    "clicked_links": [
+        { "url": "https://resend.com/pricing", "clicks": 2 },
+        { "url": "https://resend.com/docs", "clicks": 1 }
+    ]
+}"#;
+
+        let parsed = serde_json::from_str::<BroadcastRecipient>(data).expect("Parsing failed");
+
+        assert_eq!(parsed.count, Some(3));
+        let clicked_links = parsed.clicked_links.expect("clicked_links should be set");
+        assert_eq!(clicked_links.len(), 2);
+        assert_eq!(clicked_links[0].url, "https://resend.com/pricing");
+        assert_eq!(clicked_links[0].clicks, 2);
+    }
+
+    #[test]
+    fn parse_recipients_response_bounced_test() {
+        let data = r#"{
+    "id": "b2Zmc2V0OjA",
+    "contact_id": null,
+    "email": "bounced@example.com",
+    "bounce_type": "permanent"
+}"#;
+
+        let parsed = serde_json::from_str::<BroadcastRecipient>(data).expect("Parsing failed");
+
+        assert!(parsed.contact_id.is_none());
+        assert!(parsed.count.is_none());
+        assert!(parsed.clicked_links.is_none());
+        assert_eq!(
+            parsed.bounce_type,
+            Some(super::types::BroadcastRecipientBounceType::Permanent)
+        );
+    }
+
+    #[test]
+    fn serialize_list_recipients_options_test() {
+        use super::types::BroadcastRecipientBounceType;
+
+        let opts = ListRecipientsOptions::new(BroadcastRecipientEventType::Bounced)
+            .with_email("steve")
+            .with_bounce_type(BroadcastRecipientBounceType::Permanent)
+            .with_limit(10)
+            .list_after("cursor-123");
+
+        let json = serde_json::to_value(&opts).expect("Failed to serialize");
+
+        assert_eq!(json["type"], "bounced");
+        assert_eq!(json["email"], "steve");
+        assert_eq!(json["bounce_type"], "permanent");
+        assert_eq!(json["limit"], 10);
+        assert_eq!(json["after"], "cursor-123");
+        assert!(json.get("before").is_none() || json["before"].is_null());
+    }
+
+    #[tokio_shared_rt::test(shared = true)]
+    #[serial_test::serial]
+    #[cfg(not(feature = "blocking"))]
+    async fn recipients_not_found() -> DebugResult<()> {
+        let resend = &*CLIENT;
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
+        let list_opts = ListRecipientsOptions::new(BroadcastRecipientEventType::Sent);
+        let result = resend
+            .broadcasts
+            .recipients("00000000-0000-0000-0000-000000000000", list_opts)
+            .await;
+
+        assert!(result.is_err());
+
+        Ok(())
     }
 }
