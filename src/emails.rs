@@ -4,7 +4,7 @@ use reqwest::Method;
 use serde::{Deserialize, Deserializer};
 
 use crate::{
-    Config, Result,
+    Config, Error, Result,
     list_opts::{ListOptions, ListResponse},
     types::Attachment,
 };
@@ -155,9 +155,23 @@ impl EmailsSvc {
     ///
     /// This is a beta endpoint and its shape may still change.
     ///
+    /// # Errors
+    ///
+    /// Returns [`Error::Other`] without making a request if `options` combines the
+    /// [`crate::types::Dimension::Broadcast`] dimension or `broadcast_id` filter with the
+    /// [`crate::types::Dimension::Email`] dimension or `email_id` filter, in any pairing.
+    ///
     /// <https://resend.com/docs/api-reference/emails/metrics>
     #[maybe_async::maybe_async]
     pub async fn metrics(&self, options: GetEmailMetricsOptions) -> Result<EmailMetrics> {
+        if options.combines_email_and_broadcast() {
+            return Err(Error::Other(
+                "the `broadcast` dimension/`broadcast_id` filter cannot be combined with the \
+                 `email` dimension/`email_id` filter"
+                    .to_string(),
+            ));
+        }
+
         let request = self.0.build(Method::GET, "/emails/metrics").query(&options);
         let response = self.0.send(request).await?;
         let content = response.json::<EmailMetrics>().await?;
@@ -881,6 +895,16 @@ pub mod types {
             );
             self
         }
+
+        /// Whether this combines the `broadcast` dimension/filter with the `email`
+        /// dimension/filter, which the `/emails/metrics` endpoint rejects.
+        pub(crate) fn combines_email_and_broadcast(&self) -> bool {
+            let has_broadcast =
+                self.dimensions.contains(&Dimension::Broadcast) || !self.broadcast_ids.is_empty();
+            let has_email =
+                self.dimensions.contains(&Dimension::Email) || !self.email_ids.is_empty();
+            has_broadcast && has_email
+        }
     }
 
     /// A metric available on the `/emails/metrics` endpoint.
@@ -964,7 +988,8 @@ pub mod types {
 
     /// A dimension to break `/emails/metrics` results down by.
     ///
-    /// Note that `email` cannot be combined with `broadcast` (server-validated).
+    /// Note that `email` cannot be combined with `broadcast`; [`crate::emails::EmailsSvc::metrics`]
+    /// returns an error before sending the request if they are.
     ///
     /// <https://resend.com/docs/api-reference/emails/metrics>
     #[must_use]
@@ -1116,7 +1141,7 @@ mod test {
     #[cfg(not(feature = "blocking"))]
     use jiff::{Span, Timestamp, Zoned};
 
-    use std::collections::HashMap;
+    use std::{collections::HashMap, sync::Arc};
 
     use crate::{
         Config,
@@ -1515,7 +1540,6 @@ mod test {
 
     #[test]
     fn metrics_query_multiple_dimensions() {
-        // `email` + `broadcast` is server-validated, not client-validated - the SDK allows it.
         let opts = GetEmailMetricsOptions::new()
             .with_dimensions([Dimension::Period, Dimension::Broadcast]);
         let query = built_query(&opts);
@@ -1523,6 +1547,45 @@ mod test {
             query.get("dimensions").map(String::as_str),
             Some("period,broadcast")
         );
+    }
+
+    #[tokio_shared_rt::test(shared = true)]
+    #[serial_test::serial]
+    #[cfg(not(feature = "blocking"))]
+    async fn metrics_rejects_email_and_broadcast_combinations() {
+        let config = Arc::new(Config::builder("re_test_key").build());
+        let emails = crate::emails::EmailsSvc(config);
+
+        let dimensions_combined =
+            GetEmailMetricsOptions::new().with_dimensions([Dimension::Email, Dimension::Broadcast]);
+        assert!(matches!(
+            emails.metrics(dimensions_combined).await,
+            Err(crate::Error::Other(_))
+        ));
+
+        let broadcast_dimension_with_email_id = GetEmailMetricsOptions::new()
+            .with_dimension(Dimension::Broadcast)
+            .with_email_id("e1");
+        assert!(matches!(
+            emails.metrics(broadcast_dimension_with_email_id).await,
+            Err(crate::Error::Other(_))
+        ));
+
+        let email_dimension_with_broadcast_id = GetEmailMetricsOptions::new()
+            .with_dimension(Dimension::Email)
+            .with_broadcast_id("b1");
+        assert!(matches!(
+            emails.metrics(email_dimension_with_broadcast_id).await,
+            Err(crate::Error::Other(_))
+        ));
+
+        let both_filters = GetEmailMetricsOptions::new()
+            .with_email_id("e1")
+            .with_broadcast_id("b1");
+        assert!(matches!(
+            emails.metrics(both_filters).await,
+            Err(crate::Error::Other(_))
+        ));
     }
 
     #[test]
