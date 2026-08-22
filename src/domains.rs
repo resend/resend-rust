@@ -710,7 +710,7 @@ mod test {
         // Create
         let domain = resend
             .domains
-            .create(CreateDomainOptions::new("example.com"))
+            .create(CreateDomainOptions::new("resend-rust.com"))
             .await?;
 
         std::thread::sleep(std::time::Duration::from_secs(4));
