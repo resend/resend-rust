@@ -461,7 +461,7 @@ pub mod types {
     }
 
     impl CreateContactOptions {
-        /// Creates a new [`ContactData`].
+        /// Creates a new [`CreateContactOptions`].
         pub fn new(email: &str) -> Self {
             Self {
                 email: email.to_owned(),
