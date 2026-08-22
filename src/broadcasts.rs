@@ -848,6 +848,7 @@ mod test {
     #[tokio_shared_rt::test(shared = true)]
     #[serial_test::serial]
     #[cfg(not(feature = "blocking"))]
+    #[ignore = "requires RESEND_API_KEY and network access"]
     async fn recipients_not_found() -> DebugResult<()> {
         let resend = &*CLIENT;
         std::thread::sleep(std::time::Duration::from_secs(1));
