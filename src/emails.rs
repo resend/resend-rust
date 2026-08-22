@@ -11,8 +11,9 @@ use crate::{
 use crate::{
     idempotent::Idempotent,
     types::{
-        CancelScheduleResponse, CreateEmailBaseOptions, CreateEmailResponse, Email,
-        ShareEmailOptions, ShareEmailResponse, UpdateEmailOptions, UpdateEmailResponse,
+        CancelScheduleResponse, CreateEmailBaseOptions, CreateEmailResponse, Email, EmailMetrics,
+        GetEmailMetricsOptions, ShareEmailOptions, ShareEmailResponse, UpdateEmailOptions,
+        UpdateEmailResponse,
     },
 };
 
@@ -149,6 +150,18 @@ impl EmailsSvc {
 
         Ok(content)
     }
+
+    /// Retrieve email delivery metrics aggregated over a date range.
+    ///
+    /// <https://resend.com/docs/api-reference/emails/metrics>
+    #[maybe_async::maybe_async]
+    pub async fn metrics<T>(&self, options: GetEmailMetricsOptions<T>) -> Result<EmailMetrics> {
+        let request = self.0.build(Method::GET, "/emails/metrics").query(&options);
+        let response = self.0.send(request).await?;
+        let content = response.json::<EmailMetrics>().await?;
+
+        Ok(content)
+    }
 }
 
 #[allow(unreachable_pub)]
@@ -158,9 +171,9 @@ pub mod types {
     use serde::{Deserialize, Serialize};
 
     use crate::{
-        emails::parse_nullable_vec,
+        emails::{join_comma, parse_nullable_vec},
         idempotent::Idempotent,
-        types::{TemplateId, TopicId},
+        types::{BroadcastId, DomainId, TemplateId, TopicId},
     };
 
     crate::define_id_type!(EmailId);
@@ -692,6 +705,538 @@ pub mod types {
             self
         }
     }
+
+    #[derive(Debug, Clone, Copy)]
+    pub struct NoFilter;
+    #[derive(Debug, Clone, Copy)]
+    pub struct EmailFilter;
+    #[derive(Debug, Clone, Copy)]
+    pub struct BroadcastFilter;
+
+    /// Query parameters for [`crate::emails::EmailsSvc::metrics`].
+    ///
+    /// Note that [`GetEmailMetricsOptions::default()`] applies no filters, which means the
+    /// server-side defaults are used (last 7 days, `UTC`, daily granularity, all metrics, no
+    /// dimensions).
+    ///
+    /// <https://resend.com/docs/api-reference/emails/metrics>
+    #[must_use]
+    #[derive(Debug, Clone, Serialize)]
+    pub struct GetEmailMetricsOptions<State = NoFilter> {
+        #[serde(skip)]
+        _state: std::marker::PhantomData<State>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        start_date: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        end_date: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        timezone: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        granularity: Option<MetricsGranularity>,
+        #[serde(skip_serializing_if = "Vec::is_empty", serialize_with = "join_comma")]
+        metrics: Vec<Metric>,
+        #[serde(skip_serializing_if = "Vec::is_empty", serialize_with = "join_comma")]
+        dimensions: Vec<Dimension>,
+        #[serde(
+            rename = "domain_id",
+            skip_serializing_if = "Vec::is_empty",
+            serialize_with = "join_comma"
+        )]
+        domain_ids: Vec<DomainId>,
+        #[serde(
+            rename = "email_id",
+            skip_serializing_if = "Vec::is_empty",
+            serialize_with = "join_comma"
+        )]
+        email_ids: Vec<EmailId>,
+        #[serde(
+            rename = "broadcast_id",
+            skip_serializing_if = "Vec::is_empty",
+            serialize_with = "join_comma"
+        )]
+        broadcast_ids: Vec<BroadcastId>,
+    }
+
+    impl Default for GetEmailMetricsOptions {
+        /// Creates a new [`GetEmailMetricsOptions`] applying no filters.
+        fn default() -> Self {
+            Self {
+                _state: std::marker::PhantomData::<NoFilter>,
+                start_date: Option::default(),
+                end_date: Option::default(),
+                timezone: Option::default(),
+                granularity: Option::default(),
+                metrics: Vec::default(),
+                dimensions: Vec::default(),
+                domain_ids: Vec::default(),
+                email_ids: Vec::default(),
+                broadcast_ids: Vec::default(),
+            }
+        }
+    }
+
+    impl GetEmailMetricsOptions<NoFilter> {
+        /// Adds the email dimension to break results down by. If none are added, only `totals` is
+        /// returned.
+        #[inline]
+        pub fn with_email_dimension(mut self) -> GetEmailMetricsOptions<EmailFilter> {
+            self.dimensions.push(Dimension::Email);
+
+            GetEmailMetricsOptions::<EmailFilter> {
+                _state: std::marker::PhantomData,
+                start_date: self.start_date,
+                end_date: self.end_date,
+                timezone: self.timezone,
+                granularity: self.granularity,
+                metrics: self.metrics,
+                dimensions: self.dimensions,
+                domain_ids: self.domain_ids,
+                email_ids: self.email_ids,
+                broadcast_ids: self.broadcast_ids,
+            }
+        }
+
+        /// Restricts results to an additional email ID. Max 100. Cannot be combined with
+        /// [`Dimension::Broadcast`] or a broadcast ID.
+        #[inline]
+        pub fn with_email_id(mut self, email_id: &str) -> GetEmailMetricsOptions<EmailFilter> {
+            self.email_ids.push(EmailId::new(email_id));
+
+            GetEmailMetricsOptions::<EmailFilter> {
+                _state: std::marker::PhantomData,
+                start_date: self.start_date,
+                end_date: self.end_date,
+                timezone: self.timezone,
+                granularity: self.granularity,
+                metrics: self.metrics,
+                dimensions: self.dimensions,
+                domain_ids: self.domain_ids,
+                email_ids: self.email_ids,
+                broadcast_ids: self.broadcast_ids,
+            }
+        }
+
+        /// Restricts results to additional email IDs. Max 100. Cannot be combined with
+        /// [`Dimension::Broadcast`] or a broadcast ID.
+        #[inline]
+        pub fn with_email_ids<T: AsRef<str>>(
+            mut self,
+            email_ids: impl IntoIterator<Item = T>,
+        ) -> GetEmailMetricsOptions<EmailFilter> {
+            self.email_ids
+                .extend(email_ids.into_iter().map(|id| EmailId::new(id.as_ref())));
+
+            GetEmailMetricsOptions::<EmailFilter> {
+                _state: std::marker::PhantomData,
+                start_date: self.start_date,
+                end_date: self.end_date,
+                timezone: self.timezone,
+                granularity: self.granularity,
+                metrics: self.metrics,
+                dimensions: self.dimensions,
+                domain_ids: self.domain_ids,
+                email_ids: self.email_ids,
+                broadcast_ids: self.broadcast_ids,
+            }
+        }
+
+        /// Adds the broadcast dimension to break results down by. If none are added, only `totals` is
+        /// returned.
+        #[inline]
+        pub fn with_broadcast_dimension(mut self) -> GetEmailMetricsOptions<BroadcastFilter> {
+            self.dimensions.push(Dimension::Broadcast);
+
+            GetEmailMetricsOptions::<BroadcastFilter> {
+                _state: std::marker::PhantomData,
+                start_date: self.start_date,
+                end_date: self.end_date,
+                timezone: self.timezone,
+                granularity: self.granularity,
+                metrics: self.metrics,
+                dimensions: self.dimensions,
+                domain_ids: self.domain_ids,
+                email_ids: self.email_ids,
+                broadcast_ids: self.broadcast_ids,
+            }
+        }
+
+        /// Restricts results to an additional broadcast ID. Max 100. Cannot be combined with
+        /// [`Dimension::Email`] or an email ID.
+        #[inline]
+        pub fn with_broadcast_id(
+            mut self,
+            broadcast_id: &str,
+        ) -> GetEmailMetricsOptions<BroadcastFilter> {
+            self.broadcast_ids.push(BroadcastId::new(broadcast_id));
+
+            GetEmailMetricsOptions::<BroadcastFilter> {
+                _state: std::marker::PhantomData,
+                start_date: self.start_date,
+                end_date: self.end_date,
+                timezone: self.timezone,
+                granularity: self.granularity,
+                metrics: self.metrics,
+                dimensions: self.dimensions,
+                domain_ids: self.domain_ids,
+                email_ids: self.email_ids,
+                broadcast_ids: self.broadcast_ids,
+            }
+        }
+
+        /// Restricts results to additional broadcast IDs. Max 100. Cannot be combined with
+        /// [`Dimension::Email`] or an email ID.
+        #[inline]
+        pub fn with_broadcast_ids<T: AsRef<str>>(
+            mut self,
+            broadcast_ids: impl IntoIterator<Item = T>,
+        ) -> GetEmailMetricsOptions<BroadcastFilter> {
+            self.broadcast_ids.extend(
+                broadcast_ids
+                    .into_iter()
+                    .map(|id| BroadcastId::new(id.as_ref())),
+            );
+
+            GetEmailMetricsOptions::<BroadcastFilter> {
+                _state: std::marker::PhantomData,
+                start_date: self.start_date,
+                end_date: self.end_date,
+                timezone: self.timezone,
+                granularity: self.granularity,
+                metrics: self.metrics,
+                dimensions: self.dimensions,
+                domain_ids: self.domain_ids,
+                email_ids: self.email_ids,
+                broadcast_ids: self.broadcast_ids,
+            }
+        }
+    }
+
+    impl<T> GetEmailMetricsOptions<T> {
+        /// Sets the start of the date range (ISO 8601 date or datetime).
+        #[inline]
+        pub fn with_start_date(mut self, start_date: &str) -> Self {
+            self.start_date = Some(start_date.to_owned());
+            self
+        }
+
+        /// Sets the end of the date range (ISO 8601 date or datetime).
+        #[inline]
+        pub fn with_end_date(mut self, end_date: &str) -> Self {
+            self.end_date = Some(end_date.to_owned());
+            self
+        }
+
+        /// Sets the IANA timezone, e.g. `America/New_York`. Defaults to `UTC`.
+        #[inline]
+        pub fn with_timezone(mut self, timezone: &str) -> Self {
+            self.timezone = Some(timezone.to_owned());
+            self
+        }
+
+        /// Sets the bucket size used when [`Dimension::Period`] is requested. Defaults to
+        /// [`MetricsGranularity::Daily`].
+        #[inline]
+        pub fn with_granularity(mut self, granularity: MetricsGranularity) -> Self {
+            self.granularity = Some(granularity);
+            self
+        }
+
+        /// Adds a metric to compute. If none are added, all metrics are computed.
+        #[inline]
+        pub fn with_metric(mut self, metric: Metric) -> Self {
+            self.metrics.push(metric);
+            self
+        }
+
+        /// Adds multiple metrics to compute. If none are added, all metrics are computed.
+        #[inline]
+        pub fn with_metrics(mut self, metrics: impl IntoIterator<Item = Metric>) -> Self {
+            self.metrics.extend(metrics);
+            self
+        }
+
+        /// Restricts results to an additional sending domain ID. Max 100.
+        #[inline]
+        pub fn with_domain_id(mut self, domain_id: &str) -> Self {
+            self.domain_ids.push(DomainId::new(domain_id));
+            self
+        }
+
+        /// Restricts results to additional sending domain IDs. Max 100.
+        #[inline]
+        pub fn with_domain_ids<K: AsRef<str>>(
+            mut self,
+            domain_ids: impl IntoIterator<Item = K>,
+        ) -> Self {
+            self.domain_ids
+                .extend(domain_ids.into_iter().map(|id| DomainId::new(id.as_ref())));
+            self
+        }
+
+        #[inline]
+        pub fn with_period_dimension(mut self) -> Self {
+            self.dimensions.push(Dimension::Period);
+            self
+        }
+
+        #[inline]
+        pub fn with_domain_dimension(mut self) -> Self {
+            self.dimensions.push(Dimension::Domain);
+            self
+        }
+    }
+
+    impl GetEmailMetricsOptions<EmailFilter> {
+        /// Adds the email dimension to break results down by. If none are added, only `totals` is
+        /// returned.
+        #[inline]
+        pub fn with_email_dimension(mut self) -> Self {
+            self.dimensions.push(Dimension::Email);
+            self
+        }
+
+        /// Restricts results to an additional email ID. Max 100. Cannot be combined with
+        /// [`Dimension::Broadcast`] or a broadcast ID.
+        #[inline]
+        pub fn with_email_id(mut self, email_id: &str) -> Self {
+            self.email_ids.push(EmailId::new(email_id));
+            self
+        }
+
+        /// Restricts results to additional email IDs. Max 100. Cannot be combined with
+        /// [`Dimension::Broadcast`] or a broadcast ID.
+        #[inline]
+        pub fn with_email_ids<T: AsRef<str>>(
+            mut self,
+            email_ids: impl IntoIterator<Item = T>,
+        ) -> Self {
+            self.email_ids
+                .extend(email_ids.into_iter().map(|id| EmailId::new(id.as_ref())));
+            self
+        }
+    }
+
+    impl GetEmailMetricsOptions<BroadcastFilter> {
+        /// Adds the broadcast dimension to break results down by. If none are added, only `totals` is
+        /// returned.
+        #[inline]
+        pub fn with_broadcast_dimension(mut self) -> Self {
+            self.dimensions.push(Dimension::Broadcast);
+            self
+        }
+
+        /// Restricts results to an additional broadcast ID. Max 100. Cannot be combined with
+        /// [`Dimension::Email`] or an email ID.
+        #[inline]
+        pub fn with_broadcast_id(mut self, broadcast_id: &str) -> Self {
+            self.broadcast_ids.push(BroadcastId::new(broadcast_id));
+            self
+        }
+
+        /// Restricts results to additional broadcast IDs. Max 100. Cannot be combined with
+        /// [`Dimension::Email`] or an email ID.
+        #[inline]
+        pub fn with_broadcast_ids<T: AsRef<str>>(
+            mut self,
+            broadcast_ids: impl IntoIterator<Item = T>,
+        ) -> Self {
+            self.broadcast_ids.extend(
+                broadcast_ids
+                    .into_iter()
+                    .map(|id| BroadcastId::new(id.as_ref())),
+            );
+            self
+        }
+    }
+
+    /// A metric available on the `/emails/metrics` endpoint.
+    ///
+    /// <https://resend.com/docs/api-reference/emails/metrics>
+    #[must_use]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+    #[serde(rename_all = "snake_case")]
+    pub enum Metric {
+        Received,
+        Delivered,
+        Complained,
+        Suppressed,
+        Bounced,
+        BouncedTransient,
+        BouncedPermanent,
+        BouncedUndetermined,
+        Opened,
+        Clicked,
+        Unsubscribed,
+        DeliveryDelayed,
+        Failed,
+        Sent,
+        UniqueOpened,
+        UniqueClicked,
+        DeliveryRate,
+        OpenRate,
+        ClickRate,
+        BounceRate,
+        ComplaintRate,
+        UnsubscribeRate,
+    }
+
+    impl Metric {
+        /// The wire representation of this [`Metric`], as used both in the `metrics` query
+        /// parameter and in JSON responses.
+        #[must_use]
+        pub const fn as_str(self) -> &'static str {
+            match self {
+                Self::Received => "received",
+                Self::Delivered => "delivered",
+                Self::Complained => "complained",
+                Self::Suppressed => "suppressed",
+                Self::Bounced => "bounced",
+                Self::BouncedTransient => "bounced_transient",
+                Self::BouncedPermanent => "bounced_permanent",
+                Self::BouncedUndetermined => "bounced_undetermined",
+                Self::Opened => "opened",
+                Self::Clicked => "clicked",
+                Self::Unsubscribed => "unsubscribed",
+                Self::DeliveryDelayed => "delivery_delayed",
+                Self::Failed => "failed",
+                Self::Sent => "sent",
+                Self::UniqueOpened => "unique_opened",
+                Self::UniqueClicked => "unique_clicked",
+                Self::DeliveryRate => "delivery_rate",
+                Self::OpenRate => "open_rate",
+                Self::ClickRate => "click_rate",
+                Self::BounceRate => "bounce_rate",
+                Self::ComplaintRate => "complaint_rate",
+                Self::UnsubscribeRate => "unsubscribe_rate",
+            }
+        }
+    }
+
+    impl AsRef<str> for Metric {
+        #[inline]
+        fn as_ref(&self) -> &str {
+            self.as_str()
+        }
+    }
+
+    impl Serialize for Metric {
+        fn serialize<S>(&self, serializer: S) -> crate::Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer,
+        {
+            serializer.serialize_str(self.as_str())
+        }
+    }
+
+    /// A dimension to break `/emails/metrics` results down by.
+    ///
+    /// Note that `email` cannot be combined with `broadcast`; [`crate::emails::EmailsSvc::metrics`]
+    /// returns an error before sending the request if they are.
+    ///
+    /// <https://resend.com/docs/api-reference/emails/metrics>
+    #[must_use]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+    #[serde(rename_all = "snake_case")]
+    pub enum Dimension {
+        Period,
+        Domain,
+        Email,
+        Broadcast,
+    }
+
+    impl Dimension {
+        /// The wire representation of this [`Dimension`], as used both in the `dimensions`
+        /// query parameter and in JSON responses.
+        #[must_use]
+        pub const fn as_str(self) -> &'static str {
+            match self {
+                Self::Period => "period",
+                Self::Domain => "domain",
+                Self::Email => "email",
+                Self::Broadcast => "broadcast",
+            }
+        }
+    }
+
+    impl AsRef<str> for Dimension {
+        #[inline]
+        fn as_ref(&self) -> &str {
+            self.as_str()
+        }
+    }
+
+    impl Serialize for Dimension {
+        fn serialize<S>(&self, serializer: S) -> crate::Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer,
+        {
+            serializer.serialize_str(self.as_str())
+        }
+    }
+
+    /// Bucket size used when [`Dimension::Period`] is requested.
+    #[must_use]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+    #[serde(rename_all = "snake_case")]
+    pub enum MetricsGranularity {
+        Hourly,
+        Daily,
+        Weekly,
+        Monthly,
+    }
+
+    /// Response of [`crate::emails::EmailsSvc::metrics`].
+    #[must_use]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct EmailMetrics {
+        /// Start of the date range these metrics cover.
+        pub start_date: String,
+        /// End of the date range these metrics cover.
+        pub end_date: String,
+        /// The metrics that were computed.
+        pub metrics: Vec<Metric>,
+        /// The dimensions results are broken down by.
+        pub dimensions: Vec<Dimension>,
+        /// The bucket size used for the [`Dimension::Period`] dimension.
+        pub granularity: MetricsGranularity,
+        /// Totals across the whole date range, keyed by metric name.
+        pub totals: HashMap<String, f64>,
+        /// Per-dimension breakdown. Absent when no `dimensions` were requested.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub data: Option<Vec<EmailMetricsDataPoint>>,
+    }
+
+    /// A single row of [`EmailMetrics::data`].
+    ///
+    /// Which dimension fields are populated depends on the requested [`Dimension`]s, and which
+    /// metric fields are present (in [`EmailMetricsDataPoint::metrics`]) depends on the
+    /// requested [`Metric`]s.
+    #[must_use]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct EmailMetricsDataPoint {
+        /// Present when [`Dimension::Period`] was requested.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub period: Option<String>,
+        /// Present when [`Dimension::Domain`] was requested.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub domain_id: Option<DomainId>,
+        /// Present when [`Dimension::Domain`] was requested.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub domain_name: Option<String>,
+        /// Present when [`Dimension::Email`] was requested.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub email_id: Option<EmailId>,
+        /// Present when [`Dimension::Broadcast`] was requested.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub broadcast_id: Option<BroadcastId>,
+        /// Present when [`Dimension::Broadcast`] was requested.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub broadcast_name: Option<String>,
+        /// The requested metric values for this row, keyed by metric name.
+        #[serde(flatten)]
+        pub metrics: HashMap<String, f64>,
+    }
 }
 
 /// Turns:
@@ -703,6 +1248,21 @@ where
 {
     let opt = Option::deserialize(deserializer)?;
     Ok(opt.unwrap_or_else(Vec::new))
+}
+
+/// Serializes a slice as a single comma-joined string, as expected by query parameters like
+/// `metrics` or `dimensions` on the `/emails/metrics` endpoint.
+fn join_comma<S, T>(items: &[T], serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+    T: AsRef<str>,
+{
+    let joined = items
+        .iter()
+        .map(AsRef::as_ref)
+        .collect::<Vec<_>>()
+        .join(",");
+    serializer.serialize_str(&joined)
 }
 
 #[cfg(test)]
@@ -723,6 +1283,30 @@ mod test {
     };
     #[cfg(not(feature = "blocking"))]
     use jiff::{Span, Timestamp, Zoned};
+
+    use std::collections::HashMap;
+
+    use crate::{
+        Config,
+        types::{Dimension, EmailMetrics, GetEmailMetricsOptions, Metric, MetricsGranularity},
+    };
+
+    /// Builds the request `metrics()` would send and returns its decoded query parameters,
+    /// without making any network calls.
+    fn built_query<T>(opts: &GetEmailMetricsOptions<T>) -> HashMap<String, String> {
+        let config = Config::builder("re_test_key").build();
+        let request = config
+            .build(reqwest::Method::GET, "/emails/metrics")
+            .query(opts)
+            .build()
+            .unwrap();
+
+        request
+            .url()
+            .query_pairs()
+            .map(|(k, v)| (k.into_owned(), v.into_owned()))
+            .collect()
+    }
 
     #[tokio_shared_rt::test(shared = true)]
     #[serial_test::serial]
@@ -1075,5 +1659,165 @@ mod test {
         assert!(deleted.deleted);
 
         Ok(())
+    }
+
+    #[test]
+    fn metrics_query_no_options() {
+        let query = built_query(&GetEmailMetricsOptions::default());
+        assert!(query.is_empty());
+    }
+
+    #[test]
+    fn metrics_query_multiple_dimensions() {
+        let opts = GetEmailMetricsOptions::default()
+            .with_period_dimension()
+            .with_broadcast_dimension();
+        let query = built_query(&opts);
+        assert_eq!(
+            query.get("dimensions").map(String::as_str),
+            Some("period,broadcast")
+        );
+    }
+
+    #[test]
+    fn metrics_query_domain_id_filter() {
+        let single = GetEmailMetricsOptions::default().with_domain_id("d1");
+        let query = built_query(&single);
+        assert_eq!(query.get("domain_id").map(String::as_str), Some("d1"));
+
+        let multiple = GetEmailMetricsOptions::default().with_domain_ids(["d1", "d2", "d3"]);
+        let query = built_query(&multiple);
+        assert_eq!(query.get("domain_id").map(String::as_str), Some("d1,d2,d3"));
+    }
+
+    #[test]
+    fn metrics_query_email_id_filter() {
+        let single = GetEmailMetricsOptions::default().with_email_id("e1");
+        let query = built_query(&single);
+        assert_eq!(query.get("email_id").map(String::as_str), Some("e1"));
+
+        let multiple = GetEmailMetricsOptions::default().with_email_ids(["e1", "e2"]);
+        let query = built_query(&multiple);
+        assert_eq!(query.get("email_id").map(String::as_str), Some("e1,e2"));
+    }
+
+    #[test]
+    fn metrics_query_broadcast_id_filter() {
+        let single = GetEmailMetricsOptions::default().with_broadcast_id("b1");
+        let query = built_query(&single);
+        assert_eq!(query.get("broadcast_id").map(String::as_str), Some("b1"));
+
+        let multiple = GetEmailMetricsOptions::default().with_broadcast_ids(["b1", "b2"]);
+        let query = built_query(&multiple);
+        assert_eq!(query.get("broadcast_id").map(String::as_str), Some("b1,b2"));
+    }
+
+    #[test]
+    fn metrics_query_metrics_passed_through() {
+        let single = GetEmailMetricsOptions::default().with_metric(Metric::Delivered);
+        let query = built_query(&single);
+        assert_eq!(query.get("metrics").map(String::as_str), Some("delivered"));
+
+        let multiple =
+            GetEmailMetricsOptions::default().with_metrics([Metric::Delivered, Metric::Opened]);
+        let query = built_query(&multiple);
+        assert_eq!(
+            query.get("metrics").map(String::as_str),
+            Some("delivered,opened")
+        );
+    }
+
+    #[test]
+    fn metrics_query_granularity_and_timezone_passed_through() {
+        let opts = GetEmailMetricsOptions::default()
+            .with_start_date("2026-07-01")
+            .with_end_date("2026-07-08")
+            .with_timezone("America/New_York")
+            .with_granularity(MetricsGranularity::Weekly);
+
+        let query = built_query(&opts);
+        assert_eq!(
+            query.get("start_date").map(String::as_str),
+            Some("2026-07-01")
+        );
+        assert_eq!(
+            query.get("end_date").map(String::as_str),
+            Some("2026-07-08")
+        );
+        assert_eq!(
+            query.get("timezone").map(String::as_str),
+            Some("America/New_York")
+        );
+        assert_eq!(query.get("granularity").map(String::as_str), Some("weekly"));
+    }
+
+    #[test]
+    fn deserialize_metrics_response_with_data() {
+        let json = r#"{
+            "object": "metrics",
+            "start_date": "2026-07-01T00:00:00.000Z",
+            "end_date": "2026-07-08T00:00:00.000Z",
+            "metrics": ["delivered", "opened"],
+            "dimensions": ["period", "broadcast"],
+            "granularity": "daily",
+            "totals": { "delivered": 100, "opened": 40 },
+            "data": [
+                {
+                    "period": "2026-07-01",
+                    "broadcast_id": "5c9c5f21-3b3a-4f0a-8f6b-3f2d1e6f6c9a",
+                    "broadcast_name": "July Newsletter",
+                    "delivered": 10,
+                    "opened": 4
+                }
+            ]
+        }"#;
+
+        let metrics: EmailMetrics = serde_json::from_str(json).unwrap();
+
+        assert_eq!(metrics.start_date, "2026-07-01T00:00:00.000Z");
+        assert_eq!(metrics.end_date, "2026-07-08T00:00:00.000Z");
+        assert_eq!(metrics.metrics, vec![Metric::Delivered, Metric::Opened]);
+        assert_eq!(
+            metrics.dimensions,
+            vec![Dimension::Period, Dimension::Broadcast]
+        );
+        assert_eq!(metrics.granularity, MetricsGranularity::Daily);
+        assert_eq!(metrics.totals.get("delivered"), Some(&100.0));
+        assert_eq!(metrics.totals.get("opened"), Some(&40.0));
+
+        let data = metrics
+            .data
+            .expect("data present when dimensions requested");
+        assert_eq!(data.len(), 1);
+
+        let row = data.first().expect("one data row");
+        assert_eq!(row.period.as_deref(), Some("2026-07-01"));
+        assert!(row.domain_id.is_none());
+        assert!(row.email_id.is_none());
+        assert_eq!(
+            row.broadcast_id.as_deref(),
+            Some("5c9c5f21-3b3a-4f0a-8f6b-3f2d1e6f6c9a")
+        );
+        assert_eq!(row.broadcast_name.as_deref(), Some("July Newsletter"));
+        assert_eq!(row.metrics.get("delivered"), Some(&10.0));
+        assert_eq!(row.metrics.get("opened"), Some(&4.0));
+    }
+
+    #[test]
+    fn deserialize_metrics_response_without_dimensions() {
+        let json = r#"{
+            "object": "metrics",
+            "start_date": "2026-07-01T00:00:00.000Z",
+            "end_date": "2026-07-08T00:00:00.000Z",
+            "metrics": ["delivered"],
+            "dimensions": [],
+            "granularity": "daily",
+            "totals": { "delivered": 100 }
+        }"#;
+
+        let metrics: EmailMetrics = serde_json::from_str(json).unwrap();
+
+        assert!(metrics.dimensions.is_empty());
+        assert!(metrics.data.is_none());
     }
 }
