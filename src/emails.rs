@@ -730,42 +730,30 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Clone, Default, Serialize)]
     pub struct GetEmailMetricsOptions {
-        /// Start of the date range (ISO 8601 date or datetime).
         #[serde(skip_serializing_if = "Option::is_none")]
         start_date: Option<String>,
-        /// End of the date range (ISO 8601 date or datetime).
         #[serde(skip_serializing_if = "Option::is_none")]
         end_date: Option<String>,
-        /// IANA timezone, e.g. `America/New_York`. Defaults to `UTC`.
         #[serde(skip_serializing_if = "Option::is_none")]
         timezone: Option<String>,
-        /// Bucket size used when [`Dimension::Period`] is requested. Defaults to `daily`.
         #[serde(skip_serializing_if = "Option::is_none")]
         granularity: Option<MetricsGranularity>,
-        /// Metrics to compute. Defaults to all metrics.
         #[serde(skip_serializing_if = "Vec::is_empty", serialize_with = "join_comma")]
         metrics: Vec<Metric>,
-        /// How to break down the returned data. Defaults to none, in which case only `totals`
-        /// is returned.
         #[serde(skip_serializing_if = "Vec::is_empty", serialize_with = "join_comma")]
         dimensions: Vec<Dimension>,
-        /// Restrict results to these sending domain IDs. Max 100.
         #[serde(
             rename = "domain_id",
             skip_serializing_if = "Vec::is_empty",
             serialize_with = "join_comma"
         )]
         domain_ids: Vec<DomainId>,
-        /// Restrict results to these email IDs. Max 100. Cannot be combined with
-        /// [`Dimension::Broadcast`] or `broadcast_id`.
         #[serde(
             rename = "email_id",
             skip_serializing_if = "Vec::is_empty",
             serialize_with = "join_comma"
         )]
         email_ids: Vec<EmailId>,
-        /// Restrict results to these broadcast IDs. Max 100. Cannot be combined with
-        /// [`Dimension::Email`] or `email_id`.
         #[serde(
             rename = "broadcast_id",
             skip_serializing_if = "Vec::is_empty",
@@ -795,56 +783,59 @@ pub mod types {
             self
         }
 
-        /// Sets the IANA timezone, e.g. `America/New_York`.
+        /// Sets the IANA timezone, e.g. `America/New_York`. Defaults to `UTC`.
         #[inline]
         pub fn with_timezone(mut self, timezone: &str) -> Self {
             self.timezone = Some(timezone.to_owned());
             self
         }
 
-        /// Sets the bucket size used when [`Dimension::Period`] is requested.
+        /// Sets the bucket size used when [`Dimension::Period`] is requested. Defaults to
+        /// [`MetricsGranularity::Daily`].
         #[inline]
         pub fn with_granularity(mut self, granularity: MetricsGranularity) -> Self {
             self.granularity = Some(granularity);
             self
         }
 
-        /// Adds a metric to compute.
+        /// Adds a metric to compute. If none are added, all metrics are computed.
         #[inline]
         pub fn with_metric(mut self, metric: Metric) -> Self {
             self.metrics.push(metric);
             self
         }
 
-        /// Adds multiple metrics to compute.
+        /// Adds multiple metrics to compute. If none are added, all metrics are computed.
         #[inline]
         pub fn with_metrics(mut self, metrics: impl IntoIterator<Item = Metric>) -> Self {
             self.metrics.extend(metrics);
             self
         }
 
-        /// Adds a dimension to break results down by.
+        /// Adds a dimension to break results down by. If none are added, only `totals` is
+        /// returned.
         #[inline]
         pub fn with_dimension(mut self, dimension: Dimension) -> Self {
             self.dimensions.push(dimension);
             self
         }
 
-        /// Adds multiple dimensions to break results down by.
+        /// Adds multiple dimensions to break results down by. If none are added, only
+        /// `totals` is returned.
         #[inline]
         pub fn with_dimensions(mut self, dimensions: impl IntoIterator<Item = Dimension>) -> Self {
             self.dimensions.extend(dimensions);
             self
         }
 
-        /// Restricts results to an additional sending domain ID.
+        /// Restricts results to an additional sending domain ID. Max 100.
         #[inline]
         pub fn with_domain_id(mut self, domain_id: &str) -> Self {
             self.domain_ids.push(DomainId::new(domain_id));
             self
         }
 
-        /// Restricts results to additional sending domain IDs.
+        /// Restricts results to additional sending domain IDs. Max 100.
         #[inline]
         pub fn with_domain_ids<T: AsRef<str>>(
             mut self,
@@ -855,14 +846,16 @@ pub mod types {
             self
         }
 
-        /// Restricts results to an additional email ID.
+        /// Restricts results to an additional email ID. Max 100. Cannot be combined with
+        /// [`Dimension::Broadcast`] or a broadcast ID.
         #[inline]
         pub fn with_email_id(mut self, email_id: &str) -> Self {
             self.email_ids.push(EmailId::new(email_id));
             self
         }
 
-        /// Restricts results to additional email IDs.
+        /// Restricts results to additional email IDs. Max 100. Cannot be combined with
+        /// [`Dimension::Broadcast`] or a broadcast ID.
         #[inline]
         pub fn with_email_ids<T: AsRef<str>>(
             mut self,
@@ -873,14 +866,16 @@ pub mod types {
             self
         }
 
-        /// Restricts results to an additional broadcast ID.
+        /// Restricts results to an additional broadcast ID. Max 100. Cannot be combined with
+        /// [`Dimension::Email`] or an email ID.
         #[inline]
         pub fn with_broadcast_id(mut self, broadcast_id: &str) -> Self {
             self.broadcast_ids.push(BroadcastId::new(broadcast_id));
             self
         }
 
-        /// Restricts results to additional broadcast IDs.
+        /// Restricts results to additional broadcast IDs. Max 100. Cannot be combined with
+        /// [`Dimension::Email`] or an email ID.
         #[inline]
         pub fn with_broadcast_ids<T: AsRef<str>>(
             mut self,
