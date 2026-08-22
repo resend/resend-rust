@@ -527,9 +527,7 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct BroadcastRecipientClickedLink {
-        /// The clicked URL.
         pub url: String,
-        /// The number of times this recipient clicked this URL.
         pub clicks: u32,
     }
 
@@ -545,7 +543,6 @@ pub mod types {
         /// The ID of the contact associated with this recipient. `None` if the recipient's email
         /// no longer maps to a contact.
         pub contact_id: Option<ContactId>,
-        /// The recipient's email address.
         pub email: String,
         /// The number of times this recipient triggered the event. Only present when the
         /// requested `type` is `opened` or `clicked`.
