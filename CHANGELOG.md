@@ -8,6 +8,14 @@ and this project adheres to
 
 <!--## Unreleased-->
 
+## [0.30.3] - 2026-08-23
+
+### Added
+
+- `emails::metrics`
+- `broadcasts::clicked_links`
+- `broadcasts::recipients`
+
 ## [0.30.2] - 2026-08-20
 
 ### Added
@@ -588,6 +596,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+[0.30.3]: https://crates.io/crates/resend-rs/0.30.3
 [0.30.2]: https://crates.io/crates/resend-rs/0.30.2
 [0.30.1]: https://crates.io/crates/resend-rs/0.30.1
 [0.30.0]: https://crates.io/crates/resend-rs/0.30.0
