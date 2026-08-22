@@ -116,10 +116,11 @@ pub mod types {
         SendEmailBatchResponse,
     };
     pub use super::broadcasts::types::{
-        Broadcast, BroadcastClickedLink, BroadcastId, CancelBroadcastResponse,
-        CreateBroadcastOptions, CreateBroadcastResponse, RemoveBroadcastResponse,
-        SendBroadcastOptions, SendBroadcastResponse, UpdateBroadcastOptions,
-        UpdateBroadcastResponse,
+        Broadcast, BroadcastClickedLink, BroadcastId, BroadcastRecipient,
+        BroadcastRecipientBounceType, BroadcastRecipientClickedLink, BroadcastRecipientEventType,
+        CancelBroadcastResponse, CreateBroadcastOptions, CreateBroadcastResponse,
+        ListRecipientsOptions, RemoveBroadcastResponse, SendBroadcastOptions,
+        SendBroadcastResponse, UpdateBroadcastOptions, UpdateBroadcastResponse,
     };
     pub use super::contacts::types::{
         AddContactSegmentResponse, Contact, ContactChanges, ContactId, ContactImport,
