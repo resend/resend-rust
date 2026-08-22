@@ -226,9 +226,9 @@ macro_rules! define_id_type {
         pub struct $name(ecow::EcoString);
 
         impl $name {
-            /// Creates a new [`$name`].
             #[inline]
             #[must_use]
+            #[doc = concat!("Creates a new [`", stringify!($name), "`].")]
             pub fn new(id: &str) -> Self {
                 Self(ecow::EcoString::from(id))
             }
