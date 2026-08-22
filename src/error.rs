@@ -29,7 +29,11 @@ pub mod types {
     /// [`Resend`]: crate::Resend
     #[non_exhaustive]
     #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-    #[cfg_attr(test, derive(strum::EnumCount))]
+    #[cfg_attr(
+        test,
+        derive(strum::EnumCount, strum::VariantNames),
+        strum(serialize_all = "snake_case")
+    )]
     pub enum ErrorKind {
         /// Error name is not in the API spec.
         Unrecognized,
@@ -43,14 +47,7 @@ pub mod types {
         /// Retry with a valid idempotency key.
         InvalidIdempotencyKey,
 
-        /// 400 Bad Request.
-        ///
-        /// - `validation_error`
-        ///
-        /// We found an error with one or more fields in the request.
-        ///
-        /// The message will contain more details about what field and error were found.
-        ValidationError400,
+        ValidationError,
 
         /// 401 Unauthorized.
         ///
@@ -61,35 +58,38 @@ pub mod types {
         /// Include the following header `Authorization: Bearer YOUR_API_KEY` in the request.
         MissingApiKey,
 
-        /// 401 Unauthorized
-        ///
-        /// - `restricted_api_key`
-        ///
-        /// This API key is restricted to only send emails.
-        ///
-        /// Make sure the API key has `Full access` to perform actions other than sending emails.
         RestrictedApiKey,
 
         /// 403 Forbidden.
         ///
-        /// - `invalid_api_key`
+        /// - `email_above_quota`
         ///
-        /// API key is invalid.
+        /// You can’t retrieve this email’s content because it was above quota when received.
         ///
-        /// Make sure the API key is correct or generate a new [API key in the dashboard].
+        /// [Upgrade your plan] to increase your quota.
         ///
-        /// [API key in the dashboard]: https://resend.com/api-keys
-        InvalidApiKey,
+        /// [Upgrade your plan]: https://resend.com/settings/billing
+        EmailAboveQuota,
 
         /// 403 Forbidden.
         ///
-        /// - `validation_error`
+        /// - `invalid_permission`
         ///
-        /// One of the following:
-        /// - <https://resend.com/docs/api-reference/errors#validation_error-2>
-        /// - <https://resend.com/docs/api-reference/errors#validation_error-3>
-        /// - <https://resend.com/docs/api-reference/errors#validation_error-4>
-        ValidationError403,
+        /// Access token is missing required scopes.
+        ///
+        /// Request an access token that includes the scopes required by this endpoint.
+        InvalidPermission,
+
+        /// 403 Forbidden.
+        ///
+        /// - `suspended_api_key`
+        ///
+        /// This API key is suspended
+        ///
+        /// [Contact support] if you believe this is a mistake.
+        ///
+        /// [Contact support]: https://resend.com/contact
+        SuspendedApiKey,
 
         /// 404 Not Found.
         ///
@@ -111,6 +111,15 @@ pub mod types {
 
         /// 409 Conflict
         ///
+        /// - `concurrent_idempotent_requests`
+        ///
+        /// Same idempotency key used while original request is still in progress.
+        ///
+        /// Try the request again later.
+        ConcurrentIdempotentRequests,
+
+        /// 409 Conflict
+        ///
         /// - `invalid_idempotent_request`
         ///
         /// Same idempotency key used with a different request payload.
@@ -120,12 +129,12 @@ pub mod types {
 
         /// 409 Conflict
         ///
-        /// - `concurrent_idempotent_requests`
+        /// - `resource_locked`
         ///
-        /// Same idempotency key used while original request is still in progress.
+        /// Another request is already updating this resource.
         ///
-        /// Try the request again later.
-        ConcurrentIdempotentRequests,
+        /// Retry the request after a short delay.
+        ResourceLocked,
 
         /// 422 Unprocessable Content.
         ///
@@ -137,25 +146,6 @@ pub mod types {
         /// `path` to a remote resource (better for larger attachments).
         InvalidAttachment,
 
-        /// 422 Unprocessable Content.
-        ///
-        /// - `invalid_from_address`
-        ///
-        /// Invalid from field.
-        ///
-        /// Make sure the from field is a valid. The email address needs to follow the
-        /// `email@example.com` or `Name <email@example.com>` format.
-        InvalidFromAddress,
-
-        /// 422 Unprocessable Content
-        ///
-        /// - `invalid_access`
-        ///
-        /// Access must be `"full_access" | "sending_access"`.
-        ///
-        /// Make sure the API key has necessary permissions.
-        InvalidAccess,
-
         /// 422 Unprocessable Content
         ///
         /// - `invalid_parameter`
@@ -164,15 +154,6 @@ pub mod types {
         ///
         /// Check the value and make sure it’s valid.
         InvalidParameter,
-
-        /// 422 Unprocessable Content
-        ///
-        /// - `invalid_region`
-        ///
-        /// Region must be `"us-east-1" | "us-east-1" | "sa-east-1"`.
-        ///
-        /// Make sure the correct region is selected.
-        InvalidRegion,
 
         /// 422 Unprocessable Content.
         ///
@@ -183,14 +164,14 @@ pub mod types {
         /// Check the error message to see the list of missing fields.
         MissingRequiredField,
 
-        /// 429 Too Many Requests.
+        /// 422 Unprocessable Content.
         ///
-        /// - `monthly_quota_exceeded`
+        /// - `missing_required_parameter`
         ///
-        /// You have reached your monthly email sending quota.
+        /// The request is missing one or more required parameters.
         ///
-        ///  Upgrade your plan to remove the increase the monthly sending limit.
-        MonthlyQuotaExceeded,
+        /// Check the error message to see the list of missing parameters.
+        MissingRequiredParameter,
 
         /// 429 Too Many Requests.
         ///
@@ -201,6 +182,15 @@ pub mod types {
         /// Upgrade your plan to remove the daily quota limit or wait
         /// until 24 hours have passed to continue sending.
         DailyQuotaExceeded,
+
+        /// 429 Too Many Requests.
+        ///
+        /// - `monthly_quota_exceeded`
+        ///
+        /// You have reached your monthly email sending quota.
+        ///
+        ///  Upgrade your plan to remove the increase the monthly sending limit.
+        MonthlyQuotaExceeded,
 
         /// 429 Too Many Requests.
         ///
@@ -220,15 +210,6 @@ pub mod types {
         /// [`Error::RateLimit`](crate::Error::RateLimit).
         RateLimitExceeded,
 
-        /// 451 Unavailable For Legal Reasons
-        ///
-        /// - `security_error`
-        ///
-        /// We may have found a security issue with the request.
-        ///
-        /// The message will contain more details. Contact support for more information.
-        SecurityError,
-
         /// 500 Internal Server Error
         ///
         /// - `application_error`
@@ -239,33 +220,20 @@ pub mod types {
         /// for service updates.
         ApplicationError,
 
-        /// 500 Internal Server Error.
+        /// 500 Service Unavailable
         ///
-        /// - `internal_server_error`
+        /// - `service_unavailable`
         ///
-        /// An unexpected error occurred.
+        /// API is temporarily unavailable
         ///
-        /// Try the request again later. If the error does not resolve,
-        /// check our [`status page`] for service updates.
+        /// Try the request again later. Check our [status page] for service updates.
         ///
-        /// [`status page`]: https://resend-status.com/
-        InternalServerError,
+        /// [status page]: https://resend-status.com/
+        ServiceUnavailable,
     }
 
     impl From<ErrorResponse> for ErrorKind {
         fn from(value: ErrorResponse) -> Self {
-            // There exist 2 validation_error variants, differentiate via status code
-            if value.name == "validation_error" {
-                return match value.status_code {
-                    400 => Self::ValidationError400,
-                    // This is a bit silly, since we have 2 validation errors with the same error
-                    // code, we need to differentiate between them based on the message.
-                    403 => Self::ValidationError403,
-                    _ => Self::Unrecognized,
-                };
-            }
-
-            // For the rest use old From implementation.
             Self::from(value.name)
         }
     }
@@ -274,25 +242,26 @@ pub mod types {
         fn from(value: T) -> Self {
             match value.as_ref() {
                 "invalid_idempotency_key" => Self::InvalidIdempotencyKey,
+                "validation_error" => Self::ValidationError,
                 "missing_api_key" => Self::MissingApiKey,
                 "restricted_api_key" => Self::RestrictedApiKey,
-                "invalid_api_key" => Self::InvalidApiKey,
+                "email_above_quota" => Self::EmailAboveQuota,
+                "invalid_permission" => Self::InvalidPermission,
+                "suspended_api_key" => Self::SuspendedApiKey,
                 "not_found" => Self::NotFound,
                 "method_not_allowed" => Self::MethodNotAllowed,
-                "invalid_idempotent_request" => Self::InvalidIdempotentRequest,
                 "concurrent_idempotent_requests" => Self::ConcurrentIdempotentRequests,
+                "invalid_idempotent_request" => Self::InvalidIdempotentRequest,
+                "resource_locked" => Self::ResourceLocked,
                 "invalid_attachment" => Self::InvalidAttachment,
-                "invalid_from_address" => Self::InvalidFromAddress,
-                "invalid_access" => Self::InvalidAccess,
                 "invalid_parameter" => Self::InvalidParameter,
-                "invalid_region" => Self::InvalidRegion,
                 "missing_required_field" => Self::MissingRequiredField,
-                "monthly_quota_exceeded" => Self::MonthlyQuotaExceeded,
+                "missing_required_parameter" => Self::MissingRequiredParameter,
                 "daily_quota_exceeded" => Self::DailyQuotaExceeded,
+                "monthly_quota_exceeded" => Self::MonthlyQuotaExceeded,
                 "rate_limit_exceeded" => Self::RateLimitExceeded,
-                "security_error" => Self::SecurityError,
                 "application_error" => Self::ApplicationError,
-                "internal_server_error" => Self::InternalServerError,
+                "service_unavailable" => Self::ServiceUnavailable,
                 _ => Self::Unrecognized,
             }
         }
@@ -318,7 +287,9 @@ mod test {
     #[serial_test::serial]
     #[cfg(not(feature = "blocking"))]
     async fn errors_up_to_date() {
-        use strum::EnumCount;
+        use std::collections::HashSet;
+
+        use strum::VariantNames;
 
         use crate::types::{ErrorKind, ErrorResponse};
 
@@ -333,22 +304,27 @@ mod test {
 
         let re = regex::Regex::new(r"<code>(\w+)</code>").unwrap();
 
-        let actual = ErrorKind::COUNT;
         let expected = fragment
             .select(&selector)
             .map(|el| el.inner_html())
             .filter(|el| el.starts_with("<code>"))
-            .map(|inner| {
+            .flat_map(|inner| {
                 let mut results = vec![];
                 for (_, [error]) in re.captures_iter(&inner).map(|c| c.extract()) {
                     results.push(error.to_string());
                 }
                 results
             })
-            .collect::<Vec<_>>();
+            .collect::<HashSet<_>>();
+
+        let enum_names = ErrorKind::VARIANTS
+            .iter()
+            .filter(|&&name| name != "unrecognized") // IGNORE unrecognized
+            .map(|&name| name.to_string())
+            .collect::<HashSet<_>>();
 
         // Make sure no error is parsed as `ErrorKind::Unrecognized`
-        for error_name in expected.iter().flatten() {
+        for error_name in &expected {
             let error_response = ErrorResponse {
                 status_code: 400,
                 message: String::new(),
@@ -358,13 +334,27 @@ mod test {
             let error_kind = ErrorKind::from(error_response);
             assert!(
                 !matches!(error_kind, ErrorKind::Unrecognized),
-                "Could not parse {error_name}"
+                "Unrecognized: {error_name}"
             );
         }
 
-        // Expected is actually one less than what we have because of the `Unrecognized` variant.
-        let expected = expected.len() - 1;
+        // Print inconsistencies
+        let missing_from_enum = expected.difference(&enum_names).collect::<Vec<_>>();
+        let extra_in_enum = enum_names.difference(&expected).collect::<Vec<_>>();
 
-        assert_eq!(actual, expected);
+        if !missing_from_enum.is_empty() {
+            println!("On the page but missing from ErrorKind:");
+            for name in missing_from_enum {
+                println!("  - {name}");
+            }
+        }
+        if !extra_in_enum.is_empty() {
+            println!("In ErrorKind but not on the page:");
+            for name in extra_in_enum {
+                println!("  - {name}");
+            }
+        }
+
+        assert_eq!(expected.len(), enum_names.len());
     }
 }
