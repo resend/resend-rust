@@ -153,12 +153,6 @@ impl EmailsSvc {
 
     /// Retrieve email delivery metrics aggregated over a date range.
     ///
-    /// # Errors
-    ///
-    /// Returns [`Error::Other`] without making a request if `options` combines the
-    /// [`crate::types::Dimension::Broadcast`] dimension or `broadcast_id` filter with the
-    /// [`crate::types::Dimension::Email`] dimension or `email_id` filter, in any pairing.
-    ///
     /// <https://resend.com/docs/api-reference/emails/metrics>
     #[maybe_async::maybe_async]
     pub async fn metrics<T>(&self, options: GetEmailMetricsOptions<T>) -> Result<EmailMetrics> {
