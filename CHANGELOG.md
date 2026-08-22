@@ -8,6 +8,12 @@ and this project adheres to
 
 <!--## Unreleased-->
 
+## [0.31.0] - 2026-08-23
+
+### Changed
+
+- Updated and reworked the errors
+
 ## [0.30.3] - 2026-08-23
 
 ### Added
@@ -596,6 +602,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+[0.31.0]: https://crates.io/crates/resend-rs/0.31.0
 [0.30.3]: https://crates.io/crates/resend-rs/0.30.3
 [0.30.2]: https://crates.io/crates/resend-rs/0.30.2
 [0.30.1]: https://crates.io/crates/resend-rs/0.30.1
