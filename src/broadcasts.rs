@@ -580,17 +580,23 @@ mod test {
     #[test]
     fn parse_broadcast_clicked_links_test() {
         let data = r#"{
-    "object": "list",
-    "has_more": false,
-    "data": [
-        {
-            "id": "b2Zmc2V0OjA",
-            "url": "https://resend.com/pricing",
-            "clicks": 42,
-            "unique_clicks": 30
-        }
-    ]
-}"#;
+          "object": "list",
+          "has_more": true,
+          "data": [
+            {
+              "id": "b2Zmc2V0OjA",
+              "url": "https://resend.com/pricing",
+              "clicks": 42,
+              "unique_clicks": 30
+            },
+            {
+              "id": "b2Zmc2V0OjE",
+              "url": "https://resend.com/docs",
+              "clicks": 17,
+              "unique_clicks": 15
+            }
+          ]
+        }"#;
 
         let _parsed =
             serde_json::from_str::<crate::list_opts::ListResponse<BroadcastClickedLink>>(data)
