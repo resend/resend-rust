@@ -153,8 +153,6 @@ impl EmailsSvc {
 
     /// Retrieve email delivery metrics aggregated over a date range.
     ///
-    /// This is a beta endpoint and its shape may still change.
-    ///
     /// # Errors
     ///
     /// Returns [`Error::Other`] without making a request if `options` combines the
@@ -1141,7 +1139,9 @@ mod test {
     #[cfg(not(feature = "blocking"))]
     use jiff::{Span, Timestamp, Zoned};
 
-    use std::{collections::HashMap, sync::Arc};
+    use std::collections::HashMap;
+    #[cfg(not(feature = "blocking"))]
+    use std::sync::Arc;
 
     use crate::{
         Config,
