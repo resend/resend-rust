@@ -7,9 +7,9 @@ use crate::{Config, Result, list_opts::ListResponse};
 use crate::{
     list_opts::ListOptions,
     types::{
-        Broadcast, BroadcastRecipient, CancelBroadcastResponse, CreateBroadcastOptions,
-        CreateBroadcastResponse, RemoveBroadcastResponse, SendBroadcastOptions,
-        SendBroadcastResponse,
+        Broadcast, BroadcastClickedLink, BroadcastRecipient, CancelBroadcastResponse,
+        CreateBroadcastOptions, CreateBroadcastResponse, RemoveBroadcastResponse,
+        SendBroadcastOptions, SendBroadcastResponse,
     },
 };
 
@@ -98,6 +98,26 @@ impl BroadcastsSvc {
         let content = response.json::<RemoveBroadcastResponse>().await?;
 
         Ok(content.deleted)
+    }
+
+    /// Retrieve the links clicked in a broadcast, ranked by total clicks.
+    ///
+    /// <https://resend.com/docs/api-reference/broadcasts/list-broadcast-clicked-links>
+    #[maybe_async::maybe_async]
+    pub async fn clicked_links<T>(
+        &self,
+        broadcast_id: &str,
+        list_opts: ListOptions<T>,
+    ) -> Result<ListResponse<BroadcastClickedLink>> {
+        let path = format!("/broadcasts/{broadcast_id}/clicked-links");
+
+        let request = self.0.build(Method::GET, &path).query(&list_opts);
+        let response = self.0.send(request).await?;
+        let content = response
+            .json::<ListResponse<BroadcastClickedLink>>()
+            .await?;
+
+        Ok(content)
     }
 
     /// Update a broadcast to send to your audience.
@@ -555,6 +575,19 @@ pub mod types {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub clicked_links: Option<Vec<BroadcastRecipientClickedLink>>,
     }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct BroadcastClickedLink {
+        /// An opaque cursor for this row, used only for pagination. It does not identify any
+        /// entity in Resend.
+        pub id: String,
+        /// The URL that was clicked.
+        pub url: String,
+        /// Total number of clicks on this URL.
+        pub clicks: u64,
+        /// Number of unique clicks on this URL.
+        pub unique_clicks: u64,
+    }
 }
 
 #[cfg(test)]
@@ -571,8 +604,8 @@ mod test {
     };
 
     use super::types::{
-        Broadcast, BroadcastRecipient, BroadcastRecipientEventType, CancelBroadcastResponse,
-        ListRecipientsOptions,
+        Broadcast, BroadcastClickedLink, BroadcastRecipient, BroadcastRecipientEventType,
+        CancelBroadcastResponse, ListRecipientsOptions,
     };
 
     #[tokio_shared_rt::test(shared = true)]
@@ -859,5 +892,31 @@ mod test {
         assert!(result.is_err());
 
         Ok(())
+    }
+
+    #[test]
+    fn parse_broadcast_clicked_links_test() {
+        let data = r#"{
+          "object": "list",
+          "has_more": true,
+          "data": [
+            {
+              "id": "b2Zmc2V0OjA",
+              "url": "https://resend.com/pricing",
+              "clicks": 42,
+              "unique_clicks": 30
+            },
+            {
+              "id": "b2Zmc2V0OjE",
+              "url": "https://resend.com/docs",
+              "clicks": 17,
+              "unique_clicks": 15
+            }
+          ]
+        }"#;
+
+        let _parsed =
+            serde_json::from_str::<crate::list_opts::ListResponse<BroadcastClickedLink>>(data)
+                .expect("Parsing failed");
     }
 }
