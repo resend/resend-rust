@@ -181,7 +181,9 @@ pub mod types {
     };
     pub use super::webhooks::types::{
         CreateWebhookOptions, CreateWebhookResponse, DeleteWebhookResponse, UpdateWebhookOptions,
-        UpdateWebhookResponse, Webhook, WebhookId, WebhookStatus,
+        UpdateWebhookResponse, Webhook, WebhookEvent, WebhookEventAttempt, WebhookEventAttemptId,
+        WebhookEventAttemptListResponse, WebhookEventDetails, WebhookEventId,
+        WebhookEventListResponse, WebhookEventStatus, WebhookId, WebhookStatus,
     };
 }
 
