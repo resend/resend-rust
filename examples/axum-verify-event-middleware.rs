@@ -44,6 +44,9 @@ async fn handler(data: String) -> StatusCode {
 }
 
 // Mostly taken from https://github.com/tokio-rs/axum/blob/main/examples/consume-body-in-extractor-or-middleware/src/main.rs
+// Response must stay unboxed here: axum's IntoResponse is implemented for
+// Result<T, Response> directly, not for a boxed error variant.
+#[allow(clippy::result_large_err)]
 async fn verify_middleware(
     headers: HeaderMap,
     request: Request,
