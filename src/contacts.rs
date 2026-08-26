@@ -600,6 +600,9 @@ pub mod types {
         /// Indicates the subscription status of the contact.
         #[serde(skip_serializing_if = "Option::is_none")]
         unsubscribed: Option<bool>,
+        /// Custom properties for the contact.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        properties: Option<HashMap<String, String>>,
     }
 
     impl ContactChanges {
@@ -627,6 +630,22 @@ pub mod types {
         #[inline]
         pub const fn with_unsubscribed(mut self, unsubscribed: bool) -> Self {
             self.unsubscribed = Some(unsubscribed);
+            self
+        }
+
+        /// Updates a custom property of the contact.
+        #[inline]
+        pub fn with_property(mut self, key: &str, value: &str) -> Self {
+            let properties = self.properties.get_or_insert_with(HashMap::new);
+            let _old = properties.insert(key.to_owned(), value.to_owned());
+            self
+        }
+
+        /// Updates custom properties of the contact.
+        #[inline]
+        pub fn with_properties(mut self, properties: HashMap<String, String>) -> Self {
+            let self_properties = self.properties.get_or_insert_with(HashMap::new);
+            self_properties.extend(properties);
             self
         }
     }
@@ -1148,6 +1167,14 @@ mod test {
         let contact = resend.contacts.create(contact).await?;
 
         let contact = resend.contacts.get(&contact).await?;
+
+        let changes = ContactChanges::new().with_property("key", "updated");
+        let _contact = resend.contacts.update(&contact.id, changes).await?;
+        std::thread::sleep(std::time::Duration::from_secs(4));
+
+        let contact = resend.contacts.get(&contact.id).await?;
+        let properties = contact.properties.as_ref().expect("contact has properties");
+        assert_eq!(properties["key"].value, "updated");
 
         let deleted = resend.contacts.delete(&contact.id).await?;
         assert!(deleted);
