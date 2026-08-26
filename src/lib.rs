@@ -163,7 +163,9 @@ pub mod types {
         GetInboundEmailRaw, InboundAttachment, InboundAttachmentId, InboundEmail,
         InboundEmailHtmlFormat, InboundEmailId,
     };
-    pub use super::segments::types::{CreateSegmentResponse, Segment, SegmentId};
+    pub use super::segments::types::{
+        CreateSegmentResponse, Segment, SegmentId, UpdateSegmentResponse,
+    };
     pub use super::suppressions::types::{
         AddSuppressionOptions, AddSuppressionResponse, BatchAddSuppressionOptions,
         BatchAddSuppressionResponse, BatchRemoveSuppressionOptions,
