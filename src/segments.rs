@@ -172,26 +172,24 @@ mod test {
         let resend = &*CLIENT;
         let segment = "test_segments";
 
-        // Create.
         let created = resend.segments.create(segment).await?;
         let id = created.id;
         std::thread::sleep(std::time::Duration::from_secs(2));
 
-        // Get.
         let data = resend.segments.get(&id).await?;
         assert_eq!(data.name.as_str(), segment);
 
-        // Update.
         let renamed = "test_segments_renamed";
         let updated = resend.segments.update(&id, renamed).await?;
         assert_eq!(updated.id, id);
 
-        // List.
+        let refetched = resend.segments.get(&id).await?;
+        assert_eq!(refetched.name.as_str(), renamed);
+
         let segments = resend.segments.list(ListOptions::default()).await?;
         let segments_before = segments.len();
         assert!(segments_before > 1);
 
-        // Delete.
         let deleted = resend.segments.delete(&id).await?;
         assert!(deleted);
 
