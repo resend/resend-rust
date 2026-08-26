@@ -210,7 +210,9 @@ mod test {
             "name": "Registered Users"
         }"#;
 
-        let res = serde_json::from_str::<UpdateSegmentResponse>(json);
-        assert!(res.is_ok());
+        let res = serde_json::from_str::<UpdateSegmentResponse>(json)
+            .expect("valid UpdateSegmentResponse JSON");
+        assert_eq!(res.id.as_ref(), "b6d24b8e-af0b-4c3c-be0c-359bbd97381e");
+        assert_eq!(res.name, "Registered Users");
     }
 }
