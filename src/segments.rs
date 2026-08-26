@@ -130,8 +130,6 @@ pub mod types {
     pub struct UpdateSegmentResponse {
         /// The ID of the segment.
         pub id: SegmentId,
-        /// The new name of the segment.
-        pub name: String,
     }
 
     /// Name and ID of an existing contact list.
@@ -186,7 +184,7 @@ mod test {
         // Update.
         let renamed = "test_segments_renamed";
         let updated = resend.segments.update(&id, renamed).await?;
-        assert_eq!(updated.name.as_str(), renamed);
+        assert_eq!(updated.id, id);
 
         // List.
         let segments = resend.segments.list(ListOptions::default()).await?;
@@ -206,13 +204,11 @@ mod test {
 
         let json = r#"{
             "object": "segment",
-            "id": "b6d24b8e-af0b-4c3c-be0c-359bbd97381e",
-            "name": "Registered Users"
+            "id": "b6d24b8e-af0b-4c3c-be0c-359bbd97381e"
         }"#;
 
         let res = serde_json::from_str::<UpdateSegmentResponse>(json)
             .expect("valid UpdateSegmentResponse JSON");
         assert_eq!(res.id.as_ref(), "b6d24b8e-af0b-4c3c-be0c-359bbd97381e");
-        assert_eq!(res.name, "Registered Users");
     }
 }
