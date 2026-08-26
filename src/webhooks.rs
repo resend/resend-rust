@@ -71,6 +71,9 @@ impl WebhookSvc {
         Ok(content)
     }
 
+    /// Retrieve a list of events delivered to a webhook.
+    ///
+    /// <https://resend.com/docs/api-reference/webhooks/list-events>
     #[maybe_async::maybe_async]
     pub async fn list_events<T: AfterPagination>(
         &self,
@@ -85,6 +88,9 @@ impl WebhookSvc {
         Ok(content)
     }
 
+    /// Retrieve a single event delivered to a webhook.
+    ///
+    /// <https://resend.com/docs/api-reference/webhooks/get-event>
     #[maybe_async::maybe_async]
     pub async fn get_event(&self, webhook_id: &str, event_id: &str) -> Result<WebhookEventDetails> {
         let path = format!("/webhooks/{webhook_id}/events/{event_id}");
@@ -95,6 +101,9 @@ impl WebhookSvc {
         Ok(content)
     }
 
+    /// Retrieve the delivery attempts for a webhook event.
+    ///
+    /// <https://resend.com/docs/api-reference/webhooks/list-event-attempts>
     #[maybe_async::maybe_async]
     pub async fn list_event_attempts<T: AfterPagination>(
         &self,
