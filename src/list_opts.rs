@@ -12,6 +12,12 @@ pub struct ListAfter {}
 #[derive(Debug, Clone, Copy)]
 pub struct TimeNotSpecified {}
 
+pub trait AfterPagination {}
+
+impl AfterPagination for TimeNotSpecified {}
+
+impl AfterPagination for ListAfter {}
+
 /// Query parameters for retrieving a list of things.
 ///
 /// Note that [`ListOptions::default()`] applies no filters.

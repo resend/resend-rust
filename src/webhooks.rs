@@ -4,10 +4,11 @@ use reqwest::Method;
 
 use crate::{
     Config, Result,
-    list_opts::{ListOptions, ListResponse},
+    list_opts::{AfterPagination, ListOptions, ListResponse},
     types::{
         CreateWebhookOptions, CreateWebhookResponse, DeleteWebhookResponse, UpdateWebhookOptions,
-        UpdateWebhookResponse, Webhook,
+        UpdateWebhookResponse, Webhook, WebhookEventAttemptListResponse, WebhookEventDetails,
+        WebhookEventListResponse,
     },
 };
 
@@ -70,6 +71,54 @@ impl WebhookSvc {
         Ok(content)
     }
 
+    /// Retrieve a list of events delivered to a webhook.
+    ///
+    /// <https://resend.com/docs/api-reference/webhooks/list-events>
+    #[maybe_async::maybe_async]
+    pub async fn list_events<T: AfterPagination>(
+        &self,
+        webhook_id: &str,
+        list_opts: ListOptions<T>,
+    ) -> Result<WebhookEventListResponse> {
+        let path = format!("/webhooks/{webhook_id}/events");
+        let request = self.0.build(Method::GET, &path).query(&list_opts);
+        let response = self.0.send(request).await?;
+        let content = response.json::<WebhookEventListResponse>().await?;
+
+        Ok(content)
+    }
+
+    /// Retrieve a single event delivered to a webhook.
+    ///
+    /// <https://resend.com/docs/api-reference/webhooks/get-event>
+    #[maybe_async::maybe_async]
+    pub async fn get_event(&self, webhook_id: &str, event_id: &str) -> Result<WebhookEventDetails> {
+        let path = format!("/webhooks/{webhook_id}/events/{event_id}");
+        let request = self.0.build(Method::GET, &path);
+        let response = self.0.send(request).await?;
+        let content = response.json::<WebhookEventDetails>().await?;
+
+        Ok(content)
+    }
+
+    /// Retrieve the delivery attempts for a webhook event.
+    ///
+    /// <https://resend.com/docs/api-reference/webhooks/list-event-attempts>
+    #[maybe_async::maybe_async]
+    pub async fn list_event_attempts<T: AfterPagination>(
+        &self,
+        webhook_id: &str,
+        event_id: &str,
+        list_opts: ListOptions<T>,
+    ) -> Result<WebhookEventAttemptListResponse> {
+        let path = format!("/webhooks/{webhook_id}/events/{event_id}/attempts");
+        let request = self.0.build(Method::GET, &path).query(&list_opts);
+        let response = self.0.send(request).await?;
+        let content = response.json::<WebhookEventAttemptListResponse>().await?;
+
+        Ok(content)
+    }
+
     /// Remove an existing webhook.
     ///
     /// <https://resend.com/docs/api-reference/webhooks/delete-webhook>
@@ -88,10 +137,71 @@ impl WebhookSvc {
 #[allow(unreachable_pub)]
 pub mod types {
     use serde::{Deserialize, Serialize};
+    use serde_json::Value;
 
     use crate::events::EventType;
 
     crate::define_id_type!(WebhookId);
+    crate::define_id_type!(WebhookEventId);
+    crate::define_id_type!(WebhookEventAttemptId);
+
+    #[must_use]
+    #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+    #[serde(rename_all = "lowercase")]
+    pub enum WebhookEventStatus {
+        Pending,
+        Attempting,
+        Success,
+        Failed,
+    }
+
+    #[must_use]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct WebhookEvent {
+        pub id: WebhookEventId,
+        #[serde(rename = "type")]
+        pub event_type: String,
+        pub created_at: String,
+        pub status: WebhookEventStatus,
+    }
+
+    #[must_use]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct WebhookEventListResponse {
+        pub object: String,
+        pub has_more: bool,
+        pub data: Vec<WebhookEvent>,
+    }
+
+    #[must_use]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct WebhookEventDetails {
+        pub object: String,
+        pub id: WebhookEventId,
+        #[serde(rename = "type")]
+        pub event_type: String,
+        pub created_at: String,
+        pub status: WebhookEventStatus,
+        pub next_attempt_at: Option<String>,
+        pub payload: Value,
+    }
+
+    #[must_use]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct WebhookEventAttempt {
+        pub id: WebhookEventAttemptId,
+        pub http_status_code: u16,
+        pub response: String,
+        pub sent_at: String,
+    }
+
+    #[must_use]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct WebhookEventAttemptListResponse {
+        pub object: String,
+        pub has_more: bool,
+        pub data: Vec<WebhookEventAttempt>,
+    }
 
     #[must_use]
     #[derive(Debug, Clone, Serialize)]
@@ -191,12 +301,14 @@ pub mod types {
 mod test {
     use crate::{
         events::EmailEventType,
-        types::Webhook,
+        list_opts::ListOptions,
         types::{CreateWebhookOptions, CreateWebhookResponse},
+        types::{
+            Webhook, WebhookEventAttemptListResponse, WebhookEventDetails, WebhookEventListResponse,
+        },
     };
     #[cfg(not(feature = "blocking"))]
     use crate::{
-        list_opts::ListOptions,
         test::{CLIENT, DebugResult},
         types::{UpdateWebhookOptions, WebhookStatus},
     };
@@ -275,5 +387,75 @@ mod test {
 
         let res = serde_json::from_str::<Webhook>(webhook);
         assert!(res.is_ok());
+    }
+
+    #[test]
+    fn deserialize_webhook_event_responses() -> serde_json::Result<()> {
+        let events = r#"{
+  "object": "list",
+  "has_more": false,
+  "data": [{
+    "id": "msg_1srOrx2ZWZBpBUvZwXKQmoEYga2",
+    "type": "email.sent",
+    "created_at": "2026-08-22T15:28:00.000Z",
+    "status": "success"
+  }]
+}"#;
+        let event = r#"{
+  "object": "webhook_event",
+  "id": "msg_1srOrx2ZWZBpBUvZwXKQmoEYga2",
+  "type": "email.sent",
+  "created_at": "2026-08-22T15:28:00.000Z",
+  "status": "attempting",
+  "next_attempt_at": null,
+  "payload": {"type": "email.sent", "data": {"email_id": "abc"}}
+}"#;
+        let attempts = r#"{
+  "object": "list",
+  "has_more": false,
+  "data": [{
+    "id": "atmpt_2ZbUCwvGmIT4mLIN6d3Yz0Ainbd",
+    "http_status_code": 200,
+    "response": "{\"ok\":true}",
+    "sent_at": "2026-08-22T15:28:05.000Z"
+  }]
+}"#;
+
+        let events = serde_json::from_str::<WebhookEventListResponse>(events)?;
+        let event = serde_json::from_str::<WebhookEventDetails>(event)?;
+        let attempts = serde_json::from_str::<WebhookEventAttemptListResponse>(attempts)?;
+
+        assert_eq!(
+            events.data.first().map(|event| event.id.as_ref()),
+            Some("msg_1srOrx2ZWZBpBUvZwXKQmoEYga2")
+        );
+        assert!(event.next_attempt_at.is_none());
+        assert_eq!(
+            event.payload.get("type"),
+            Some(&serde_json::json!("email.sent"))
+        );
+        assert_eq!(
+            attempts.data.first().map(|attempt| attempt.id.as_ref()),
+            Some("atmpt_2ZbUCwvGmIT4mLIN6d3Yz0Ainbd")
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn serialize_after_only_pagination() -> serde_json::Result<()> {
+        let options = ListOptions::default()
+            .with_limit(10)
+            .list_after("msg_1srOrx2ZWZBpBUvZwXKQmoEYga2");
+        let query = serde_json::to_value(options)?;
+
+        assert_eq!(query.get("limit"), Some(&serde_json::json!(10)));
+        assert_eq!(
+            query.get("after"),
+            Some(&serde_json::json!("msg_1srOrx2ZWZBpBUvZwXKQmoEYga2"))
+        );
+        assert_eq!(query.get("before"), Some(&serde_json::Value::Null));
+
+        Ok(())
     }
 }
