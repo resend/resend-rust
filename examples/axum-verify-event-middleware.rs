@@ -44,28 +44,44 @@ async fn handler(data: String) -> StatusCode {
 }
 
 // Mostly taken from https://github.com/tokio-rs/axum/blob/main/examples/consume-body-in-extractor-or-middleware/src/main.rs
-// Response must stay unboxed here: axum's IntoResponse is implemented for
-// Result<T, Response> directly, not for a boxed error variant.
-#[allow(clippy::result_large_err)]
 async fn verify_middleware(
     headers: HeaderMap,
     request: Request,
     next: Next,
-) -> Result<impl IntoResponse, Response> {
+) -> Result<impl IntoResponse, AppError> {
     let (parts, body) = request.into_parts();
 
     let bytes = body
         .collect()
         .await
-        .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response())?
+        .map_err(|_e| AppError::BodyCollect)?
         .to_bytes();
 
     let secret = "<YOUR RESEND SIGNING SECRET HERE>".to_string();
     let wh = Webhook::new(&secret).expect("Invalid secret");
     wh.verify(&bytes, &headers)
-        .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response())?;
+        .map_err(|_e| AppError::WebhookVerify)?;
 
     let request = Request::from_parts(parts, Body::from(bytes));
 
     Ok(next.run(request).await)
+}
+
+#[derive(Debug)]
+enum AppError {
+    BodyCollect,
+    WebhookVerify,
+}
+
+impl IntoResponse for AppError {
+    fn into_response(self) -> Response {
+        let (status, message) = match self {
+            Self::BodyCollect => (StatusCode::INTERNAL_SERVER_ERROR, "Failed to collect body"),
+            Self::WebhookVerify => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Webhook verification failed",
+            ),
+        };
+        (status, message).into_response()
+    }
 }
