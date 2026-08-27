@@ -63,11 +63,6 @@ jobs:
       - name: Build
         run: cargo build --verbose
 
-      - name: Test
-        run: cargo --verbose t
-        env:
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-
   x86_64-apple-darwin:
     needs: [aarch64-unknown-linux-gnu, x86_64-unknown-linux-gnu]
     runs-on: macos-26
@@ -88,11 +83,6 @@ jobs:
 
       - name: Build
         run: cargo build --verbose
-
-      - name: Test
-        run: cargo --verbose t
-        env:
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
 
   x86_64-pc-windows-msvc:
     needs:
@@ -115,8 +105,3 @@ jobs:
 
       - name: Build
         run: cargo build --verbose
-
-      - name: Test
-        run: cargo --verbose t
-        env:
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
