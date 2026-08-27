@@ -427,6 +427,8 @@ pub mod types {
         MX,
         #[allow(clippy::upper_case_acronyms)]
         TXT,
+        #[allow(clippy::upper_case_acronyms)]
+        CNAME,
     }
 
     #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
