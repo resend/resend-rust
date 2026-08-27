@@ -43,7 +43,6 @@ jobs:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
 
   aarch64-unknown-linux-gnu:
-    needs: [x86_64-unknown-linux-gnu]
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -64,7 +63,6 @@ jobs:
         run: cargo build --verbose
 
   x86_64-apple-darwin:
-    needs: [aarch64-unknown-linux-gnu, x86_64-unknown-linux-gnu]
     runs-on: macos-26
     timeout-minutes: 30
     steps:
@@ -85,8 +83,6 @@ jobs:
         run: cargo build --verbose
 
   x86_64-pc-windows-msvc:
-    needs:
-      [aarch64-unknown-linux-gnu, x86_64-unknown-linux-gnu, x86_64-apple-darwin]
     runs-on: macos-26
     timeout-minutes: 30
     steps:
