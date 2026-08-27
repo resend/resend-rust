@@ -8,6 +8,14 @@ and this project adheres to
 
 <!--## Unreleased-->
 
+## [0.31.1] - 2026-08-27
+
+### Added
+
+- support custom properties in `ContactChanges`
+- `segments::rename`
+- webhook event listing endpoints
+
 ## [0.31.0] - 2026-08-23
 
 ### Changed
@@ -602,6 +610,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+[0.31.1]: https://crates.io/crates/resend-rs/0.31.1
 [0.31.0]: https://crates.io/crates/resend-rs/0.31.0
 [0.30.3]: https://crates.io/crates/resend-rs/0.30.3
 [0.30.2]: https://crates.io/crates/resend-rs/0.30.2
