@@ -6,7 +6,7 @@ use reqwest::Method;
 use crate::{Config, Result, list_opts::ListOptions};
 use crate::{list_opts::ListResponse, types::Segment};
 
-use self::types::CreateSegmentResponse;
+use self::types::{CreateSegmentResponse, UpdateSegmentResponse};
 
 /// `Resend` APIs for `/segments` endpoints.
 #[derive(Clone)]
@@ -41,6 +41,24 @@ impl SegmentsSvc {
         let request = self.0.build(Method::GET, &path);
         let response = self.0.send(request).await?;
         let content = response.json::<Segment>().await?;
+
+        Ok(content)
+    }
+
+    /// Update the name of an existing segment.
+    ///
+    /// <https://resend.com/docs/api-reference/segments/update-segment>
+    #[maybe_async::maybe_async]
+    pub async fn update(&self, id: &str, name: &str) -> Result<UpdateSegmentResponse> {
+        let path = format!("/segments/{id}");
+
+        let segment = types::UpdateSegmentRequest {
+            name: name.to_owned(),
+        };
+
+        let request = self.0.build(Method::PATCH, &path);
+        let response = self.0.send(request.json(&segment)).await?;
+        let content = response.json::<UpdateSegmentResponse>().await?;
 
         Ok(content)
     }
@@ -101,6 +119,19 @@ pub mod types {
         pub name: String,
     }
 
+    #[must_use]
+    #[derive(Debug, Clone, Serialize)]
+    pub struct UpdateSegmentRequest {
+        /// The new name for the segment.
+        pub name: String,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct UpdateSegmentResponse {
+        /// The ID of the segment.
+        pub id: SegmentId,
+    }
+
     /// Name and ID of an existing contact list.
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -141,24 +172,41 @@ mod test {
         let resend = &*CLIENT;
         let segment = "test_segments";
 
-        // Create.
         let created = resend.segments.create(segment).await?;
         let id = created.id;
         std::thread::sleep(std::time::Duration::from_secs(2));
 
-        // Get.
         let data = resend.segments.get(&id).await?;
         assert_eq!(data.name.as_str(), segment);
 
-        // List.
+        let renamed = "test_segments_renamed";
+        let updated = resend.segments.update(&id, renamed).await?;
+        assert_eq!(updated.id, id);
+
+        let refetched = resend.segments.get(&id).await?;
+        assert_eq!(refetched.name.as_str(), renamed);
+
         let segments = resend.segments.list(ListOptions::default()).await?;
         let segments_before = segments.len();
         assert!(segments_before > 1);
 
-        // Delete.
         let deleted = resend.segments.delete(&id).await?;
         assert!(deleted);
 
         Ok(())
+    }
+
+    #[test]
+    fn deserialize_update_response() {
+        use crate::types::UpdateSegmentResponse;
+
+        let json = r#"{
+            "object": "segment",
+            "id": "b6d24b8e-af0b-4c3c-be0c-359bbd97381e"
+        }"#;
+
+        let res = serde_json::from_str::<UpdateSegmentResponse>(json)
+            .expect("valid UpdateSegmentResponse JSON");
+        assert_eq!(res.id.as_ref(), "b6d24b8e-af0b-4c3c-be0c-359bbd97381e");
     }
 }
