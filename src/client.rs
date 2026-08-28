@@ -160,6 +160,67 @@ impl Resend {
     fn config(&self) -> &Config {
         &self.emails.0
     }
+
+    /// Send a raw request to any API endpoint and get back a [`serde_json::Value`].
+    /// Useful as a fallback when parsing fails.
+    ///
+    /// ## Example
+    ///
+    /// ```rust
+    /// use resend_rs::Resend;
+    ///
+    /// #[tokio::main]
+    /// async fn main() {
+    ///   let resend = Resend::default();
+    ///
+    ///   let query = resend_rs::json!({
+    ///       "limit": 10,
+    ///   });
+    ///
+    ///   let raw_response = resend
+    ///     .send_raw(
+    ///       resend_rs::Method::GET,
+    ///       "/emails",
+    ///       Some(query),
+    ///       None::<()>, // The turbofish is needed because of the `impl`
+    ///       None,
+    ///     )
+    ///     .await
+    ///     .unwrap();
+    ///
+    ///   assert!(raw_response.get("data").is_some());
+    ///   let data = raw_response.get("data").and_then(|v| v.as_array()).unwrap();
+    ///   assert!(!data.is_empty());
+    /// }
+    /// ```
+    #[maybe_async::maybe_async]
+    pub async fn send_raw(
+        &self,
+        method: reqwest::Method,
+        path: &str,
+        query: Option<impl serde::Serialize>,
+        body: Option<impl serde::Serialize>,
+        headers: Option<reqwest::header::HeaderMap>,
+    ) -> crate::Result<serde_json::Value> {
+        let mut request = self.config().build(method, path);
+
+        if let Some(q) = query {
+            request = request.query(&q);
+        }
+
+        if let Some(h) = headers {
+            request = request.headers(h);
+        }
+
+        if let Some(b) = body {
+            request = request.json(&b);
+        }
+
+        let response = self.config().send(request).await?;
+        let value = response.json::<serde_json::Value>().await?;
+
+        Ok(value)
+    }
 }
 
 impl Default for Resend {

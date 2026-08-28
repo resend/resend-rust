@@ -52,6 +52,7 @@
 
 pub use client::Resend;
 pub use config::{Config, ConfigBuilder};
+pub use reqwest::Method;
 pub use serde_json::{Value, json};
 
 mod api_keys;
