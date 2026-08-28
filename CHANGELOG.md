@@ -8,6 +8,11 @@ and this project adheres to
 
 <!--## Unreleased-->
 
+## [0.32.0] - 2026-08-28
+
+- added `resend.send_raw`
+- `SpfRecordType::CNAME`
+
 ## [0.31.1] - 2026-08-27
 
 ### Added
@@ -610,6 +615,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+[0.32.0]: https://crates.io/crates/resend-rs/0.32.0
 [0.31.1]: https://crates.io/crates/resend-rs/0.31.1
 [0.31.0]: https://crates.io/crates/resend-rs/0.31.0
 [0.30.3]: https://crates.io/crates/resend-rs/0.30.3
