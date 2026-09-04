@@ -6,9 +6,9 @@ use crate::{
     Config, Result,
     list_opts::{AfterPagination, ListOptions, ListResponse},
     types::{
-        CreateWebhookOptions, CreateWebhookResponse, DeleteWebhookResponse, UpdateWebhookOptions,
-        UpdateWebhookResponse, Webhook, WebhookEventAttemptListResponse, WebhookEventDetails,
-        WebhookEventListResponse,
+        CreateWebhookOptions, CreateWebhookResponse, DeleteWebhookResponse,
+        ReplayWebhookEventResponse, UpdateWebhookOptions, UpdateWebhookResponse, Webhook,
+        WebhookEventAttemptListResponse, WebhookEventDetails, WebhookEventListResponse,
     },
 };
 
@@ -101,6 +101,23 @@ impl WebhookSvc {
         Ok(content)
     }
 
+    /// Queue one more delivery of a webhook event to its webhook.
+    ///
+    /// <https://resend.com/docs/api-reference/webhooks/replay-event>
+    #[maybe_async::maybe_async]
+    pub async fn replay_event(
+        &self,
+        webhook_id: &str,
+        event_id: &str,
+    ) -> Result<ReplayWebhookEventResponse> {
+        let path = format!("/webhooks/{webhook_id}/events/{event_id}/replay");
+        let request = self.0.build(Method::POST, &path);
+        let response = self.0.send(request).await?;
+        let content = response.json::<ReplayWebhookEventResponse>().await?;
+
+        Ok(content)
+    }
+
     /// Retrieve the delivery attempts for a webhook event.
     ///
     /// <https://resend.com/docs/api-reference/webhooks/list-event-attempts>
@@ -184,6 +201,13 @@ pub mod types {
         pub status: WebhookEventStatus,
         pub next_attempt_at: Option<String>,
         pub payload: Value,
+    }
+
+    #[must_use]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct ReplayWebhookEventResponse {
+        pub object: String,
+        pub id: WebhookEventId,
     }
 
     #[must_use]
