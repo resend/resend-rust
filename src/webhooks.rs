@@ -119,7 +119,7 @@ impl WebhookSvc {
         Ok(content)
     }
 
-    /// Rotate the signing secret of a webhook. The previous secret stops working immediately.
+    /// Rotate the signing secret of a webhook. The previous secret keeps working for 24 hours.
     ///
     /// <https://resend.com/docs/api-reference/webhooks/rotate-signing-secret>
     #[maybe_async::maybe_async]
