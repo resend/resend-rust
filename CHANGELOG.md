@@ -8,6 +8,12 @@ and this project adheres to
 
 <!--## Unreleased-->
 
+## [0.33.0] - 2026-09-10
+
+### Added
+
+- `webhook::rotate_signing_secret`
+
 ## [0.32.1] - 2026-09-04
 
 ### Added
