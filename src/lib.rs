@@ -184,10 +184,10 @@ pub mod types {
     };
     pub use super::webhooks::types::{
         CreateWebhookOptions, CreateWebhookResponse, DeleteWebhookResponse,
-        ReplayWebhookEventResponse, UpdateWebhookOptions, UpdateWebhookResponse, Webhook,
-        WebhookEvent, WebhookEventAttempt, WebhookEventAttemptId, WebhookEventAttemptListResponse,
-        WebhookEventDetails, WebhookEventId, WebhookEventListResponse, WebhookEventStatus,
-        WebhookId, WebhookStatus,
+        ReplayWebhookEventResponse, RotateWebhookSigningSecretResponse, UpdateWebhookOptions,
+        UpdateWebhookResponse, Webhook, WebhookEvent, WebhookEventAttempt, WebhookEventAttemptId,
+        WebhookEventAttemptListResponse, WebhookEventDetails, WebhookEventId,
+        WebhookEventListResponse, WebhookEventStatus, WebhookId, WebhookStatus,
     };
 }
 

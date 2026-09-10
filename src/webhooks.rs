@@ -7,8 +7,9 @@ use crate::{
     list_opts::{AfterPagination, ListOptions, ListResponse},
     types::{
         CreateWebhookOptions, CreateWebhookResponse, DeleteWebhookResponse,
-        ReplayWebhookEventResponse, UpdateWebhookOptions, UpdateWebhookResponse, Webhook,
-        WebhookEventAttemptListResponse, WebhookEventDetails, WebhookEventListResponse,
+        ReplayWebhookEventResponse, RotateWebhookSigningSecretResponse, UpdateWebhookOptions,
+        UpdateWebhookResponse, Webhook, WebhookEventAttemptListResponse, WebhookEventDetails,
+        WebhookEventListResponse,
     },
 };
 
@@ -114,6 +115,24 @@ impl WebhookSvc {
         let request = self.0.build(Method::POST, &path);
         let response = self.0.send(request).await?;
         let content = response.json::<ReplayWebhookEventResponse>().await?;
+
+        Ok(content)
+    }
+
+    /// Rotate the signing secret of a webhook. The previous secret keeps working for 24 hours.
+    ///
+    /// <https://resend.com/docs/api-reference/webhooks/rotate-signing-secret>
+    #[maybe_async::maybe_async]
+    pub async fn rotate_signing_secret(
+        &self,
+        webhook_id: &str,
+    ) -> Result<RotateWebhookSigningSecretResponse> {
+        let path = format!("/webhooks/{webhook_id}/signing-secret/rotate");
+        let request = self.0.build(Method::POST, &path);
+        let response = self.0.send(request).await?;
+        let content = response
+            .json::<RotateWebhookSigningSecretResponse>()
+            .await?;
 
         Ok(content)
     }
@@ -255,6 +274,14 @@ pub mod types {
 
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct RotateWebhookSigningSecretResponse {
+        pub object: String,
+        pub id: WebhookId,
+        pub signing_secret: String,
+    }
+
+    #[must_use]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct Webhook {
         pub id: WebhookId,
         pub created_at: String,
@@ -328,7 +355,8 @@ mod test {
         list_opts::ListOptions,
         types::{CreateWebhookOptions, CreateWebhookResponse},
         types::{
-            Webhook, WebhookEventAttemptListResponse, WebhookEventDetails, WebhookEventListResponse,
+            RotateWebhookSigningSecretResponse, Webhook, WebhookEventAttemptListResponse,
+            WebhookEventDetails, WebhookEventListResponse,
         },
     };
     #[cfg(not(feature = "blocking"))]
@@ -411,6 +439,22 @@ mod test {
 
         let res = serde_json::from_str::<Webhook>(webhook);
         assert!(res.is_ok());
+    }
+
+    #[test]
+    fn deserialize_rotate_signing_secret_response() -> serde_json::Result<()> {
+        let rotated = r#"{
+  "object": "webhook",
+  "id": "4dd369bc-aa82-4ff3-97de-514ae3000ee0",
+  "signing_secret": "whsec_yyyyyyyyyy"
+}"#;
+
+        let rotated = serde_json::from_str::<RotateWebhookSigningSecretResponse>(rotated)?;
+
+        assert_eq!(rotated.id.as_ref(), "4dd369bc-aa82-4ff3-97de-514ae3000ee0");
+        assert_eq!(rotated.signing_secret, "whsec_yyyyyyyyyy");
+
+        Ok(())
     }
 
     #[test]
