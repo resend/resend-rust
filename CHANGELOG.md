@@ -14,7 +14,7 @@ and this project adheres to
 
 - `webhook::rotate_signing_secret`
 
-## [0.32.1] - 2026-09-04
+## [0.32.2] - 2026-09-04
 
 ### Added
 
@@ -627,6 +627,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+[0.32.2]: https://crates.io/crates/resend-rs/0.32.2
 [0.32.1]: https://crates.io/crates/resend-rs/0.32.1
 [0.32.0]: https://crates.io/crates/resend-rs/0.32.0
 [0.31.1]: https://crates.io/crates/resend-rs/0.31.1
