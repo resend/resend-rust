@@ -120,8 +120,9 @@ pub mod types {
         Broadcast, BroadcastClickedLink, BroadcastId, BroadcastRecipient,
         BroadcastRecipientBounceType, BroadcastRecipientClickedLink, BroadcastRecipientEventType,
         CancelBroadcastResponse, CreateBroadcastOptions, CreateBroadcastResponse,
-        ListRecipientsOptions, RemoveBroadcastResponse, SendBroadcastOptions,
-        SendBroadcastResponse, UpdateBroadcastOptions, UpdateBroadcastResponse,
+        DuplicateBroadcastResponse, ListRecipientsOptions, RemoveBroadcastResponse,
+        SendBroadcastOptions, SendBroadcastResponse, UpdateBroadcastOptions,
+        UpdateBroadcastResponse,
     };
     pub use super::contacts::types::{
         AddContactSegmentResponse, Contact, ContactChanges, ContactId, ContactImport,
