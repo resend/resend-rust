@@ -8,8 +8,8 @@ use crate::{
     list_opts::ListOptions,
     types::{
         Broadcast, BroadcastClickedLink, BroadcastRecipient, CancelBroadcastResponse,
-        CreateBroadcastOptions, CreateBroadcastResponse, RemoveBroadcastResponse,
-        SendBroadcastOptions, SendBroadcastResponse,
+        CreateBroadcastOptions, CreateBroadcastResponse, DuplicateBroadcastResponse,
+        RemoveBroadcastResponse, SendBroadcastOptions, SendBroadcastResponse,
     },
 };
 
@@ -82,6 +82,22 @@ impl BroadcastsSvc {
         let request = self.0.build(Method::POST, &path);
         let response = self.0.send(request).await?;
         let content = response.json::<CancelBroadcastResponse>().await?;
+
+        Ok(content)
+    }
+
+    /// Duplicate a broadcast.
+    ///
+    /// Creates a new draft with the same content as the source, named after it with " (copy)" appended.
+    ///
+    /// <https://resend.com/docs/api-reference/broadcasts/duplicate-broadcast>
+    #[maybe_async::maybe_async]
+    pub async fn duplicate(&self, broadcast_id: &str) -> Result<DuplicateBroadcastResponse> {
+        let path = format!("/broadcasts/{broadcast_id}/duplicate");
+
+        let request = self.0.build(Method::POST, &path);
+        let response = self.0.send(request).await?;
+        let content = response.json::<DuplicateBroadcastResponse>().await?;
 
         Ok(content)
     }
@@ -410,6 +426,12 @@ pub mod types {
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct DuplicateBroadcastResponse {
+        /// Unique identifier for the duplicated broadcast.
+        pub id: BroadcastId,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct RemoveBroadcastResponse {
         /// The ID of the broadcast.
         #[allow(dead_code)]
@@ -723,6 +745,11 @@ mod test {
         // Assert subject == updated subject
         let broadcast = resend.broadcasts.get(&broadcast_id).await?;
         assert_eq!(Some(subject.to_string()), broadcast.subject);
+
+        let duplicate = resend.broadcasts.duplicate(&broadcast_id).await?;
+        assert_ne!(duplicate.id, broadcast_id);
+        let deleted = resend.broadcasts.delete(&duplicate.id).await?;
+        assert!(deleted);
 
         // Delete
         let deleted = resend.broadcasts.delete(&broadcast_id).await?;
