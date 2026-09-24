@@ -4,7 +4,10 @@ use std::sync::Arc;
 use reqwest::Method;
 
 use crate::{Config, Result, list_opts::ListOptions};
-use crate::{list_opts::ListResponse, types::Segment};
+use crate::{
+    list_opts::ListResponse,
+    types::{Contact, Segment},
+};
 
 use self::types::{CreateSegmentResponse, UpdateSegmentResponse};
 
@@ -87,6 +90,26 @@ impl SegmentsSvc {
         let request = self.0.build(Method::GET, "/segments").query(&list_opts);
         let response = self.0.send(request).await?;
         let content = response.json::<ListResponse<Segment>>().await?;
+
+        Ok(content)
+    }
+
+    /// Retrieve a list of contacts in a segment.
+    ///
+    /// - Default limit: no limit (return everything)
+    ///
+    /// <https://resend.com/docs/api-reference/segments/list-segment-contacts>
+    #[maybe_async::maybe_async]
+    pub async fn list_contacts<T>(
+        &self,
+        id: &str,
+        list_opts: ListOptions<T>,
+    ) -> Result<ListResponse<Contact>> {
+        let path = format!("/segments/{id}/contacts");
+
+        let request = self.0.build(Method::GET, &path).query(&list_opts);
+        let response = self.0.send(request).await?;
+        let content = response.json::<ListResponse<Contact>>().await?;
 
         Ok(content)
     }
@@ -186,6 +209,12 @@ mod test {
         let refetched = resend.segments.get(&id).await?;
         assert_eq!(refetched.name.as_str(), renamed);
 
+        let contacts = resend
+            .segments
+            .list_contacts(&id, ListOptions::default())
+            .await?;
+        assert!(contacts.is_empty());
+
         let segments = resend.segments.list(ListOptions::default()).await?;
         let segments_before = segments.len();
         assert!(segments_before > 1);
@@ -208,5 +237,32 @@ mod test {
         let res = serde_json::from_str::<UpdateSegmentResponse>(json)
             .expect("valid UpdateSegmentResponse JSON");
         assert_eq!(res.id.as_ref(), "b6d24b8e-af0b-4c3c-be0c-359bbd97381e");
+    }
+
+    #[test]
+    fn deserialize_list_contacts_response() {
+        use crate::{list_opts::ListResponse, types::Contact};
+
+        let json = r#"{
+            "object": "list",
+            "has_more": false,
+            "data": [
+                {
+                    "id": "e169aa45-1ecf-4183-9955-b1499d5701d3",
+                    "email": "steve.wozniak@gmail.com",
+                    "first_name": "Steve",
+                    "last_name": "Wozniak",
+                    "created_at": "2026-10-06 23:47:56.678+00",
+                    "unsubscribed": false
+                }
+            ]
+        }"#;
+
+        let res = serde_json::from_str::<ListResponse<Contact>>(json)
+            .expect("valid ListResponse<Contact> JSON");
+        assert!(!res.has_more);
+        assert_eq!(res.len(), 1);
+        let contact = res.data.first().expect("one contact");
+        assert_eq!(contact.email, "steve.wozniak@gmail.com");
     }
 }

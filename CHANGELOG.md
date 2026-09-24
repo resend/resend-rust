@@ -8,6 +8,12 @@ and this project adheres to
 
 <!--## Unreleased-->
 
+## [0.32.4] - 2026-09-24
+
+### Added
+
+- `segments::list_contacts`
+
 ## [0.32.3] - 2026-09-12
 
 ### Added
@@ -633,6 +639,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+[0.32.4]: https://crates.io/crates/resend-rs/0.32.4
 [0.32.3]: https://crates.io/crates/resend-rs/0.32.3
 [0.32.2]: https://crates.io/crates/resend-rs/0.32.2
 [0.32.1]: https://crates.io/crates/resend-rs/0.32.1
