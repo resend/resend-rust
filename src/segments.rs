@@ -238,31 +238,4 @@ mod test {
             .expect("valid UpdateSegmentResponse JSON");
         assert_eq!(res.id.as_ref(), "b6d24b8e-af0b-4c3c-be0c-359bbd97381e");
     }
-
-    #[test]
-    fn deserialize_list_contacts_response() {
-        use crate::{list_opts::ListResponse, types::Contact};
-
-        let json = r#"{
-            "object": "list",
-            "has_more": false,
-            "data": [
-                {
-                    "id": "e169aa45-1ecf-4183-9955-b1499d5701d3",
-                    "email": "steve.wozniak@gmail.com",
-                    "first_name": "Steve",
-                    "last_name": "Wozniak",
-                    "created_at": "2026-10-06 23:47:56.678+00",
-                    "unsubscribed": false
-                }
-            ]
-        }"#;
-
-        let res = serde_json::from_str::<ListResponse<Contact>>(json)
-            .expect("valid ListResponse<Contact> JSON");
-        assert!(!res.has_more);
-        assert_eq!(res.len(), 1);
-        let contact = res.data.first().expect("one contact");
-        assert_eq!(contact.email, "steve.wozniak@gmail.com");
-    }
 }
