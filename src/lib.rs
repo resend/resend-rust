@@ -76,6 +76,7 @@ mod segments;
 mod suppressions;
 mod templates;
 mod topics;
+mod usage;
 mod webhooks;
 
 pub mod services {
@@ -95,6 +96,7 @@ pub mod services {
     pub use super::suppressions::SuppressionsSvc;
     pub use super::templates::TemplateSvc;
     pub use super::topics::TopicsSvc;
+    pub use super::usage::UsageSvc;
 }
 
 pub mod types {
@@ -182,6 +184,10 @@ pub mod types {
     pub use super::topics::types::{
         CreateTopicOptions, CreateTopicResponse, DeleteTopicResponse, SubscriptionType, Topic,
         TopicId, TopicVisibility, UpdateTopicOptions, UpdateTopicResponse,
+    };
+    pub use super::usage::types::{
+        AiCreditsUsage, AutomationRunsUsage, BroadcastsUsage, ContactsUsage, DomainsUsage,
+        EmailUsagePeriod, EmailsUsage, SegmentsUsage, Usage, UsageRateLimit,
     };
     pub use super::webhooks::types::{
         CreateWebhookOptions, CreateWebhookResponse, DeleteWebhookResponse,
