@@ -12,7 +12,7 @@ pub struct UsageSvc(pub(crate) Arc<Config>);
 impl UsageSvc {
     /// Retrieves the account-level usage and quota data for the authenticated user.
     ///
-    /// <https://resend.com/docs/api-reference/usage/get-usage>
+    /// <https://resend.com/docs/api-reference/usage/retrieve-usage>
     #[maybe_async::maybe_async]
     pub async fn get(&self) -> Result<Usage> {
         let request = self.0.build(Method::GET, "/usage");
@@ -188,7 +188,7 @@ mod test {
             "object": "usage",
             "emails": {
                 "daily": { "used": 258, "limit": null, "sent": 57, "received": 201, "resets_at": "2026-07-17T00:00:00.000Z" },
-                "monthly": { "used": 5422, "limit": 10000, "sent": 1000, "received": 4442, "resets_at": "2026-08-01T00:00:00.000Z" }
+                "monthly": { "used": 5442, "limit": 10000, "sent": 1000, "received": 4442, "resets_at": "2026-08-01T00:00:00.000Z" }
             },
             "contacts": { "used": 85000, "limit": 150000 },
             "segments": { "used": 2, "limit": 3 },
