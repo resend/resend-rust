@@ -97,7 +97,7 @@ impl ContactsSvc {
         Ok(content.deleted)
     }
 
-    /// Retrieves a list contacts from an audience.
+    /// Show all contacts.
     ///
     /// - Default limit: no limit (return everything)
     ///
