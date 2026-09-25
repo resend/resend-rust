@@ -103,12 +103,8 @@ impl ContactsSvc {
     ///
     /// <https://resend.com/docs/api-reference/contacts/list-contacts>
     #[maybe_async::maybe_async]
-    pub async fn list<T>(
-        &self,
-        audience: &str,
-        list_opts: ListOptions<T>,
-    ) -> Result<ListResponse<Contact>> {
-        let path = format!("/audiences/{audience}/contacts");
+    pub async fn list<T>(&self, list_opts: ListOptions<T>) -> Result<ListResponse<Contact>> {
+        let path = "/contacts".to_string();
 
         let request = self.0.build(Method::GET, &path).query(&list_opts);
         let response = self.0.send(request).await?;
@@ -1121,10 +1117,7 @@ mod test {
         assert!(contact.unsubscribed);
 
         // List.
-        let contacts = resend
-            .contacts
-            .list(&audience_id, ListOptions::default())
-            .await?;
+        let contacts = resend.contacts.list(ListOptions::default()).await?;
         assert_eq!(contacts.len(), 1);
 
         // Delete.
@@ -1141,10 +1134,7 @@ mod test {
         assert!(deleted.deleted);
 
         // List.
-        let contacts = resend
-            .contacts
-            .list(&audience_id, ListOptions::default())
-            .await?;
+        let contacts = resend.contacts.list(ListOptions::default()).await?;
         assert!(contacts.is_empty());
 
         std::thread::sleep(std::time::Duration::from_secs(4));
