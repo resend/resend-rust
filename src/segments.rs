@@ -102,10 +102,10 @@ impl SegmentsSvc {
     #[maybe_async::maybe_async]
     pub async fn list_contacts<T>(
         &self,
-        id: &str,
+        segment_id: &str,
         list_opts: ListOptions<T>,
     ) -> Result<ListResponse<Contact>> {
-        let path = format!("/segments/{id}/contacts");
+        let path = format!("/segments/{segment_id}/contacts");
 
         let request = self.0.build(Method::GET, &path).query(&list_opts);
         let response = self.0.send(request).await?;
