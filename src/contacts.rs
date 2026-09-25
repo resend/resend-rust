@@ -451,7 +451,7 @@ pub mod types {
         unsubscribed: Option<bool>,
         /// Custom properties for the contact.
         #[serde(skip_serializing_if = "Option::is_none")]
-        properties: Option<HashMap<String, String>>,
+        properties: Option<HashMap<String, serde_json::Value>>,
         /// Segment IDs to add the contact to.
         #[serde(skip_serializing_if = "Option::is_none")]
         segments: Option<Vec<SegmentObject>>,
@@ -507,15 +507,18 @@ pub mod types {
         #[inline]
         pub fn with_property(mut self, key: &str, value: &str) -> Self {
             let properties = self.properties.get_or_insert_with(HashMap::new);
-            let _old = properties.insert(key.to_owned(), value.to_owned());
+            let _old = properties.insert(key.to_owned(), value.into());
             self
         }
 
         /// Adds custom properties to the contact.
         #[inline]
-        pub fn with_properties(mut self, properties: HashMap<String, String>) -> Self {
+        pub fn with_properties<V: Into<serde_json::Value>>(
+            mut self,
+            properties: HashMap<String, V>,
+        ) -> Self {
             let self_properties = self.properties.get_or_insert_with(HashMap::new);
-            self_properties.extend(properties);
+            self_properties.extend(properties.into_iter().map(|(k, v)| (k, v.into())));
             self
         }
 
@@ -602,7 +605,7 @@ pub mod types {
         unsubscribed: Option<bool>,
         /// Custom properties for the contact.
         #[serde(skip_serializing_if = "Option::is_none")]
-        properties: Option<HashMap<String, String>>,
+        properties: Option<HashMap<String, serde_json::Value>>,
     }
 
     impl ContactChanges {
@@ -637,15 +640,18 @@ pub mod types {
         #[inline]
         pub fn with_property(mut self, key: &str, value: &str) -> Self {
             let properties = self.properties.get_or_insert_with(HashMap::new);
-            let _old = properties.insert(key.to_owned(), value.to_owned());
+            let _old = properties.insert(key.to_owned(), value.into());
             self
         }
 
         /// Updates custom properties of the contact.
         #[inline]
-        pub fn with_properties(mut self, properties: HashMap<String, String>) -> Self {
+        pub fn with_properties<V: Into<serde_json::Value>>(
+            mut self,
+            properties: HashMap<String, V>,
+        ) -> Self {
             let self_properties = self.properties.get_or_insert_with(HashMap::new);
-            self_properties.extend(properties);
+            self_properties.extend(properties.into_iter().map(|(k, v)| (k, v.into())));
             self
         }
     }
@@ -1025,10 +1031,10 @@ mod test {
     use crate::{
         list_opts::ListOptions,
         test::{CLIENT, DebugResult},
-        types::{ContactChanges, CreateTopicOptions, SubscriptionType, UpdateContactTopicOptions},
+        types::{CreateTopicOptions, SubscriptionType, UpdateContactTopicOptions},
     };
 
-    use crate::types::{Contact, ContactProperty, CreateContactOptions};
+    use crate::types::{Contact, ContactChanges, ContactProperty, CreateContactOptions};
 
     #[tokio_shared_rt::test(shared = true)]
     #[serial_test::serial]
@@ -1215,6 +1221,12 @@ mod test {
             .list_contact_segment(&contact_id, ListOptions::default())
             .await?;
         assert!(!list.data.is_empty());
+
+        let contacts = resend
+            .segments
+            .list_contacts(&segment.id, ListOptions::default())
+            .await?;
+        assert!(!contacts.is_empty());
 
         let deleted = resend
             .contacts
@@ -1472,5 +1484,53 @@ mod test {
         assert_eq!(topics[0]["subscription"], "opt_in");
         assert_eq!(topics[1]["id"], "topic_789");
         assert_eq!(topics[1]["subscription"], "opt_out");
+    }
+
+    #[test]
+    #[allow(clippy::indexing_slicing)]
+    fn serialize_create_contact_property_values() {
+        let properties = HashMap::from([
+            ("company".to_owned(), serde_json::json!("Acme Corp")),
+            ("age".to_owned(), serde_json::json!(42)),
+            ("nickname".to_owned(), serde_json::Value::Null),
+        ]);
+
+        let contact = CreateContactOptions::new("test@example.com").with_properties(properties);
+
+        let json = serde_json::to_value(&contact).expect("Failed to serialize");
+
+        assert_eq!(
+            json["properties"],
+            serde_json::json!({
+                "company": "Acme Corp",
+                "age": 42,
+                "nickname": null,
+            })
+        );
+    }
+
+    #[test]
+    #[allow(clippy::indexing_slicing)]
+    fn serialize_contact_changes_property_values() {
+        let properties = HashMap::from([
+            ("company".to_owned(), serde_json::json!("Acme Corp")),
+            ("age".to_owned(), serde_json::json!(42)),
+            ("vip".to_owned(), serde_json::json!(true)),
+            ("nickname".to_owned(), serde_json::Value::Null),
+        ]);
+
+        let changes = ContactChanges::new().with_properties(properties);
+
+        let json = serde_json::to_value(&changes).expect("Failed to serialize");
+
+        assert_eq!(
+            json["properties"],
+            serde_json::json!({
+                "company": "Acme Corp",
+                "age": 42,
+                "vip": true,
+                "nickname": null,
+            })
+        );
     }
 }
