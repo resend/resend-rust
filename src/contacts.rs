@@ -1222,6 +1222,12 @@ mod test {
             .await?;
         assert!(!list.data.is_empty());
 
+        let contacts = resend
+            .segments
+            .list_contacts(&segment.id, ListOptions::default())
+            .await?;
+        assert!(!contacts.is_empty());
+
         let deleted = resend
             .contacts
             .delete_contact_segment(&contact_id, &segment.id)
