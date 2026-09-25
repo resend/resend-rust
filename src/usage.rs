@@ -1,4 +1,3 @@
-use std::fmt;
 use std::sync::Arc;
 
 use reqwest::Method;
@@ -6,7 +5,7 @@ use reqwest::Method;
 use crate::{Config, Result, types::Usage};
 
 /// `Resend` APIs for `/usage` endpoints.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct UsageSvc(pub(crate) Arc<Config>);
 
 impl UsageSvc {
@@ -20,12 +19,6 @@ impl UsageSvc {
         let content = response.json::<Usage>().await?;
 
         Ok(content)
-    }
-}
-
-impl fmt::Debug for UsageSvc {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Debug::fmt(&self.0, f)
     }
 }
 
