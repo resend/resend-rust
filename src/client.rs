@@ -20,6 +20,7 @@ use crate::{
         ApiKeysSvc, BroadcastsSvc, ContactsSvc, DomainsSvc, EmailsSvc, SegmentsSvc, TemplateSvc,
     },
     topics::TopicsSvc,
+    usage::UsageSvc,
 };
 
 #[cfg(doc)]
@@ -61,6 +62,8 @@ pub struct Resend {
     pub oauth: OAuthSvc,
     /// `Resend` APIs for `/suppressions` endpoints.
     pub suppressions: SuppressionsSvc,
+    /// `Resend` APIs for `/usage` endpoints.
+    pub usage: UsageSvc,
 }
 
 impl Resend {
@@ -117,7 +120,8 @@ impl Resend {
             automations: AutomationsSvc(Arc::clone(&inner)),
             events: EventsSvc(Arc::clone(&inner)),
             oauth: OAuthSvc(Arc::clone(&inner)),
-            suppressions: SuppressionsSvc(inner),
+            suppressions: SuppressionsSvc(Arc::clone(&inner)),
+            usage: UsageSvc(inner),
         }
     }
 
