@@ -171,9 +171,17 @@ impl Config {
 
     /// Constructs a new [`RequestBuilder`].
     pub(crate) fn build(&self, method: Method, path: &str) -> RequestBuilder {
-        let path = self
-            .base_url
-            .join(path)
+        // `Url::join` replaces the last path segment of the base when it has no trailing slash
+        // and discards the whole base path when `path` starts with a slash. Normalize both so a
+        // base url such as `https://proxy.example.com/resend` keeps its prefix.
+        let mut base_url = self.base_url.clone();
+        if !base_url.path().ends_with('/') {
+            let with_slash = format!("{}/", base_url.path());
+            base_url.set_path(&with_slash);
+        }
+
+        let path = base_url
+            .join(path.trim_start_matches('/'))
             .expect("should be a valid API endpoint");
 
         self.client
@@ -257,5 +265,44 @@ impl fmt::Debug for Config {
             .field("user_agent", &self.user_agent.as_str())
             .field("base_url", &self.base_url.as_str())
             .finish_non_exhaustive()
+    }
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod test {
+    use super::*;
+
+    fn url_for(base_url: &str, path: &str) -> String {
+        let config = Config::builder("re_test")
+            .base_url(base_url.parse().unwrap())
+            .build();
+
+        config
+            .build(Method::GET, path)
+            .build()
+            .unwrap()
+            .url()
+            .to_string()
+    }
+
+    #[test]
+    fn base_url_without_path() {
+        assert_eq!(
+            url_for("https://api.resend.com", "/emails"),
+            "https://api.resend.com/emails"
+        );
+    }
+
+    #[test]
+    fn base_url_path_prefix_is_kept() {
+        assert_eq!(
+            url_for("https://proxy.example.com/resend", "/emails/abc"),
+            "https://proxy.example.com/resend/emails/abc"
+        );
+        assert_eq!(
+            url_for("https://proxy.example.com/resend/", "/emails/abc"),
+            "https://proxy.example.com/resend/emails/abc"
+        );
     }
 }
