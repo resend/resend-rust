@@ -16,7 +16,7 @@ use crate::{
     types::{
         BroadcastId, CreateEventOptions, CreateEventResponse, DeleteEventResponse, Domain, EmailId,
         GetEventResponse, InboundAttachment, SegmentId, SendEventOptions, SendEventResponse,
-        TemplateId, UpdateEventOptions, UpdateEventResponse,
+        SubscriptionType, TemplateId, TopicId, UpdateEventOptions, UpdateEventResponse,
     },
 };
 
@@ -236,8 +236,10 @@ pub fn try_parse_event_type(data: &str) -> Result<EventType> {
 pub enum Event {
     EmailEvent(EmailEvent),
     ContactEvent(ContactEvent),
+    ContactTopicsEvent(ContactTopicsEvent),
     DomainEvent(DomainEvent),
     SuppressionEvent(SuppressionEvent),
+    TopicEvent(TopicEvent),
 }
 
 /// Represents any [Resend Event Type](https://resend.com/docs/dashboard/webhooks/event-types).
@@ -246,8 +248,10 @@ pub enum Event {
 pub enum EventType {
     EmailEventType(EmailEventType),
     ContactEventType(ContactEventType),
+    ContactTopicsEventType(ContactTopicsEventType),
     DomainEventType(DomainEventType),
     SuppressionEventType(SuppressionEventType),
+    TopicEventType(TopicEventType),
 }
 
 impl From<EmailEventType> for EventType {
@@ -262,6 +266,12 @@ impl From<ContactEventType> for EventType {
     }
 }
 
+impl From<ContactTopicsEventType> for EventType {
+    fn from(value: ContactTopicsEventType) -> Self {
+        Self::ContactTopicsEventType(value)
+    }
+}
+
 impl From<DomainEventType> for EventType {
     fn from(value: DomainEventType) -> Self {
         Self::DomainEventType(value)
@@ -271,6 +281,12 @@ impl From<DomainEventType> for EventType {
 impl From<SuppressionEventType> for EventType {
     fn from(value: SuppressionEventType) -> Self {
         Self::SuppressionEventType(value)
+    }
+}
+
+impl From<TopicEventType> for EventType {
+    fn from(value: TopicEventType) -> Self {
+        Self::TopicEventType(value)
     }
 }
 
@@ -291,6 +307,14 @@ pub struct ContactEvent {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ContactTopicsEvent {
+    #[serde(rename = "type")]
+    pub r#type: ContactTopicsEventType,
+    pub created_at: String,
+    pub data: ContactTopicsBody,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DomainEvent {
     #[serde(rename = "type")]
     pub r#type: DomainEventType,
@@ -304,6 +328,14 @@ pub struct SuppressionEvent {
     pub r#type: SuppressionEventType,
     pub created_at: String,
     pub data: SuppressionBody,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TopicEvent {
+    #[serde(rename = "type")]
+    pub r#type: TopicEventType,
+    pub created_at: String,
+    pub data: TopicBody,
 }
 
 #[derive(Debug, Copy, Clone, Deserialize, Serialize)]
@@ -346,6 +378,13 @@ pub enum ContactEventType {
 
 #[derive(Debug, Copy, Clone, Deserialize, Serialize)]
 #[cfg_attr(test, derive(strum::EnumCount))]
+pub enum ContactTopicsEventType {
+    #[serde(rename = "contact.topics.updated")]
+    ContactTopicsUpdated,
+}
+
+#[derive(Debug, Copy, Clone, Deserialize, Serialize)]
+#[cfg_attr(test, derive(strum::EnumCount))]
 pub enum DomainEventType {
     #[serde(rename = "domain.created")]
     DomainCreated,
@@ -362,6 +401,17 @@ pub enum SuppressionEventType {
     SuppressionAdded,
     #[serde(rename = "suppression.removed")]
     SuppressionRemoved,
+}
+
+#[derive(Debug, Copy, Clone, Deserialize, Serialize)]
+#[cfg_attr(test, derive(strum::EnumCount))]
+pub enum TopicEventType {
+    #[serde(rename = "topic.created")]
+    TopicCreated,
+    #[serde(rename = "topic.updated")]
+    TopicUpdated,
+    #[serde(rename = "topic.deleted")]
+    TopicDeleted,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -452,6 +502,18 @@ pub struct ContactBody {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ContactTopicsBody {
+    pub email: String,
+    pub topics: Vec<ContactTopicSubscription>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ContactTopicSubscription {
+    pub id: TopicId,
+    pub subscription: SubscriptionType,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SuppressionBody {
     pub id: String,
     pub email: String,
@@ -466,6 +528,17 @@ pub enum SuppressionOriginType {
     Bounce,
     Complaint,
     Manual,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TopicBody {
+    pub id: TopicId,
+    pub name: String,
+    pub description: Option<String>,
+    pub default_subscription: SubscriptionType,
+    pub deleted: bool,
+    pub created_at: String,
+    pub updated_at: String,
 }
 
 #[allow(clippy::unwrap_used)]
@@ -484,10 +557,10 @@ mod test {
 
     use crate::{
         events::{
-            ContactEventType, DomainEventType, EmailEventType, Event, SuppressionEventType,
-            try_parse_event,
+            ContactEventType, ContactTopicsEventType, DomainEventType, EmailEventType, Event,
+            SuppressionEventType, TopicEventType, try_parse_event,
         },
-        types::ContactIdOrEmail,
+        types::{ContactIdOrEmail, SubscriptionType},
     };
 
     use serde_json::json;
@@ -1072,6 +1145,51 @@ mod test {
     }
 
     #[test]
+    fn contact_topics_updated() {
+        let data = r#"{
+          "type": "contact.topics.updated",
+          "created_at": "2026-02-12T10:00:00.000Z",
+          "data": {
+            "email": "steve.wozniak@gmail.com",
+            "topics": [
+              {
+                "id": "b6d24b8e-af0b-4c3c-be0c-359bbd97381e",
+                "subscription": "opt_in"
+              },
+              {
+                "id": "07d84122-7224-4881-9c31-1c048e204602",
+                "subscription": "opt_out"
+              }
+            ]
+          }
+        }"#;
+
+        let parsed = try_parse_event(data);
+        assert!(parsed.is_ok());
+        let parsed = parsed.unwrap();
+
+        if let Event::ContactTopicsEvent(contact_topics_event) = parsed {
+            assert!(matches!(
+                contact_topics_event.r#type,
+                ContactTopicsEventType::ContactTopicsUpdated
+            ));
+            assert_eq!(contact_topics_event.data.email, "steve.wozniak@gmail.com");
+            let subscriptions = contact_topics_event
+                .data
+                .topics
+                .iter()
+                .map(|topic| topic.subscription)
+                .collect::<Vec<_>>();
+            assert_eq!(
+                subscriptions,
+                vec![SubscriptionType::OptIn, SubscriptionType::OptOut]
+            );
+        } else {
+            panic!("Wrong parsing");
+        }
+    }
+
+    #[test]
     fn domain_created() {
         let data = r#"{
           "type": "domain.created",
@@ -1318,6 +1436,99 @@ mod test {
         }
     }
 
+    #[test]
+    fn topic_created() {
+        let data = r#"{
+          "type": "topic.created",
+          "created_at": "2026-02-12T10:00:00.000Z",
+          "data": {
+            "id": "b6d24b8e-af0b-4c3c-be0c-359bbd97381e",
+            "name": "Product Updates",
+            "description": "New features and improvements",
+            "default_subscription": "opt_in",
+            "deleted": false,
+            "created_at": "2026-02-12T10:00:00.000Z",
+            "updated_at": "2026-02-12T10:00:00.000Z"
+          }
+        }"#;
+
+        let parsed = try_parse_event(data);
+        assert!(parsed.is_ok());
+        let parsed = parsed.unwrap();
+
+        if let Event::TopicEvent(topic_event) = parsed {
+            assert!(matches!(topic_event.r#type, TopicEventType::TopicCreated));
+            assert_eq!(
+                topic_event.data.default_subscription,
+                SubscriptionType::OptIn
+            );
+            assert!(topic_event.data.description.is_some());
+            assert!(!topic_event.data.deleted);
+        } else {
+            panic!("Wrong parsing");
+        }
+    }
+
+    #[test]
+    fn topic_updated() {
+        let data = r#"{
+          "type": "topic.updated",
+          "created_at": "2026-02-12T10:00:00.000Z",
+          "data": {
+            "id": "b6d24b8e-af0b-4c3c-be0c-359bbd97381e",
+            "name": "Product Updates",
+            "description": null,
+            "default_subscription": "opt_out",
+            "deleted": false,
+            "created_at": "2026-02-12T10:00:00.000Z",
+            "updated_at": "2026-02-12T10:00:00.000Z"
+          }
+        }"#;
+
+        let parsed = try_parse_event(data);
+        assert!(parsed.is_ok());
+        let parsed = parsed.unwrap();
+
+        if let Event::TopicEvent(topic_event) = parsed {
+            assert!(matches!(topic_event.r#type, TopicEventType::TopicUpdated));
+            assert_eq!(
+                topic_event.data.default_subscription,
+                SubscriptionType::OptOut
+            );
+            assert!(topic_event.data.description.is_none());
+        } else {
+            panic!("Wrong parsing");
+        }
+    }
+
+    #[test]
+    fn topic_deleted() {
+        let data = r#"{
+          "type": "topic.deleted",
+          "created_at": "2026-02-12T10:00:00.000Z",
+          "data": {
+            "id": "b6d24b8e-af0b-4c3c-be0c-359bbd97381e",
+            "name": "Product Updates",
+            "description": "New features and improvements",
+            "default_subscription": "opt_in",
+            "deleted": true,
+            "created_at": "2026-02-12T10:00:00.000Z",
+            "updated_at": "2026-02-12T10:00:00.000Z"
+          }
+        }"#;
+
+        let parsed = try_parse_event(data);
+        assert!(parsed.is_ok());
+        let parsed = parsed.unwrap();
+
+        if let Event::TopicEvent(topic_event) = parsed {
+            assert!(matches!(topic_event.r#type, TopicEventType::TopicDeleted));
+            assert!(topic_event.data.deleted);
+        } else {
+            panic!("Wrong parsing");
+        }
+    }
+
     /// Similar to the test in `error.rs`
     #[allow(clippy::unwrap_used)]
     #[tokio_shared_rt::test(shared = true)]
@@ -1336,8 +1547,10 @@ mod test {
 
         let expected = EmailEventType::COUNT
             + ContactEventType::COUNT
+            + ContactTopicsEventType::COUNT
             + DomainEventType::COUNT
-            + SuppressionEventType::COUNT;
+            + SuppressionEventType::COUNT
+            + TopicEventType::COUNT;
         let actual = fragment
             .select(&selector)
             .map(|el| el.inner_html())
