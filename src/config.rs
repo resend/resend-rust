@@ -171,13 +171,12 @@ impl Config {
 
     /// Constructs a new [`RequestBuilder`].
     pub(crate) fn build(&self, method: Method, path: &str) -> RequestBuilder {
-        let path = self
-            .base_url
-            .join(path)
-            .expect("should be a valid API endpoint");
+        let mut url = self.base_url.clone();
+        let base_path = url.path().trim_end_matches('/').to_owned();
+        url.set_path(&format!("{}/{}", base_path, path.trim_start_matches('/')));
 
         self.client
-            .request(method, path)
+            .request(method, url)
             .bearer_auth(self.api_key.as_str())
             .header(USER_AGENT, self.user_agent.as_str())
     }
@@ -257,5 +256,44 @@ impl fmt::Debug for Config {
             .field("user_agent", &self.user_agent.as_str())
             .field("base_url", &self.base_url.as_str())
             .finish_non_exhaustive()
+    }
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod test {
+    use super::*;
+
+    fn url_for(base_url: &str, path: &str) -> String {
+        let config = Config::builder("re_test")
+            .base_url(base_url.parse().unwrap())
+            .build();
+
+        config
+            .build(Method::GET, path)
+            .build()
+            .unwrap()
+            .url()
+            .to_string()
+    }
+
+    #[test]
+    fn base_url_without_path() {
+        assert_eq!(
+            url_for("https://api.resend.com", "/emails"),
+            "https://api.resend.com/emails"
+        );
+    }
+
+    #[test]
+    fn base_url_path_prefix_is_kept() {
+        assert_eq!(
+            url_for("https://proxy.example.com/resend", "/emails/abc"),
+            "https://proxy.example.com/resend/emails/abc"
+        );
+        assert_eq!(
+            url_for("https://proxy.example.com/resend/", "/emails/abc"),
+            "https://proxy.example.com/resend/emails/abc"
+        );
     }
 }
