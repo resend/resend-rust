@@ -171,21 +171,12 @@ impl Config {
 
     /// Constructs a new [`RequestBuilder`].
     pub(crate) fn build(&self, method: Method, path: &str) -> RequestBuilder {
-        // `Url::join` replaces the last path segment of the base when it has no trailing slash
-        // and discards the whole base path when `path` starts with a slash. Normalize both so a
-        // base url such as `https://proxy.example.com/resend` keeps its prefix.
-        let mut base_url = self.base_url.clone();
-        if !base_url.path().ends_with('/') {
-            let with_slash = format!("{}/", base_url.path());
-            base_url.set_path(&with_slash);
-        }
-
-        let path = base_url
-            .join(path.trim_start_matches('/'))
-            .expect("should be a valid API endpoint");
+        let mut url = self.base_url.clone();
+        let base_path = url.path().trim_end_matches('/').to_owned();
+        url.set_path(&format!("{}/{}", base_path, path.trim_start_matches('/')));
 
         self.client
-            .request(method, path)
+            .request(method, url)
             .bearer_auth(self.api_key.as_str())
             .header(USER_AGENT, self.user_agent.as_str())
     }
