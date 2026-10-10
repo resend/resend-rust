@@ -494,7 +494,7 @@ pub mod types {
         filename: Option<String>,
         /// Optional content type for the attachment, if not set will be derived from the filename
         /// property.
-        #[serde(rename = "contentType", skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         content_type: Option<String>,
         /// Optional content ID for the attachment, to be used as a reference in the HTML content.
         /// If set, this attachment will be sent as an inline attachment and you can reference it
@@ -1273,13 +1273,13 @@ mod test {
     use crate::{
         list_opts::ListOptions,
         types::{
-            CreateAttachment, CreateTemplateOptions, EmailTemplate, ShareEmailOptions,
-            UpdateEmailOptions, Variable, VariableType,
+            CreateTemplateOptions, EmailTemplate, ShareEmailOptions, UpdateEmailOptions, Variable,
+            VariableType,
         },
     };
     use crate::{
         test::{CLIENT, DebugResult},
-        types::{CreateEmailBaseOptions, Email, ShareEmailResponse, Tag},
+        types::{CreateAttachment, CreateEmailBaseOptions, Email, ShareEmailResponse, Tag},
     };
     #[cfg(not(feature = "blocking"))]
     use jiff::{Span, Timestamp, Zoned};
@@ -1659,6 +1659,20 @@ mod test {
         assert!(deleted.deleted);
 
         Ok(())
+    }
+
+    #[test]
+    fn attachment_content_type_serializes_as_snake_case() {
+        let attachment = CreateAttachment::from_path("https://example.com/a.pdf")
+            .with_filename("invoice")
+            .with_content_type("application/pdf");
+        let json = serde_json::to_value(&attachment).unwrap();
+
+        assert_eq!(
+            json.get("content_type").and_then(serde_json::Value::as_str),
+            Some("application/pdf")
+        );
+        assert!(json.get("contentType").is_none());
     }
 
     #[test]
