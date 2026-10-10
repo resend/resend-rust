@@ -6,7 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-<!--## Unreleased-->
+## Unreleased
+
+### Fixed
+
+- The content type set with `CreateAttachment::with_content_type` is now sent as `content_type` instead of `contentType`, so the API no longer ignores it
 
 ## [0.34.0] - 2026-10-01
 
