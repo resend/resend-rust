@@ -173,7 +173,7 @@ pub mod types {
         ListInboxThreadsOptions, ReplyInboxThreadEmailOptions, ReplyInboxThreadEmailResponse,
         SearchInboxThreadsOptions, SendInboxDraftResponse, UpdateInboxAgentOptions,
         UpdateInboxAgentResponse, UpdateInboxDraftOptions, UpdateInboxLabelOptions,
-        UpdateInboxLabelResponse, UpdateInboxOptions, UpdateInboxResponse,
+        UpdateInboxLabelResponse, UpdateInboxOptions, UpdateInboxResponse, UpdateInboxThreadFolder,
         UpdateInboxThreadOptions,
     };
     pub use super::logs::types::{Log, LogId};

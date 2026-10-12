@@ -1296,6 +1296,18 @@ pub mod types {
         }
     }
 
+    /// The folder to move a thread to. `sent` is assigned automatically and cannot be set.
+    #[must_use]
+    #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+    #[serde(rename_all = "snake_case")]
+    pub enum UpdateInboxThreadFolder {
+        Inbox,
+        Archive,
+        Spam,
+        /// Moving a thread to `trash` schedules it for deletion in 30 days.
+        Trash,
+    }
+
     /// List of changes to apply to a thread.
     ///
     /// At least one field is required. A label ID cannot be both added and removed in the same
@@ -1306,7 +1318,7 @@ pub mod types {
         #[serde(skip_serializing_if = "Option::is_none")]
         read: Option<bool>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        folder: Option<InboxFolder>,
+        folder: Option<UpdateInboxThreadFolder>,
         #[serde(skip_serializing_if = "Option::is_none")]
         label_id: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -1329,7 +1341,7 @@ pub mod types {
 
         /// Moves the thread to this folder. `sent` is assigned automatically and cannot be set.
         #[inline]
-        pub const fn with_folder(mut self, folder: InboxFolder) -> Self {
+        pub const fn with_folder(mut self, folder: UpdateInboxThreadFolder) -> Self {
             self.folder = Some(folder);
             self
         }
@@ -1963,7 +1975,8 @@ mod test {
         InboxThread, InboxThreadEmail, InboxThreadSearchResult, InboxThreadSummary,
         ListInboxLabelsResponse, ListInboxThreadsOptions, ReplyInboxThreadEmailOptions,
         SearchInboxThreadsOptions, UpdateInboxAgentOptions, UpdateInboxDraftOptions,
-        UpdateInboxLabelOptions, UpdateInboxOptions, UpdateInboxThreadOptions,
+        UpdateInboxLabelOptions, UpdateInboxOptions, UpdateInboxThreadFolder,
+        UpdateInboxThreadOptions,
     };
     use crate::{list_opts::ListOptions, list_opts::ListResponse};
 
@@ -2222,7 +2235,7 @@ mod test {
     fn serialize_update_thread() {
         let update = UpdateInboxThreadOptions::new()
             .with_read(true)
-            .with_folder(InboxFolder::Archive)
+            .with_folder(UpdateInboxThreadFolder::Archive)
             .with_add_label_ids(["7f9c1d2e-4a6b-4c3d-8e15-9b0a7c6d5e34"])
             .with_remove_label_ids(["2b6d0f4e-8a1c-4e3b-9d57-1c0e8a6f4b21"]);
         assert_eq!(
@@ -2234,6 +2247,19 @@ mod test {
                 "remove_label_ids": ["2b6d0f4e-8a1c-4e3b-9d57-1c0e8a6f4b21"]
             })
         );
+
+        for (folder, name) in [
+            (UpdateInboxThreadFolder::Inbox, "inbox"),
+            (UpdateInboxThreadFolder::Archive, "archive"),
+            (UpdateInboxThreadFolder::Spam, "spam"),
+            (UpdateInboxThreadFolder::Trash, "trash"),
+        ] {
+            let update = UpdateInboxThreadOptions::new().with_folder(folder);
+            assert_eq!(
+                serde_json::to_value(&update).unwrap(),
+                serde_json::json!({ "folder": name })
+            );
+        }
 
         let legacy = UpdateInboxThreadOptions::new().with_label_id("label");
         assert_eq!(
