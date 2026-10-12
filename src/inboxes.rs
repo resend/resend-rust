@@ -1346,22 +1346,32 @@ pub mod types {
         /// Label IDs to apply to the thread. Between 1 and 10 IDs. A label ID that does not exist
         /// in the inbox returns a 404.
         #[inline]
-        pub fn with_add_label_ids<S: Into<String>>(
+        pub fn with_add_label_ids<S: AsRef<str>>(
             mut self,
             label_ids: impl IntoIterator<Item = S>,
         ) -> Self {
-            self.add_label_ids = Some(label_ids.into_iter().map(Into::into).collect());
+            self.add_label_ids = Some(
+                label_ids
+                    .into_iter()
+                    .map(|label_id| label_id.as_ref().to_owned())
+                    .collect(),
+            );
             self
         }
 
         /// Label IDs to remove from the thread. Between 1 and 10 IDs. A label ID that does not
         /// exist in the inbox returns a 404.
         #[inline]
-        pub fn with_remove_label_ids<S: Into<String>>(
+        pub fn with_remove_label_ids<S: AsRef<str>>(
             mut self,
             label_ids: impl IntoIterator<Item = S>,
         ) -> Self {
-            self.remove_label_ids = Some(label_ids.into_iter().map(Into::into).collect());
+            self.remove_label_ids = Some(
+                label_ids
+                    .into_iter()
+                    .map(|label_id| label_id.as_ref().to_owned())
+                    .collect(),
+            );
             self
         }
     }
