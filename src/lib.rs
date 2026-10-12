@@ -67,6 +67,7 @@ mod emails;
 mod error;
 pub mod events;
 pub mod idempotent;
+mod inboxes;
 pub mod list_opts;
 mod logs;
 mod oauth;
@@ -89,6 +90,7 @@ pub mod services {
     pub use super::contacts::ContactsSvc;
     pub use super::domains::DomainsSvc;
     pub use super::emails::EmailsSvc;
+    pub use super::inboxes::InboxesSvc;
     pub use super::logs::LogsSvc;
     pub use super::oauth::OAuthSvc;
     pub use super::receiving::ReceivingSvc;
@@ -157,6 +159,22 @@ pub mod types {
         ContactIdOrEmail, CreateEventOptions, CreateEventResponse, DeleteEventResponse,
         GetEventResponse, SendEventOptions, SendEventResponse, UpdateEventOptions,
         UpdateEventResponse,
+    };
+    pub use super::inboxes::types::{
+        CreateInboxDraftOptions, CreateInboxDraftResponse, CreateInboxLabelOptions,
+        CreateInboxLabelResponse, CreateInboxOptions, CreateInboxResponse,
+        DeleteInboxDraftResponse, DeleteInboxLabelResponse, DeleteInboxResponse,
+        DeleteInboxThreadResponse, ForwardInboxThreadEmailOptions, ForwardInboxThreadEmailResponse,
+        Inbox, InboxAgent, InboxAgentAction, InboxAgentId, InboxDraft, InboxDraftId,
+        InboxDraftListItem, InboxDraftType, InboxEmailDirection, InboxFolder, InboxId, InboxLabel,
+        InboxLabelId, InboxListItem, InboxThread, InboxThreadEmail, InboxThreadEmailAttachment,
+        InboxThreadEmailId, InboxThreadId, InboxThreadLabel, InboxThreadSearchHighlights,
+        InboxThreadSearchResult, InboxThreadSummary, ListInboxLabelsResponse,
+        ListInboxThreadsOptions, ReplyInboxThreadEmailOptions, ReplyInboxThreadEmailResponse,
+        SearchInboxThreadsOptions, SendInboxDraftResponse, UpdateInboxAgentOptions,
+        UpdateInboxAgentResponse, UpdateInboxDraftOptions, UpdateInboxLabelOptions,
+        UpdateInboxLabelResponse, UpdateInboxOptions, UpdateInboxResponse,
+        UpdateInboxThreadOptions,
     };
     pub use super::logs::types::{Log, LogId};
     pub use super::oauth::types::{

@@ -10,6 +10,7 @@ use crate::{
     batch::BatchSvc,
     config::Config,
     events::EventsSvc,
+    inboxes::InboxesSvc,
     logs::LogsSvc,
     oauth::OAuthSvc,
     services::{AutomationsSvc, ReceivingSvc, SuppressionsSvc},
@@ -64,6 +65,8 @@ pub struct Resend {
     pub suppressions: SuppressionsSvc,
     /// `Resend` APIs for `/usage` endpoints.
     pub usage: UsageSvc,
+    /// `Resend` APIs for `/inboxes` endpoints.
+    pub inboxes: InboxesSvc,
 }
 
 impl Resend {
@@ -121,7 +124,8 @@ impl Resend {
             events: EventsSvc(Arc::clone(&inner)),
             oauth: OAuthSvc(Arc::clone(&inner)),
             suppressions: SuppressionsSvc(Arc::clone(&inner)),
-            usage: UsageSvc(inner),
+            usage: UsageSvc(Arc::clone(&inner)),
+            inboxes: InboxesSvc(inner),
         }
     }
 
