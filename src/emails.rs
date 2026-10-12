@@ -1360,8 +1360,8 @@ mod test {
         assert!(res.is_ok());
         let res = res.unwrap();
         assert_eq!(res.message_id.unwrap(), "<111-222-333@email.example.com>");
-        assert!(res.cc.is_empty());
-        assert!(res.bcc.is_empty());
+        assert_eq!(res.cc, Vec::<String>::new());
+        assert_eq!(res.bcc, Vec::<String>::new());
         assert!(res.text.is_none());
 
         let email = r#"{
@@ -1386,8 +1386,8 @@ mod test {
         let res = serde_json::from_str::<Email>(email);
         assert!(res.is_ok());
         let res = res.unwrap();
-        assert!(!res.cc.is_empty());
-        assert!(!res.bcc.is_empty());
+        assert_ne!(res.cc, Vec::<String>::new());
+        assert_ne!(res.bcc, Vec::<String>::new());
         assert!(res.text.is_some());
     }
 
@@ -1517,7 +1517,7 @@ mod test {
             .share(&email.id, ShareEmailOptions::new())
             .await?;
         assert_eq!(shared.id, email.id);
-        assert!(!shared.url.is_empty());
+        assert_ne!(shared.url, "");
         std::thread::sleep(std::time::Duration::from_secs(1));
 
         let shared = resend
@@ -1525,7 +1525,7 @@ mod test {
             .share(&email.id, ShareEmailOptions::new().with_expires_in("10m"))
             .await?;
         assert_eq!(shared.id, email.id);
-        assert!(!shared.url.is_empty());
+        assert_ne!(shared.url, "");
         std::thread::sleep(std::time::Duration::from_secs(1));
 
         let shared = resend
@@ -1817,7 +1817,7 @@ mod test {
 
         let metrics: EmailMetrics = serde_json::from_str(json).unwrap();
 
-        assert!(metrics.dimensions.is_empty());
+        assert_eq!(metrics.dimensions, Vec::<Dimension>::new());
         assert!(metrics.data.is_none());
     }
 }

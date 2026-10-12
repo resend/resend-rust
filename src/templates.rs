@@ -565,7 +565,7 @@ mod test {
         assert!(res.is_ok());
 
         let res = res.unwrap();
-        assert!(!res.variables.is_empty());
+        assert_ne!(res.variables, Vec::<crate::types::Variable>::new());
 
         let template = r#"{
   "object": "template",
@@ -587,6 +587,6 @@ mod test {
         assert!(res.is_ok());
 
         let res = res.unwrap();
-        assert!(res.variables.is_empty());
+        assert_eq!(res.variables, Vec::<crate::types::Variable>::new());
     }
 }
