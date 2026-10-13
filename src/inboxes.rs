@@ -4,6 +4,7 @@ use reqwest::Method;
 
 use crate::{
     Config, Result,
+    idempotent::Idempotent,
     list_opts::{ListOptions, ListResponse},
     types::{
         CreateInboxDraftOptions, CreateInboxDraftResponse, CreateInboxLabelOptions,
@@ -13,9 +14,9 @@ use crate::{
         Inbox, InboxAgent, InboxDraft, InboxDraftListItem, InboxListItem, InboxThread,
         InboxThreadEmail, InboxThreadSearchResult, InboxThreadSummary, ListInboxLabelsResponse,
         ListInboxThreadsOptions, ReplyInboxThreadEmailOptions, ReplyInboxThreadEmailResponse,
-        SearchInboxThreadsOptions, SendInboxDraftResponse, UpdateInboxAgentOptions,
-        UpdateInboxAgentResponse, UpdateInboxDraftOptions, UpdateInboxLabelOptions,
-        UpdateInboxLabelResponse, UpdateInboxOptions, UpdateInboxResponse,
+        SearchInboxThreadsOptions, SendInboxDraftOptions, SendInboxDraftResponse,
+        UpdateInboxAgentOptions, UpdateInboxAgentResponse, UpdateInboxDraftOptions,
+        UpdateInboxLabelOptions, UpdateInboxLabelResponse, UpdateInboxOptions, UpdateInboxResponse,
         UpdateInboxThreadOptions,
     },
 };
@@ -410,11 +411,17 @@ impl InboxesSvc {
         inbox_id: &str,
         thread_id: &str,
         email_id: &str,
-        reply: ReplyInboxThreadEmailOptions,
+        reply: impl Into<Idempotent<ReplyInboxThreadEmailOptions>>,
     ) -> Result<ReplyInboxThreadEmailResponse> {
         let path = format!("/inboxes/{inbox_id}/threads/{thread_id}/emails/{email_id}/reply");
+        let reply: Idempotent<ReplyInboxThreadEmailOptions> = reply.into();
 
-        let request = self.0.build(Method::POST, &path);
+        let mut request = self.0.build(Method::POST, &path);
+
+        if let Some(ref idempotency_key) = reply.idempotency_key {
+            request = request.header("Idempotency-Key", idempotency_key);
+        }
+
         let response = self.0.send(request.json(&reply)).await?;
         let content = response.json::<ReplyInboxThreadEmailResponse>().await?;
 
@@ -436,11 +443,17 @@ impl InboxesSvc {
         inbox_id: &str,
         thread_id: &str,
         email_id: &str,
-        forward: ForwardInboxThreadEmailOptions,
+        forward: impl Into<Idempotent<ForwardInboxThreadEmailOptions>>,
     ) -> Result<ForwardInboxThreadEmailResponse> {
         let path = format!("/inboxes/{inbox_id}/threads/{thread_id}/emails/{email_id}/forward");
+        let forward: Idempotent<ForwardInboxThreadEmailOptions> = forward.into();
 
-        let request = self.0.build(Method::POST, &path);
+        let mut request = self.0.build(Method::POST, &path);
+
+        if let Some(ref idempotency_key) = forward.idempotency_key {
+            request = request.header("Idempotency-Key", idempotency_key);
+        }
+
         let response = self.0.send(request.json(&forward)).await?;
         let content = response.json::<ForwardInboxThreadEmailResponse>().await?;
 
@@ -485,11 +498,17 @@ impl InboxesSvc {
     pub async fn create_draft(
         &self,
         inbox_id: &str,
-        draft: CreateInboxDraftOptions,
+        draft: impl Into<Idempotent<CreateInboxDraftOptions>>,
     ) -> Result<CreateInboxDraftResponse> {
         let path = format!("/inboxes/{inbox_id}/drafts");
+        let draft: Idempotent<CreateInboxDraftOptions> = draft.into();
 
-        let request = self.0.build(Method::POST, &path);
+        let mut request = self.0.build(Method::POST, &path);
+
+        if let Some(ref idempotency_key) = draft.idempotency_key {
+            request = request.header("Idempotency-Key", idempotency_key);
+        }
+
         let response = self.0.send(request.json(&draft)).await?;
         let content = response.json::<CreateInboxDraftResponse>().await?;
 
@@ -559,7 +578,9 @@ impl InboxesSvc {
     ///
     /// A reply draft is sent in its thread. A draft without a thread starts a new thread. The
     /// draft must have at least one `to` recipient, a non-empty `subject`, and `html` or `text`,
-    /// or the request returns a 422. A draft that was already sent returns a 409.
+    /// or the request returns a 422. A draft that was already sent returns a 409. The request
+    /// takes no body. Use [`SendInboxDraftOptions::with_idempotency_key`] to send the draft only
+    /// once.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/send-draft>
     #[maybe_async::maybe_async]
@@ -567,10 +588,17 @@ impl InboxesSvc {
         &self,
         inbox_id: &str,
         draft_id: &str,
+        opts: impl Into<Idempotent<SendInboxDraftOptions>>,
     ) -> Result<SendInboxDraftResponse> {
         let path = format!("/inboxes/{inbox_id}/drafts/{draft_id}/send");
+        let opts: Idempotent<SendInboxDraftOptions> = opts.into();
 
-        let request = self.0.build(Method::POST, &path);
+        let mut request = self.0.build(Method::POST, &path);
+
+        if let Some(ref idempotency_key) = opts.idempotency_key {
+            request = request.header("Idempotency-Key", idempotency_key);
+        }
+
         let response = self.0.send(request).await?;
         let content = response.json::<SendInboxDraftResponse>().await?;
 
@@ -582,6 +610,7 @@ impl InboxesSvc {
 pub mod types {
     use serde::{Deserialize, Serialize};
 
+    use crate::idempotent::Idempotent;
     use crate::types::{CreateAttachment, DomainId, EmailId};
 
     crate::define_id_type!(InboxId);
@@ -1551,6 +1580,20 @@ pub mod types {
                 .push(attachment.into());
             self
         }
+
+        /// Adds an `Idempotency-Key` header to the request, so the reply is sent only once. 1 to 256
+        /// characters. A retry with the same key within 24 hours returns the first response.
+        /// Reusing the key with a different body, or while the first request is still running,
+        /// returns a 409.
+        ///
+        /// <https://resend.com/docs/dashboard/emails/idempotency-keys>
+        #[inline]
+        pub fn with_idempotency_key(self, idempotency_key: &str) -> Idempotent<Self> {
+            Idempotent {
+                idempotency_key: Some(idempotency_key.to_owned()),
+                data: self,
+            }
+        }
     }
 
     #[must_use]
@@ -1644,6 +1687,20 @@ pub mod types {
                 .get_or_insert_with(Vec::new)
                 .push(attachment.into());
             self
+        }
+
+        /// Adds an `Idempotency-Key` header to the request, so the forward is sent only once. 1 to 256
+        /// characters. A retry with the same key within 24 hours returns the first response.
+        /// Reusing the key with a different body, or while the first request is still running,
+        /// returns a 409.
+        ///
+        /// <https://resend.com/docs/dashboard/emails/idempotency-keys>
+        #[inline]
+        pub fn with_idempotency_key(self, idempotency_key: &str) -> Idempotent<Self> {
+            Idempotent {
+                idempotency_key: Some(idempotency_key.to_owned()),
+                data: self,
+            }
         }
     }
 
@@ -1881,6 +1938,20 @@ pub mod types {
                 .push(attachment);
             self
         }
+
+        /// Adds an `Idempotency-Key` header to the request, so the draft is created only once. 1 to 256
+        /// characters. A retry with the same key within 24 hours returns the first response.
+        /// Reusing the key with a different body, or while the first request is still running,
+        /// returns a 409.
+        ///
+        /// <https://resend.com/docs/dashboard/emails/idempotency-keys>
+        #[inline]
+        pub fn with_idempotency_key(self, idempotency_key: &str) -> Idempotent<Self> {
+            Idempotent {
+                idempotency_key: Some(idempotency_key.to_owned()),
+                data: self,
+            }
+        }
     }
 
     #[must_use]
@@ -2030,6 +2101,33 @@ pub mod types {
         pub deleted: bool,
     }
 
+    /// Options for [`InboxesSvc::send_draft`](crate::services::InboxesSvc::send_draft).
+    ///
+    /// [`SendInboxDraftOptions::default()`] sends the draft without an `Idempotency-Key` header.
+    #[must_use]
+    #[derive(Debug, Default, Clone, Copy, Serialize)]
+    pub struct SendInboxDraftOptions {}
+
+    impl SendInboxDraftOptions {
+        pub fn new() -> Self {
+            Self::default()
+        }
+
+        /// Adds an `Idempotency-Key` header to the request, so the draft is sent only once. 1 to 256
+        /// characters. A retry with the same key within 24 hours returns the first response.
+        /// Reusing the key with a different body, or while the first request is still running,
+        /// returns a 409.
+        ///
+        /// <https://resend.com/docs/dashboard/emails/idempotency-keys>
+        #[inline]
+        pub fn with_idempotency_key(self, idempotency_key: &str) -> Idempotent<Self> {
+            Idempotent {
+                idempotency_key: Some(idempotency_key.to_owned()),
+                data: self,
+            }
+        }
+    }
+
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct SendInboxDraftResponse {
@@ -2048,10 +2146,11 @@ mod test {
         InboxEmailDirection, InboxFolder, InboxListItem, InboxThread, InboxThreadEmail,
         InboxThreadSearchResult, InboxThreadSummary, ListInboxLabelsResponse,
         ListInboxThreadsOptions, ReplyInboxThreadEmailOptions, SearchInboxThreadsOptions,
-        UpdateInboxAgentOptions, UpdateInboxDraftOptions, UpdateInboxLabelOptions,
-        UpdateInboxOptions, UpdateInboxThreadFolder, UpdateInboxThreadOptions,
+        SendInboxDraftOptions, UpdateInboxAgentOptions, UpdateInboxDraftOptions,
+        UpdateInboxLabelOptions, UpdateInboxOptions, UpdateInboxThreadFolder,
+        UpdateInboxThreadOptions,
     };
-    use crate::{list_opts::ListOptions, list_opts::ListResponse};
+    use crate::{idempotent::Idempotent, list_opts::ListOptions, list_opts::ListResponse};
 
     fn query(value: &impl serde::Serialize) -> String {
         let url = reqwest::Url::parse("https://api.resend.com/").unwrap();
@@ -2384,6 +2483,40 @@ mod test {
                 "subject": "Fwd: Refund for order 1041"
             })
         );
+    }
+
+    #[test]
+    fn idempotency_key() {
+        let draft = CreateInboxDraftOptions::new()
+            .with_text("Hi")
+            .with_idempotency_key("draft-1");
+        assert_eq!(draft.idempotency_key.as_deref(), Some("draft-1"));
+        assert_eq!(
+            serde_json::to_value(&draft).unwrap(),
+            serde_json::json!({ "text": "Hi" })
+        );
+
+        let reply = ReplyInboxThreadEmailOptions::new()
+            .with_text("Hi")
+            .with_idempotency_key("reply-1");
+        assert_eq!(reply.idempotency_key.as_deref(), Some("reply-1"));
+        assert_eq!(
+            serde_json::to_value(&reply).unwrap(),
+            serde_json::json!({ "text": "Hi" })
+        );
+
+        let forward = ForwardInboxThreadEmailOptions::new(["a@example.com"])
+            .with_idempotency_key("forward-1");
+        assert_eq!(forward.idempotency_key.as_deref(), Some("forward-1"));
+        assert_eq!(
+            serde_json::to_value(&forward).unwrap(),
+            serde_json::json!({ "to": ["a@example.com"] })
+        );
+
+        let send = SendInboxDraftOptions::new().with_idempotency_key("send-1");
+        assert_eq!(send.idempotency_key.as_deref(), Some("send-1"));
+        let send: Idempotent<SendInboxDraftOptions> = SendInboxDraftOptions::default().into();
+        assert!(send.idempotency_key.is_none());
     }
 
     #[test]

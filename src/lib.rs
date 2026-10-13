@@ -171,10 +171,10 @@ pub mod types {
         InboxThreadEmailAttachment, InboxThreadEmailId, InboxThreadId, InboxThreadLabel,
         InboxThreadSearchHighlights, InboxThreadSearchResult, InboxThreadSummary,
         ListInboxLabelsResponse, ListInboxThreadsOptions, ReplyInboxThreadEmailOptions,
-        ReplyInboxThreadEmailResponse, SearchInboxThreadsOptions, SendInboxDraftResponse,
-        UpdateInboxAgentOptions, UpdateInboxAgentResponse, UpdateInboxDraftOptions,
-        UpdateInboxLabelOptions, UpdateInboxLabelResponse, UpdateInboxOptions, UpdateInboxResponse,
-        UpdateInboxThreadFolder, UpdateInboxThreadOptions,
+        ReplyInboxThreadEmailResponse, SearchInboxThreadsOptions, SendInboxDraftOptions,
+        SendInboxDraftResponse, UpdateInboxAgentOptions, UpdateInboxAgentResponse,
+        UpdateInboxDraftOptions, UpdateInboxLabelOptions, UpdateInboxLabelResponse,
+        UpdateInboxOptions, UpdateInboxResponse, UpdateInboxThreadFolder, UpdateInboxThreadOptions,
     };
     pub use super::logs::types::{Log, LogId};
     pub use super::oauth::types::{
