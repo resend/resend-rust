@@ -303,8 +303,10 @@ impl InboxesSvc {
 
     /// Marks a thread read or unread, moves it to a folder, or adds and removes labels.
     ///
-    /// At least one field is required. A label ID cannot be both added and removed in the same
-    /// request. Moving a thread out of `trash` restores it and clears its deletion deadline.
+    /// At least one of `read`, `folder`, `add_label_ids`, or `remove_label_ids` is required. A
+    /// label ID cannot be both added and removed in the same request. Removing a label from a
+    /// thread keeps the label itself. Moving a thread out of `trash` restores it and clears its
+    /// deletion deadline.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/update-thread>
     #[maybe_async::maybe_async]
@@ -1310,8 +1312,8 @@ pub mod types {
 
     /// List of changes to apply to a thread.
     ///
-    /// At least one field is required. A label ID cannot be both added and removed in the same
-    /// request.
+    /// At least one of `read`, `folder`, `add_label_ids`, or `remove_label_ids` is required. A
+    /// label ID cannot be both added and removed in the same request.
     #[must_use]
     #[derive(Debug, Default, Clone, Serialize)]
     pub struct UpdateInboxThreadOptions {
@@ -1319,8 +1321,6 @@ pub mod types {
         read: Option<bool>,
         #[serde(skip_serializing_if = "Option::is_none")]
         folder: Option<UpdateInboxThreadFolder>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        label_id: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         add_label_ids: Option<Vec<String>>,
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -1346,15 +1346,6 @@ pub mod types {
             self
         }
 
-        /// Applies this label to the thread, the same as one entry in `add_label_ids`. A label ID
-        /// that does not exist in the inbox returns a 404.
-        #[deprecated(note = "Use `with_add_label_ids` instead.")]
-        #[inline]
-        pub fn with_label_id(mut self, label_id: impl Into<String>) -> Self {
-            self.label_id = Some(label_id.into());
-            self
-        }
-
         /// Label IDs to apply to the thread. Between 1 and 10 IDs. A label ID that does not exist
         /// in the inbox returns a 404.
         #[inline]
@@ -1371,8 +1362,8 @@ pub mod types {
             self
         }
 
-        /// Label IDs to remove from the thread. Between 1 and 10 IDs. A label ID that does not
-        /// exist in the inbox returns a 404.
+        /// Label IDs to remove from the thread. Between 1 and 10 IDs. The labels themselves are
+        /// kept. A label ID that does not exist in the inbox returns a 404.
         #[inline]
         pub fn with_remove_label_ids<S: AsRef<str>>(
             mut self,
@@ -2231,7 +2222,6 @@ mod test {
     }
 
     #[test]
-    #[allow(deprecated)]
     fn serialize_update_thread() {
         let update = UpdateInboxThreadOptions::new()
             .with_read(true)
@@ -2260,12 +2250,6 @@ mod test {
                 serde_json::json!({ "folder": name })
             );
         }
-
-        let legacy = UpdateInboxThreadOptions::new().with_label_id("label");
-        assert_eq!(
-            serde_json::to_value(&legacy).unwrap(),
-            serde_json::json!({ "label_id": "label" })
-        );
     }
 
     #[test]
