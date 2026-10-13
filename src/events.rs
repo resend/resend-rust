@@ -958,8 +958,8 @@ mod test {
 
             let received = email_event.data.received.unwrap();
             assert_eq!(received.attachments.len(), 1);
-            assert!(received.cc.is_empty());
-            assert!(received.bcc.is_empty());
+            assert_eq!(received.cc, Vec::<String>::new());
+            assert_eq!(received.bcc, Vec::<String>::new());
             assert_eq!(received.received_for, vec!["forwarded@example.com"]);
         } else {
             panic!("Wrong parsing");
