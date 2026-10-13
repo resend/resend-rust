@@ -33,7 +33,7 @@ impl InboxesSvc {
     /// Resend generates a `receiving_address` on the team inbound domain. A domain that does not
     /// meet these rules returns a 422 `validation_error`. An address or receiving address that is
     /// already in use returns a 409. A team that has reached the inbox limit of its plan returns
-    /// a 403 `validation_error`.
+    /// a 403 `validation_error`. A blocked account returns a 451.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/create-inbox>
     #[maybe_async::maybe_async]
@@ -48,7 +48,8 @@ impl InboxesSvc {
     /// Returns the inboxes of the team, newest first.
     ///
     /// The list items carry fewer fields than a single inbox. Retrieve an inbox to get all its
-    /// fields.
+    /// fields. The `after` and `before` cursors take an inbox ID. A value that is not a UUID
+    /// returns a 422, and an unknown ID returns a 404.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/list-inboxes>
     #[maybe_async::maybe_async]
@@ -228,8 +229,9 @@ impl InboxesSvc {
     /// Returns the threads in an inbox, most recently active first.
     ///
     /// A thread is a conversation made up of one or more emails. The `after` and `before` cursors
-    /// take a thread ID, and only one of them can be passed. To find threads by text, sender,
-    /// recipient, attachment, or date, use [`InboxesSvc::search_threads`].
+    /// take a thread ID, and only one of them can be passed. A cursor thread that is not in the
+    /// selected folders returns a 404. To find threads by text, sender, recipient, attachment, or
+    /// date, use [`InboxesSvc::search_threads`].
     ///
     /// <https://resend.com/docs/api-reference/inboxes/list-threads>
     #[maybe_async::maybe_async]
@@ -259,9 +261,10 @@ impl InboxesSvc {
     /// [`InboxesSvc::list_threads`]. Search can be up to about a minute behind new emails.
     /// Different parameters combine, so a thread must match all of them. `folders`, `labels`, and
     /// `read` apply to the thread. `query`, `from`, `to`, `cc`, `bcc`, `has_attachment`,
-    /// `start_date`, and `end_date` must all match the same email in the thread. With a `query`,
-    /// `folders=sent` also requires the matching email to be one the inbox sent. When more than
-    /// 10,000 threads match, search covers the 10,000 with the newest matching email.
+    /// `start_date`, and `end_date` must all match the same email in the thread. When any of these
+    /// email filters is set, the matching email must itself be in one of `folders`. For `sent`,
+    /// that means an email the inbox sent. When more than 10,000 threads match, search covers the
+    /// 10,000 with the newest matching email.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/search-threads>
     #[maybe_async::maybe_async]
@@ -306,7 +309,8 @@ impl InboxesSvc {
     /// At least one of `read`, `folder`, `add_label_ids`, or `remove_label_ids` is required. A
     /// label ID cannot be both added and removed in the same request. Removing a label from a
     /// thread keeps the label itself. Moving a thread out of `trash` restores it and clears its
-    /// deletion deadline.
+    /// deletion deadline. The changes apply in this order: `read`, `folder`, added labels, removed
+    /// labels. They are not atomic, so a 404 for a label leaves the earlier changes applied.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/update-thread>
     #[maybe_async::maybe_async]
@@ -350,7 +354,7 @@ impl InboxesSvc {
     ///
     /// Pass the `id` of the last message as `after` to get the next, newer page. Pass the `id` of
     /// the first message as `before` to get the previous, older page. You cannot combine `after`
-    /// and `before`.
+    /// and `before`. A cursor that is not a message of the thread returns a 404.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/list-thread-emails>
     #[maybe_async::maybe_async]
@@ -422,7 +426,8 @@ impl InboxesSvc {
     /// The original message is quoted under a forwarded-message banner, below the optional
     /// `html` or `text` note. The attachments of the original message are sent with the forward,
     /// together with any `attachments` you add. The request fails when they exceed 10 files or
-    /// 25 MB of `content` in total.
+    /// 25 MB of `content` in total. An original attachment that was sent from a URL (`path`)
+    /// cannot be forwarded, and the request returns a 422.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/forward-thread-email>
     #[maybe_async::maybe_async]
@@ -467,10 +472,13 @@ impl InboxesSvc {
     ///
     /// Use [`CreateInboxDraftOptions::new`] for a draft that starts a new thread, and
     /// [`CreateInboxDraftOptions::reply`] for a reply draft in an existing thread. At least one of
-    /// `to`, `cc`, `bcc`, `subject`, `text`, `html` or `attachments` must be non-empty. The combined recipients
-    /// of `to`, `cc` and `bcc` cannot exceed 50. Only one unsent reply draft can target an email,
-    /// so a reply draft request for an email that already has one returns the ID of the existing
-    /// draft.
+    /// `to`, `cc`, `bcc`, `subject`, `text`, `html` or `attachments` must be non-empty. The
+    /// combined recipients of `to`, `cc` and `bcc` cannot exceed 50. Only one unsent reply draft
+    /// can target an email, so a reply draft request for an email that already has one returns
+    /// the ID of the existing draft. That request ignores every other field, except
+    /// `attachments`, which replaces the attachments of the existing draft when sent. A reply
+    /// draft created without `subject` stores an empty subject and gets no `Re:` prefix, so set
+    /// one before you send it.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/create-draft>
     #[maybe_async::maybe_async]
@@ -550,8 +558,8 @@ impl InboxesSvc {
     /// Sends the draft from the inbox address.
     ///
     /// A reply draft is sent in its thread. A draft without a thread starts a new thread. The
-    /// draft must have at least one `to` recipient, or the request returns a 422. A draft that
-    /// was already sent returns a 409.
+    /// draft must have at least one `to` recipient, a non-empty `subject`, and `html` or `text`,
+    /// or the request returns a 422. A draft that was already sent returns a 409.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/send-draft>
     #[maybe_async::maybe_async]
@@ -857,8 +865,8 @@ pub mod types {
             self
         }
 
-        /// The actions the agent can take. Replaces the whole set. Send an empty list to disable
-        /// all actions.
+        /// The actions the agent can take. Replaces the whole set. Duplicates are removed. Send an
+        /// empty list to disable all actions.
         #[inline]
         pub fn with_enabled_actions(
             mut self,
@@ -1521,11 +1529,12 @@ pub mod types {
             self
         }
 
-        /// Reply to everyone on the original message. The reply goes to the author of the
-        /// message, or to its `Reply-To` addresses if it has any. The other `to` and `cc`
-        /// recipients of the message are copied in `cc`. The inbox address is always excluded.
-        /// For a message the inbox sent, the reply goes to that message's `to` recipients and
-        /// copies its `cc` recipients. Defaults to `false`.
+        /// Reply to everyone on the original message. For a message the inbox received, the
+        /// reply goes to its `Reply-To` addresses, or to its sender when it has none, and copies
+        /// the other addresses of its `To` header and its `cc` recipients in `cc`. For a message
+        /// the inbox sent, the reply goes to that message's `Reply-To` addresses when they are not
+        /// the inbox address, otherwise to its `to` recipients, and copies its `cc` recipients.
+        /// The inbox address is always excluded, and duplicates are removed. Defaults to `false`.
         #[inline]
         pub const fn with_reply_all(mut self, reply_all: bool) -> Self {
             self.reply_all = Some(reply_all);
@@ -1863,8 +1872,8 @@ pub mod types {
             self
         }
 
-        /// Adds a file to store on the draft. A draft can carry up to 10 files and 25 MB in
-        /// total.
+        /// Adds a file to store on the draft. The files on a draft can total at most 25 MB. An
+        /// empty file or a blocked file type returns a 422.
         #[inline]
         pub fn with_attachment(mut self, attachment: CreateInboxDraftAttachment) -> Self {
             self.attachments
@@ -1998,8 +2007,8 @@ pub mod types {
         }
 
         /// The files to store on the draft. Sending the field replaces every attachment on the
-        /// draft. Pass an empty list to remove them all. A draft can carry up to 10 files and
-        /// 25 MB in total.
+        /// draft. Pass an empty list to remove them all. The files on a draft can total at most
+        /// 25 MB. An empty file or a blocked file type returns a 422.
         #[inline]
         pub fn with_attachments(
             mut self,

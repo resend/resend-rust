@@ -669,8 +669,7 @@ pub enum InboxEventSource {
 /// An attachment on an email in an `inbox.*` event.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InboxEventEmailAttachment {
-    /// The ID of the attachment. Not always a UUID. Outbound attachments are identified by their
-    /// position in the sent email.
+    /// The ID of the attachment.
     pub id: String,
     pub filename: Option<String>,
     /// The size of the attachment in bytes.
