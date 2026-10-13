@@ -1582,6 +1582,8 @@ pub mod types {
 
         /// Adds an email header. The `In-Reply-To`, `References` and `Reply-To` headers are set by
         /// Resend and cannot be set here. Sending one of them, in any letter case, returns a 422.
+        /// A header name cannot be empty, and names and values cannot contain line breaks or null
+        /// characters, or the request returns a 422.
         #[inline]
         pub fn with_header(mut self, name: &str, value: &str) -> Self {
             let headers = self.headers.get_or_insert_with(HashMap::new);
@@ -1593,6 +1595,8 @@ pub mod types {
         /// Adds a file to attach, as on `POST /emails`. Each one needs `content` or `path`. Up to
         /// 10 files. The `content` of all files can total at most 25 MB. A `path` file counts
         /// toward the 10 files only, because it is fetched when the email is sent.
+        /// An empty file, a blocked file type, or a `path` that is not an `http` or `https` URL or
+        /// that points to `localhost` returns a 422.
         #[inline]
         pub fn with_attachment(mut self, attachment: impl Into<CreateAttachment>) -> Self {
             self.attachments
@@ -1602,9 +1606,10 @@ pub mod types {
         }
 
         /// Adds an `Idempotency-Key` header to the request, so the reply is sent only once. 1 to 256
-        /// characters. A retry with the same key within 24 hours returns the first response.
-        /// Reusing the key with a different body, or while the first request is still running,
-        /// returns a 409.
+        /// characters. A retry with the same key within 24 hours replays the first successful (2xx)
+        /// response, with the `idempotent-replayed: true` header. A failed request is not stored, so
+        /// you can retry it with the same key. Reusing the key with a different body, or while the
+        /// first request is still running, returns a 409.
         ///
         /// <https://resend.com/docs/dashboard/emails/idempotency-keys>
         #[inline]
@@ -1703,6 +1708,8 @@ pub mod types {
 
         /// Adds an email header. The `In-Reply-To`, `References` and `Reply-To` headers are set by
         /// Resend and cannot be set here. Sending one of them, in any letter case, returns a 422.
+        /// A header name cannot be empty, and names and values cannot contain line breaks or null
+        /// characters, or the request returns a 422.
         #[inline]
         pub fn with_header(mut self, name: &str, value: &str) -> Self {
             let headers = self.headers.get_or_insert_with(HashMap::new);
@@ -1715,6 +1722,8 @@ pub mod types {
         /// share one limit with the attachments of the original message, which the forward also
         /// sends. Together they can have up to 10 files and at most 25 MB of `content`. A `path`
         /// file counts toward the 10 files only, because it is fetched when the email is sent.
+        /// An empty file, a blocked file type, or a `path` that is not an `http` or `https` URL or
+        /// that points to `localhost` returns a 422.
         #[inline]
         pub fn with_attachment(mut self, attachment: impl Into<CreateAttachment>) -> Self {
             self.attachments
@@ -1724,9 +1733,10 @@ pub mod types {
         }
 
         /// Adds an `Idempotency-Key` header to the request, so the forward is sent only once. 1 to 256
-        /// characters. A retry with the same key within 24 hours returns the first response.
-        /// Reusing the key with a different body, or while the first request is still running,
-        /// returns a 409.
+        /// characters. A retry with the same key within 24 hours replays the first successful (2xx)
+        /// response, with the `idempotent-replayed: true` header. A failed request is not stored, so
+        /// you can retry it with the same key. Reusing the key with a different body, or while the
+        /// first request is still running, returns a 409.
         ///
         /// <https://resend.com/docs/dashboard/emails/idempotency-keys>
         #[inline]
@@ -1974,9 +1984,10 @@ pub mod types {
         }
 
         /// Adds an `Idempotency-Key` header to the request, so the draft is created only once. 1 to 256
-        /// characters. A retry with the same key within 24 hours returns the first response.
-        /// Reusing the key with a different body, or while the first request is still running,
-        /// returns a 409.
+        /// characters. A retry with the same key within 24 hours replays the first successful (2xx)
+        /// response, with the `idempotent-replayed: true` header. A failed request is not stored, so
+        /// you can retry it with the same key. Reusing the key with a different body, or while the
+        /// first request is still running, returns a 409.
         ///
         /// <https://resend.com/docs/dashboard/emails/idempotency-keys>
         #[inline]
@@ -2019,7 +2030,7 @@ pub mod types {
         #[serde(skip_serializing_if = "Option::is_none")]
         text: Option<Nullable<String>>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        attachments: Option<Vec<CreateInboxDraftAttachment>>,
+        attachments: Option<Nullable<Vec<CreateInboxDraftAttachment>>>,
     }
 
     impl UpdateInboxDraftOptions {
@@ -2119,7 +2130,14 @@ pub mod types {
             mut self,
             attachments: impl IntoIterator<Item = CreateInboxDraftAttachment>,
         ) -> Self {
-            self.attachments = Some(attachments.into_iter().collect());
+            self.attachments = Some(Nullable::Value(attachments.into_iter().collect()));
+            self
+        }
+
+        /// Sends `null` to remove every attachment from the draft.
+        #[inline]
+        pub fn clear_attachments(mut self) -> Self {
+            self.attachments = Some(Nullable::Null);
             self
         }
     }
@@ -2154,6 +2172,8 @@ pub mod types {
 
         /// Adds an email header. The `In-Reply-To`, `References` and `Reply-To` headers are set by
         /// Resend and cannot be set here. Sending one of them, in any letter case, returns a 422.
+        /// A header name cannot be empty, and names and values cannot contain line breaks or null
+        /// characters, or the request returns a 422.
         #[inline]
         pub fn with_header(mut self, name: &str, value: &str) -> Self {
             let headers = self.headers.get_or_insert_with(HashMap::new);
@@ -2163,9 +2183,10 @@ pub mod types {
         }
 
         /// Adds an `Idempotency-Key` header to the request, so the draft is sent only once. 1 to 256
-        /// characters. A retry with the same key within 24 hours returns the first response.
-        /// Reusing the key with a different body, or while the first request is still running,
-        /// returns a 409.
+        /// characters. A retry with the same key within 24 hours replays the first successful (2xx)
+        /// response, with the `idempotent-replayed: true` header. A failed request is not stored, so
+        /// you can retry it with the same key. Reusing the key with a different body, or while the
+        /// first request is still running, returns a 409.
         ///
         /// <https://resend.com/docs/dashboard/emails/idempotency-keys>
         #[inline]
@@ -2684,6 +2705,12 @@ mod test {
         assert_eq!(
             serde_json::to_value(&replace).unwrap(),
             serde_json::json!({ "attachments": [] })
+        );
+
+        let clear = UpdateInboxDraftOptions::new().clear_attachments();
+        assert_eq!(
+            serde_json::to_value(&clear).unwrap(),
+            serde_json::json!({ "attachments": null })
         );
     }
 }
