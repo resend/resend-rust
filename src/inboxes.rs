@@ -579,8 +579,9 @@ impl InboxesSvc {
     /// A reply draft is sent in its thread. A draft without a thread starts a new thread. The
     /// draft must have at least one `to` recipient, a non-empty `subject`, and `html` or `text`,
     /// or the request returns a 422. A draft that was already sent returns a 409. The request
-    /// takes no body. Use [`SendInboxDraftOptions::with_idempotency_key`] to send the draft only
-    /// once.
+    /// body is optional and takes only `headers`. Use [`SendInboxDraftOptions::with_header`] to
+    /// add custom headers, and [`SendInboxDraftOptions::with_idempotency_key`] to send the draft
+    /// only once.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/send-draft>
     #[maybe_async::maybe_async]
@@ -599,6 +600,10 @@ impl InboxesSvc {
             request = request.header("Idempotency-Key", idempotency_key);
         }
 
+        if opts.data.headers.is_some() {
+            request = request.json(&opts);
+        }
+
         let response = self.0.send(request).await?;
         let content = response.json::<SendInboxDraftResponse>().await?;
 
@@ -608,6 +613,8 @@ impl InboxesSvc {
 
 #[allow(unreachable_pub)]
 pub mod types {
+    use std::collections::HashMap;
+
     use serde::{Deserialize, Serialize};
 
     use crate::idempotent::Idempotent;
@@ -1511,6 +1518,9 @@ pub mod types {
         reply_all: Option<bool>,
         #[serde(skip_serializing_if = "Option::is_none")]
         attachments: Option<Vec<CreateAttachment>>,
+        /// Custom headers to add to the email.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        headers: Option<HashMap<String, String>>,
     }
 
     impl ReplyInboxThreadEmailOptions {
@@ -1570,6 +1580,16 @@ pub mod types {
             self
         }
 
+        /// Adds an email header. The `In-Reply-To`, `References` and `Reply-To` headers are set by
+        /// Resend and cannot be set here. Sending one of them, in any letter case, returns a 422.
+        #[inline]
+        pub fn with_header(mut self, name: &str, value: &str) -> Self {
+            let headers = self.headers.get_or_insert_with(HashMap::new);
+            let _unused = headers.insert(name.to_owned(), value.to_owned());
+
+            self
+        }
+
         /// Adds a file to attach, as on `POST /emails`. Each one needs `content` or `path`. Up to
         /// 10 files. The `content` of all files can total at most 25 MB. A `path` file counts
         /// toward the 10 files only, because it is fetched when the email is sent.
@@ -1622,6 +1642,9 @@ pub mod types {
         subject: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         attachments: Option<Vec<CreateAttachment>>,
+        /// Custom headers to add to the email.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        headers: Option<HashMap<String, String>>,
     }
 
     impl ForwardInboxThreadEmailOptions {
@@ -1638,6 +1661,7 @@ pub mod types {
                 text: None,
                 subject: None,
                 attachments: None,
+                headers: None,
             }
         }
 
@@ -1674,6 +1698,16 @@ pub mod types {
         #[inline]
         pub fn with_subject(mut self, subject: impl Into<String>) -> Self {
             self.subject = Some(subject.into());
+            self
+        }
+
+        /// Adds an email header. The `In-Reply-To`, `References` and `Reply-To` headers are set by
+        /// Resend and cannot be set here. Sending one of them, in any letter case, returns a 422.
+        #[inline]
+        pub fn with_header(mut self, name: &str, value: &str) -> Self {
+            let headers = self.headers.get_or_insert_with(HashMap::new);
+            let _unused = headers.insert(name.to_owned(), value.to_owned());
+
             self
         }
 
@@ -2103,14 +2137,29 @@ pub mod types {
 
     /// Options for [`InboxesSvc::send_draft`](crate::services::InboxesSvc::send_draft).
     ///
-    /// [`SendInboxDraftOptions::default()`] sends the draft without an `Idempotency-Key` header.
+    /// [`SendInboxDraftOptions::default()`] sends the draft with no body and without an
+    /// `Idempotency-Key` header.
     #[must_use]
-    #[derive(Debug, Default, Clone, Copy, Serialize)]
-    pub struct SendInboxDraftOptions {}
+    #[derive(Debug, Default, Clone, Serialize)]
+    pub struct SendInboxDraftOptions {
+        /// Custom headers to add to the email.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub(crate) headers: Option<HashMap<String, String>>,
+    }
 
     impl SendInboxDraftOptions {
         pub fn new() -> Self {
             Self::default()
+        }
+
+        /// Adds an email header. The `In-Reply-To`, `References` and `Reply-To` headers are set by
+        /// Resend and cannot be set here. Sending one of them, in any letter case, returns a 422.
+        #[inline]
+        pub fn with_header(mut self, name: &str, value: &str) -> Self {
+            let headers = self.headers.get_or_insert_with(HashMap::new);
+            let _unused = headers.insert(name.to_owned(), value.to_owned());
+
+            self
         }
 
         /// Adds an `Idempotency-Key` header to the request, so the draft is sent only once. 1 to 256
@@ -2511,6 +2560,25 @@ mod test {
         assert_eq!(
             serde_json::to_value(&forward).unwrap(),
             serde_json::json!({ "to": ["a@example.com"] })
+        );
+
+        let headers = ReplyInboxThreadEmailOptions::new()
+            .with_text("Hi")
+            .with_header("X-Ticket-Id", "4821");
+        assert_eq!(
+            serde_json::to_value(&headers).unwrap(),
+            serde_json::json!({ "text": "Hi", "headers": { "X-Ticket-Id": "4821" } })
+        );
+        let headers = ForwardInboxThreadEmailOptions::new(["a@example.com"])
+            .with_header("X-Ticket-Id", "4821");
+        assert_eq!(
+            serde_json::to_value(&headers).unwrap(),
+            serde_json::json!({ "to": ["a@example.com"], "headers": { "X-Ticket-Id": "4821" } })
+        );
+        let headers = SendInboxDraftOptions::new().with_header("X-Ticket-Id", "4821");
+        assert_eq!(
+            serde_json::to_value(&headers).unwrap(),
+            serde_json::json!({ "headers": { "X-Ticket-Id": "4821" } })
         );
 
         let send = SendInboxDraftOptions::new().with_idempotency_key("send-1");
