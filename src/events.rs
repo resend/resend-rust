@@ -15,10 +15,11 @@ use crate::{
     list_opts::{ListOptions, ListResponse},
     types::{
         BroadcastId, CreateEventOptions, CreateEventResponse, DeleteEventResponse, Domain, EmailId,
-        GetEventResponse, InboundAttachment, Inbox, InboxDraftId, InboxDraftType,
-        InboxEmailDirection, InboxFolder, InboxId, InboxThreadEmailId, InboxThreadId,
-        InboxThreadLabel, InboxThreadSummary, SegmentId, SendEventOptions, SendEventResponse,
-        SubscriptionType, TemplateId, TopicId, UpdateEventOptions, UpdateEventResponse,
+        GetEventResponse, InboundAttachment, Inbox, InboxDraftAttachment, InboxDraftId,
+        InboxDraftType, InboxEmailDirection, InboxFolder, InboxId, InboxThreadEmailId,
+        InboxThreadId, InboxThreadLabel, InboxThreadSummary, SegmentId, SendEventOptions,
+        SendEventResponse, SubscriptionType, TemplateId, TopicId, UpdateEventOptions,
+        UpdateEventResponse,
     },
 };
 
@@ -713,6 +714,8 @@ pub struct InboxEventDraft {
     pub reply_to_email_id: Option<InboxThreadEmailId>,
     /// The ID of the queued outbound email after send. `None` until then.
     pub email_id: Option<EmailId>,
+    /// The files stored on the draft.
+    pub attachments: Vec<InboxDraftAttachment>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -2252,6 +2255,7 @@ mod test {
               "thread_id": "7c1f0a2e-5d3b-4e8a-9f61-2b8d4c6e1a90",
               "reply_to_email_id": "4ef9a417-02e9-4d39-ad75-9611e0fcc33c",
               "email_id": null,
+              "attachments": [{ "id": "5c1e9d2a-7b3f-4e8a-9c6d-2f0a1b3c4d5e", "filename": "receipt.pdf", "content_type": "application/pdf", "size": 20841 }],
               "created_at": "2026-09-29T11:58:00.000Z",
               "updated_at": "2026-09-29T12:00:00.000Z"
             }
@@ -2260,7 +2264,9 @@ mod test {
 
         match parse_inbox_event(data) {
             InboxEvent::InboxDraftCreated { data, .. } => {
-                assert_eq!(data.draft.unwrap().r#type, InboxDraftType::Reply);
+                let draft = data.draft.unwrap();
+                assert_eq!(draft.r#type, InboxDraftType::Reply);
+                assert_eq!(draft.attachments.first().unwrap().size, 20841);
             }
             other => panic!("Wrong parsing: {other:?}"),
         }
@@ -2295,6 +2301,7 @@ mod test {
               "thread_id": "7c1f0a2e-5d3b-4e8a-9f61-2b8d4c6e1a90",
               "reply_to_email_id": "4ef9a417-02e9-4d39-ad75-9611e0fcc33c",
               "email_id": null,
+              "attachments": [{ "id": "5c1e9d2a-7b3f-4e8a-9c6d-2f0a1b3c4d5e", "filename": "receipt.pdf", "content_type": "application/pdf", "size": 20841 }],
               "created_at": "2026-09-29T11:58:00.000Z",
               "updated_at": "2026-09-29T12:00:00.000Z"
             }
@@ -2339,6 +2346,7 @@ mod test {
               "thread_id": "7c1f0a2e-5d3b-4e8a-9f61-2b8d4c6e1a90",
               "reply_to_email_id": "4ef9a417-02e9-4d39-ad75-9611e0fcc33c",
               "email_id": "81ce9b8d-1b0a-4d02-a4d9-2a91f5ab6397",
+              "attachments": [{ "id": "5c1e9d2a-7b3f-4e8a-9c6d-2f0a1b3c4d5e", "filename": "receipt.pdf", "content_type": "application/pdf", "size": 20841 }],
               "created_at": "2026-09-29T11:58:00.000Z",
               "updated_at": "2026-09-29T12:00:00.000Z"
             }

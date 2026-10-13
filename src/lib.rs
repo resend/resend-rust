@@ -161,20 +161,20 @@ pub mod types {
         UpdateEventResponse,
     };
     pub use super::inboxes::types::{
-        CreateInboxDraftOptions, CreateInboxDraftResponse, CreateInboxLabelOptions,
-        CreateInboxLabelResponse, CreateInboxOptions, CreateInboxResponse,
+        CreateInboxDraftAttachment, CreateInboxDraftOptions, CreateInboxDraftResponse,
+        CreateInboxLabelOptions, CreateInboxLabelResponse, CreateInboxOptions, CreateInboxResponse,
         DeleteInboxDraftResponse, DeleteInboxLabelResponse, DeleteInboxResponse,
         DeleteInboxThreadResponse, ForwardInboxThreadEmailOptions, ForwardInboxThreadEmailResponse,
-        Inbox, InboxAgent, InboxAgentAction, InboxAgentId, InboxDraft, InboxDraftId,
-        InboxDraftListItem, InboxDraftType, InboxEmailDirection, InboxFolder, InboxId, InboxLabel,
-        InboxLabelId, InboxListItem, InboxThread, InboxThreadEmail, InboxThreadEmailAttachment,
-        InboxThreadEmailId, InboxThreadId, InboxThreadLabel, InboxThreadSearchHighlights,
-        InboxThreadSearchResult, InboxThreadSummary, ListInboxLabelsResponse,
-        ListInboxThreadsOptions, ReplyInboxThreadEmailOptions, ReplyInboxThreadEmailResponse,
-        SearchInboxThreadsOptions, SendInboxDraftResponse, UpdateInboxAgentOptions,
-        UpdateInboxAgentResponse, UpdateInboxDraftOptions, UpdateInboxLabelOptions,
-        UpdateInboxLabelResponse, UpdateInboxOptions, UpdateInboxResponse, UpdateInboxThreadFolder,
-        UpdateInboxThreadOptions,
+        Inbox, InboxAgent, InboxAgentAction, InboxAgentId, InboxDraft, InboxDraftAttachment,
+        InboxDraftId, InboxDraftListItem, InboxDraftType, InboxEmailDirection, InboxFolder,
+        InboxId, InboxLabel, InboxLabelId, InboxListItem, InboxThread, InboxThreadEmail,
+        InboxThreadEmailAttachment, InboxThreadEmailId, InboxThreadId, InboxThreadLabel,
+        InboxThreadSearchHighlights, InboxThreadSearchResult, InboxThreadSummary,
+        ListInboxLabelsResponse, ListInboxThreadsOptions, ReplyInboxThreadEmailOptions,
+        ReplyInboxThreadEmailResponse, SearchInboxThreadsOptions, SendInboxDraftResponse,
+        UpdateInboxAgentOptions, UpdateInboxAgentResponse, UpdateInboxDraftOptions,
+        UpdateInboxLabelOptions, UpdateInboxLabelResponse, UpdateInboxOptions, UpdateInboxResponse,
+        UpdateInboxThreadFolder, UpdateInboxThreadOptions,
     };
     pub use super::logs::types::{Log, LogId};
     pub use super::oauth::types::{

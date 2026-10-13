@@ -467,7 +467,7 @@ impl InboxesSvc {
     ///
     /// Use [`CreateInboxDraftOptions::new`] for a draft that starts a new thread, and
     /// [`CreateInboxDraftOptions::reply`] for a reply draft in an existing thread. At least one of
-    /// `to`, `cc`, `bcc`, `subject`, `text` or `html` must be non-empty. The combined recipients
+    /// `to`, `cc`, `bcc`, `subject`, `text`, `html` or `attachments` must be non-empty. The combined recipients
     /// of `to`, `cc` and `bcc` cannot exceed 50. Only one unsent reply draft can target an email,
     /// so a reply draft request for an email that already has one returns the ID of the existing
     /// draft.
@@ -504,8 +504,9 @@ impl InboxesSvc {
 
     /// Updates the content of an unsent draft. Omitted fields are left unchanged.
     ///
-    /// Send at least one of `to`, `cc`, `bcc`, `subject`, `text` or `html`. A request that sets
-    /// `text` or `html` replaces the whole body. The body part you omit from that request becomes
+    /// Send at least one of `to`, `cc`, `bcc`, `subject`, `text`, `html` or `attachments`.
+    /// Sending `attachments` replaces every attachment on the draft. A request that sets `text` or
+    /// `html` replaces the whole body. The body part you omit from that request becomes
     /// `null`. The merged draft must still contain at least one non-empty field, and its combined
     /// recipients cannot exceed 50. A draft that was already sent, or that changed during the
     /// request, returns a 409.
@@ -1655,6 +1656,48 @@ pub mod types {
         Reply,
     }
 
+    /// A file stored on a draft.
+    #[must_use]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct InboxDraftAttachment {
+        /// The ID of the attachment.
+        pub id: String,
+        /// The filename of the attachment.
+        pub filename: String,
+        /// The MIME type of the attachment.
+        pub content_type: String,
+        /// The size of the attachment in bytes.
+        pub size: u64,
+    }
+
+    /// A file to store on a draft. Each one needs `content`, `filename` and `content_type`.
+    #[must_use]
+    #[derive(Debug, Clone, Serialize)]
+    pub struct CreateInboxDraftAttachment {
+        content: Vec<u8>,
+        filename: String,
+        content_type: String,
+    }
+
+    impl CreateInboxDraftAttachment {
+        /// Creates a new [`CreateInboxDraftAttachment`].
+        ///
+        /// - `content`: The content of the file.
+        /// - `filename`: The filename of the attachment.
+        /// - `content_type`: The MIME type of the attachment, such as `application/pdf`.
+        pub fn new(
+            content: Vec<u8>,
+            filename: impl Into<String>,
+            content_type: impl Into<String>,
+        ) -> Self {
+            Self {
+                content,
+                filename: filename.into(),
+                content_type: content_type.into(),
+            }
+        }
+    }
+
     /// A single draft.
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1686,6 +1729,8 @@ pub mod types {
         /// The ID of the outbound email queued when the draft was sent. `None` until the draft is
         /// sent.
         pub email_id: Option<EmailId>,
+        /// The files stored on the draft.
+        pub attachments: Vec<InboxDraftAttachment>,
         /// Timestamp when the draft was created.
         pub created_at: String,
         /// Timestamp when the draft was last saved.
@@ -1716,14 +1761,16 @@ pub mod types {
         pub thread_id: Option<InboxThreadId>,
         /// The Email ID the draft replies to. `None` otherwise.
         pub reply_to_email_id: Option<InboxThreadEmailId>,
+        /// The files stored on the draft.
+        pub attachments: Vec<InboxDraftAttachment>,
         /// Timestamp when the draft was last saved.
         pub updated_at: String,
     }
 
     /// See [relevant docs].
     ///
-    /// At least one of `to`, `cc`, `bcc`, `subject`, `text` or `html` must be non-empty. The
-    /// combined recipients of `to`, `cc` and `bcc` cannot exceed 50.
+    /// At least one of `to`, `cc`, `bcc`, `subject`, `text`, `html` or `attachments` must be
+    /// non-empty. The combined recipients of `to`, `cc` and `bcc` cannot exceed 50.
     ///
     /// [relevant docs]: <https://resend.com/docs/api-reference/inboxes/create-draft#body-parameters>
     #[must_use]
@@ -1745,6 +1792,8 @@ pub mod types {
         thread_id: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         reply_to_email_id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        attachments: Option<Vec<CreateInboxDraftAttachment>>,
     }
 
     impl CreateInboxDraftOptions {
@@ -1813,6 +1862,16 @@ pub mod types {
             self.text = Some(text.into());
             self
         }
+
+        /// Adds a file to store on the draft. A draft can carry up to 10 files and 25 MB in
+        /// total.
+        #[inline]
+        pub fn with_attachment(mut self, attachment: CreateInboxDraftAttachment) -> Self {
+            self.attachments
+                .get_or_insert_with(Vec::new)
+                .push(attachment);
+            self
+        }
     }
 
     #[must_use]
@@ -1826,8 +1885,8 @@ pub mod types {
 
     /// List of changes to apply to an [`InboxDraft`].
     ///
-    /// Send at least one of `to`, `cc`, `bcc`, `subject`, `text` or `html`. Omitted fields are
-    /// left unchanged. Setting `text` or `html` replaces the whole body, so the body part you omit
+    /// Send at least one of `to`, `cc`, `bcc`, `subject`, `text`, `html` or `attachments`.
+    /// Omitted fields are left unchanged. Setting `text` or `html` replaces the whole body, so the body part you omit
     /// becomes `null`. The merged draft must contain at least one non-empty field, and its
     /// combined recipients cannot exceed 50.
     #[must_use]
@@ -1845,6 +1904,8 @@ pub mod types {
         html: Option<Nullable<String>>,
         #[serde(skip_serializing_if = "Option::is_none")]
         text: Option<Nullable<String>>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        attachments: Option<Vec<CreateInboxDraftAttachment>>,
     }
 
     impl UpdateInboxDraftOptions {
@@ -1935,6 +1996,18 @@ pub mod types {
             self.text = Some(Nullable::Null);
             self
         }
+
+        /// The files to store on the draft. Sending the field replaces every attachment on the
+        /// draft. Pass an empty list to remove them all. A draft can carry up to 10 files and
+        /// 25 MB in total.
+        #[inline]
+        pub fn with_attachments(
+            mut self,
+            attachments: impl IntoIterator<Item = CreateInboxDraftAttachment>,
+        ) -> Self {
+            self.attachments = Some(attachments.into_iter().collect());
+            self
+        }
     }
 
     #[must_use]
@@ -1960,14 +2033,14 @@ pub mod types {
 #[allow(clippy::unwrap_used)]
 mod test {
     use crate::types::{
-        CreateAttachment, CreateInboxDraftOptions, CreateInboxLabelOptions, CreateInboxOptions,
-        ForwardInboxThreadEmailOptions, Inbox, InboxAgent, InboxAgentAction, InboxDraft,
-        InboxDraftListItem, InboxDraftType, InboxEmailDirection, InboxFolder, InboxListItem,
-        InboxThread, InboxThreadEmail, InboxThreadSearchResult, InboxThreadSummary,
-        ListInboxLabelsResponse, ListInboxThreadsOptions, ReplyInboxThreadEmailOptions,
-        SearchInboxThreadsOptions, UpdateInboxAgentOptions, UpdateInboxDraftOptions,
-        UpdateInboxLabelOptions, UpdateInboxOptions, UpdateInboxThreadFolder,
-        UpdateInboxThreadOptions,
+        CreateAttachment, CreateInboxDraftAttachment, CreateInboxDraftOptions,
+        CreateInboxLabelOptions, CreateInboxOptions, ForwardInboxThreadEmailOptions, Inbox,
+        InboxAgent, InboxAgentAction, InboxDraft, InboxDraftListItem, InboxDraftType,
+        InboxEmailDirection, InboxFolder, InboxListItem, InboxThread, InboxThreadEmail,
+        InboxThreadSearchResult, InboxThreadSummary, ListInboxLabelsResponse,
+        ListInboxThreadsOptions, ReplyInboxThreadEmailOptions, SearchInboxThreadsOptions,
+        UpdateInboxAgentOptions, UpdateInboxDraftOptions, UpdateInboxLabelOptions,
+        UpdateInboxOptions, UpdateInboxThreadFolder, UpdateInboxThreadOptions,
     };
     use crate::{list_opts::ListOptions, list_opts::ListResponse};
 
@@ -2347,6 +2420,7 @@ mod test {
   "thread_id": null,
   "reply_to_email_id": null,
   "email_id": null,
+  "attachments": [],
   "created_at": "2026-08-05T14:12:04.110Z",
   "updated_at": "2026-08-05T14:12:04.110Z"
 }"#;
@@ -2368,11 +2442,38 @@ mod test {
       "snippet": "Refund issued",
       "thread_id": "4d8e2a1c-9b3f-4c6d-8a21-3e5f7c9c0d12",
       "reply_to_email_id": "5b1a9f47-2c8d-4e6f-9a03-1d2e3f4a5b60",
+      "attachments": [{ "id": "5c1e9d2a-7b3f-4e8a-9c6d-2f0a1b3c4d5e", "filename": "receipt.pdf", "content_type": "application/pdf", "size": 20841 }],
       "updated_at": "2026-08-05T14:12:04.110Z"
     }
   ]
 }"#;
         let list = serde_json::from_str::<ListResponse<InboxDraftListItem>>(list).unwrap();
-        assert_eq!(list.data.first().unwrap().r#type, InboxDraftType::Reply);
+        let item = list.data.first().unwrap();
+        assert_eq!(item.r#type, InboxDraftType::Reply);
+        assert_eq!(
+            item.attachments.first().unwrap().content_type,
+            "application/pdf"
+        );
+
+        let with_attachment = CreateInboxDraftOptions::new()
+            .with_text("See the receipt.")
+            .with_attachment(CreateInboxDraftAttachment::new(
+                b"hi".to_vec(),
+                "note.txt",
+                "text/plain",
+            ));
+        assert_eq!(
+            serde_json::to_value(&with_attachment).unwrap(),
+            serde_json::json!({
+                "text": "See the receipt.",
+                "attachments": [{ "content": [104, 105], "filename": "note.txt", "content_type": "text/plain" }]
+            })
+        );
+
+        let replace = UpdateInboxDraftOptions::new().with_attachments([]);
+        assert_eq!(
+            serde_json::to_value(&replace).unwrap(),
+            serde_json::json!({ "attachments": [] })
+        );
     }
 }
