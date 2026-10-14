@@ -843,8 +843,10 @@ pub mod types {
         /// Instructions the agent follows when it handles the threads of the inbox. `None` when
         /// no instructions are set.
         pub instructions: Option<String>,
-        /// The tone the agent writes in, such as `friendly and concise`. `None` when no tone is
-        /// set.
+        /// The tone the agent writes in. One of the presets `concise_professional`,
+        /// `concise_casual`, `expanded_professional`, or `expanded_casual`, or custom text in the
+        /// owner's own words, such as `friendly and concise`. Older dashboard values such as
+        /// `Concise · Casual` are custom text. `None` when no tone is set.
         pub tone: Option<String>,
         /// The actions the agent can take. Empty when no actions are enabled.
         pub enabled_actions: Vec<InboxAgentAction>,
@@ -886,7 +888,9 @@ pub mod types {
             self
         }
 
-        /// The tone the agent writes in, such as `friendly and concise`. Max 64 characters.
+        /// The tone the agent writes in. Use one of the presets `concise_professional`,
+        /// `concise_casual`, `expanded_professional`, or `expanded_casual`, or describe the tone
+        /// in your own words, such as `friendly and concise`. Custom text is max 64 characters.
         /// Leading and trailing whitespace is trimmed, and the trimmed value must not be empty.
         #[inline]
         pub fn with_tone(mut self, tone: impl Into<String>) -> Self {
