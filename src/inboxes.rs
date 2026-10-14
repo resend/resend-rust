@@ -1106,7 +1106,7 @@ pub mod types {
         /// The labels attached to the thread.
         pub labels: Vec<InboxThreadLabel>,
         /// The number of emails in the thread.
-        pub message_count: u64,
+        pub email_count: u64,
         /// Whether the most recent email in the thread has an attachment.
         pub has_attachment: bool,
         /// Whether the thread has an unsent draft.
@@ -2417,7 +2417,7 @@ mod test {
   "cc": [],
   "bcc": [],
   "labels": [{ "id": "7f9c1d2e-4a6b-4c3d-8e15-9b0a7c6d5e34", "name": "Urgent", "color": "#E93D82" }],
-  "message_count": 2,
+  "email_count": 2,
   "has_attachment": true,
   "has_draft": false,
   "read": false,
@@ -2440,7 +2440,7 @@ mod test {
       "cc": [],
       "bcc": [],
       "labels": [],
-      "message_count": 1,
+      "email_count": 1,
       "has_attachment": true,
       "has_draft": false,
       "read": true,
