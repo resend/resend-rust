@@ -1884,7 +1884,8 @@ mod test {
               "unread": 0,
               "drafts": 0,
               "last_received": null,
-              "created_at": "2026-09-29T12:00:00.000Z"
+              "created_at": "2026-09-29T12:00:00.000Z",
+              "updated_at": "2026-09-29T12:00:00.000Z"
             }
           }
         }"#;
@@ -1917,7 +1918,8 @@ mod test {
               "unread": 3,
               "drafts": 2,
               "last_received": "2026-09-29T11:42:08.000Z",
-              "created_at": "2026-09-01T09:30:00.000Z"
+              "created_at": "2026-09-01T09:30:00.000Z",
+              "updated_at": "2026-09-29T12:00:00.000Z"
             }
           }
         }"#;
