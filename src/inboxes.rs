@@ -66,13 +66,14 @@ impl InboxesSvc {
     /// Retrieve a single inbox by ID or email address.
     ///
     /// `inbox_id_or_email` is the Inbox ID or the inbox email address, such as
-    /// `support@acme.com`. A value that contains `@` must be a valid email address, and the match
-    /// is case-insensitive. Any other value must be a UUID.
+    /// `support@acme.com`. A value that contains `@` must be a valid email address, and any other
+    /// value must be a UUID, or the request returns a 422. The address match is case-insensitive
+    /// and never falls back to the inbox `name`. An address that matches no inbox returns a 404.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/get-inbox>
     #[maybe_async::maybe_async]
     pub async fn get(&self, inbox_id_or_email: &str) -> Result<Inbox> {
-        let path = inbox_path(inbox_id_or_email);
+        let path = format!("/inboxes/{}", urlencoding::encode(inbox_id_or_email));
 
         let request = self.0.build(Method::GET, &path);
         let response = self.0.send(request).await?;
@@ -88,10 +89,10 @@ impl InboxesSvc {
     #[maybe_async::maybe_async]
     pub async fn update(
         &self,
-        inbox_id: &str,
+        inbox_id_or_email: &str,
         update: UpdateInboxOptions,
     ) -> Result<UpdateInboxResponse> {
-        let path = inbox_path(inbox_id);
+        let path = format!("/inboxes/{}", urlencoding::encode(inbox_id_or_email));
 
         let request = self.0.build(Method::PATCH, &path);
         let response = self.0.send(request.json(&update)).await?;
@@ -105,8 +106,8 @@ impl InboxesSvc {
     ///
     /// <https://resend.com/docs/api-reference/inboxes/delete-inbox>
     #[maybe_async::maybe_async]
-    pub async fn delete(&self, inbox_id: &str) -> Result<DeleteInboxResponse> {
-        let path = inbox_path(inbox_id);
+    pub async fn delete(&self, inbox_id_or_email: &str) -> Result<DeleteInboxResponse> {
+        let path = format!("/inboxes/{}", urlencoding::encode(inbox_id_or_email));
 
         let request = self.0.build(Method::DELETE, &path);
         let response = self.0.send(request).await?;
@@ -122,8 +123,8 @@ impl InboxesSvc {
     ///
     /// <https://resend.com/docs/api-reference/inboxes/get-agent>
     #[maybe_async::maybe_async]
-    pub async fn get_agent(&self, inbox_id: &str) -> Result<InboxAgent> {
-        let path = format!("{}/agent", inbox_path(inbox_id));
+    pub async fn get_agent(&self, inbox_id_or_email: &str) -> Result<InboxAgent> {
+        let path = format!("/inboxes/{}/agent", urlencoding::encode(inbox_id_or_email));
 
         let request = self.0.build(Method::GET, &path);
         let response = self.0.send(request).await?;
@@ -139,10 +140,10 @@ impl InboxesSvc {
     #[maybe_async::maybe_async]
     pub async fn update_agent(
         &self,
-        inbox_id: &str,
+        inbox_id_or_email: &str,
         update: UpdateInboxAgentOptions,
     ) -> Result<UpdateInboxAgentResponse> {
-        let path = format!("{}/agent", inbox_path(inbox_id));
+        let path = format!("/inboxes/{}/agent", urlencoding::encode(inbox_id_or_email));
 
         let request = self.0.build(Method::PATCH, &path);
         let response = self.0.send(request.json(&update)).await?;
@@ -155,8 +156,8 @@ impl InboxesSvc {
     ///
     /// <https://resend.com/docs/api-reference/inboxes/list-labels>
     #[maybe_async::maybe_async]
-    pub async fn list_labels(&self, inbox_id: &str) -> Result<ListInboxLabelsResponse> {
-        let path = format!("{}/labels", inbox_path(inbox_id));
+    pub async fn list_labels(&self, inbox_id_or_email: &str) -> Result<ListInboxLabelsResponse> {
+        let path = format!("/inboxes/{}/labels", urlencoding::encode(inbox_id_or_email));
 
         let request = self.0.build(Method::GET, &path);
         let response = self.0.send(request).await?;
@@ -175,10 +176,10 @@ impl InboxesSvc {
     #[maybe_async::maybe_async]
     pub async fn create_label(
         &self,
-        inbox_id: &str,
+        inbox_id_or_email: &str,
         label: CreateInboxLabelOptions,
     ) -> Result<CreateInboxLabelResponse> {
-        let path = format!("{}/labels", inbox_path(inbox_id));
+        let path = format!("/inboxes/{}/labels", urlencoding::encode(inbox_id_or_email));
 
         let request = self.0.build(Method::POST, &path);
         let response = self.0.send(request.json(&label)).await?;
@@ -196,11 +197,14 @@ impl InboxesSvc {
     #[maybe_async::maybe_async]
     pub async fn update_label(
         &self,
-        inbox_id: &str,
+        inbox_id_or_email: &str,
         label_id: &str,
         update: UpdateInboxLabelOptions,
     ) -> Result<UpdateInboxLabelResponse> {
-        let path = format!("{}/labels/{label_id}", inbox_path(inbox_id));
+        let path = format!(
+            "/inboxes/{}/labels/{label_id}",
+            urlencoding::encode(inbox_id_or_email)
+        );
 
         let request = self.0.build(Method::PATCH, &path);
         let response = self.0.send(request.json(&update)).await?;
@@ -215,10 +219,13 @@ impl InboxesSvc {
     #[maybe_async::maybe_async]
     pub async fn delete_label(
         &self,
-        inbox_id: &str,
+        inbox_id_or_email: &str,
         label_id: &str,
     ) -> Result<DeleteInboxLabelResponse> {
-        let path = format!("{}/labels/{label_id}", inbox_path(inbox_id));
+        let path = format!(
+            "/inboxes/{}/labels/{label_id}",
+            urlencoding::encode(inbox_id_or_email)
+        );
 
         let request = self.0.build(Method::DELETE, &path);
         let response = self.0.send(request).await?;
@@ -242,7 +249,7 @@ impl InboxesSvc {
         filters: ListInboxThreadsOptions,
         list_opts: ListOptions<T>,
     ) -> Result<ListResponse<InboxThread>> {
-        let path = format!("{}/threads", inbox_path(inbox_id));
+        let path = format!("/inboxes/{}/threads", urlencoding::encode(inbox_id));
 
         let request = self
             .0
@@ -271,11 +278,14 @@ impl InboxesSvc {
     #[maybe_async::maybe_async]
     pub async fn search_threads<T>(
         &self,
-        inbox_id: &str,
+        inbox_id_or_email: &str,
         search: SearchInboxThreadsOptions,
         list_opts: ListOptions<T>,
     ) -> Result<ListResponse<InboxThreadSearchResult>> {
-        let path = format!("{}/threads/search", inbox_path(inbox_id));
+        let path = format!(
+            "/inboxes/{}/threads/search",
+            urlencoding::encode(inbox_id_or_email)
+        );
 
         let request = self
             .0
@@ -295,8 +305,15 @@ impl InboxesSvc {
     ///
     /// <https://resend.com/docs/api-reference/inboxes/get-thread>
     #[maybe_async::maybe_async]
-    pub async fn get_thread(&self, inbox_id: &str, thread_id: &str) -> Result<InboxThreadSummary> {
-        let path = format!("{}/threads/{thread_id}", inbox_path(inbox_id));
+    pub async fn get_thread(
+        &self,
+        inbox_id_or_email: &str,
+        thread_id: &str,
+    ) -> Result<InboxThreadSummary> {
+        let path = format!(
+            "/inboxes/{}/threads/{thread_id}",
+            urlencoding::encode(inbox_id_or_email)
+        );
 
         let request = self.0.build(Method::GET, &path);
         let response = self.0.send(request).await?;
@@ -317,11 +334,14 @@ impl InboxesSvc {
     #[maybe_async::maybe_async]
     pub async fn update_thread(
         &self,
-        inbox_id: &str,
+        inbox_id_or_email: &str,
         thread_id: &str,
         update: UpdateInboxThreadOptions,
     ) -> Result<InboxThreadSummary> {
-        let path = format!("{}/threads/{thread_id}", inbox_path(inbox_id));
+        let path = format!(
+            "/inboxes/{}/threads/{thread_id}",
+            urlencoding::encode(inbox_id_or_email)
+        );
 
         let request = self.0.build(Method::PATCH, &path);
         let response = self.0.send(request.json(&update)).await?;
@@ -339,10 +359,13 @@ impl InboxesSvc {
     #[maybe_async::maybe_async]
     pub async fn delete_thread(
         &self,
-        inbox_id: &str,
+        inbox_id_or_email: &str,
         thread_id: &str,
     ) -> Result<DeleteInboxThreadResponse> {
-        let path = format!("{}/threads/{thread_id}", inbox_path(inbox_id));
+        let path = format!(
+            "/inboxes/{}/threads/{thread_id}",
+            urlencoding::encode(inbox_id_or_email)
+        );
 
         let request = self.0.build(Method::DELETE, &path);
         let response = self.0.send(request).await?;
@@ -362,11 +385,14 @@ impl InboxesSvc {
     #[maybe_async::maybe_async]
     pub async fn add_thread_labels(
         &self,
-        inbox_id: &str,
+        inbox_id_or_email: &str,
         thread_id: &str,
         labels: &[&str],
     ) -> Result<ListInboxThreadLabelsResponse> {
-        let path = format!("{}/threads/{thread_id}/labels", inbox_path(inbox_id));
+        let path = format!(
+            "/inboxes/{}/threads/{thread_id}/labels",
+            urlencoding::encode(inbox_id_or_email)
+        );
 
         let request = self.0.build(Method::POST, &path);
         let response = self
@@ -389,11 +415,14 @@ impl InboxesSvc {
     #[maybe_async::maybe_async]
     pub async fn set_thread_labels(
         &self,
-        inbox_id: &str,
+        inbox_id_or_email: &str,
         thread_id: &str,
         labels: &[&str],
     ) -> Result<ListInboxThreadLabelsResponse> {
-        let path = format!("{}/threads/{thread_id}/labels", inbox_path(inbox_id));
+        let path = format!(
+            "/inboxes/{}/threads/{thread_id}/labels",
+            urlencoding::encode(inbox_id_or_email)
+        );
 
         let request = self.0.build(Method::PUT, &path);
         let response = self
@@ -415,13 +444,13 @@ impl InboxesSvc {
     #[maybe_async::maybe_async]
     pub async fn remove_thread_label(
         &self,
-        inbox_id: &str,
+        inbox_id_or_email: &str,
         thread_id: &str,
         label_id: &str,
     ) -> Result<ListInboxThreadLabelsResponse> {
         let path = format!(
-            "{}/threads/{thread_id}/labels/{label_id}",
-            inbox_path(inbox_id)
+            "/inboxes/{}/threads/{thread_id}/labels/{label_id}",
+            urlencoding::encode(inbox_id_or_email)
         );
 
         let request = self.0.build(Method::DELETE, &path);
@@ -441,11 +470,14 @@ impl InboxesSvc {
     #[maybe_async::maybe_async]
     pub async fn list_thread_emails<T>(
         &self,
-        inbox_id: &str,
+        inbox_id_or_email: &str,
         thread_id: &str,
         list_opts: ListOptions<T>,
     ) -> Result<ListResponse<InboxThreadEmail>> {
-        let path = format!("{}/threads/{thread_id}/emails", inbox_path(inbox_id));
+        let path = format!(
+            "/inboxes/{}/threads/{thread_id}/emails",
+            urlencoding::encode(inbox_id_or_email)
+        );
 
         let request = self.0.build(Method::GET, &path).query(&list_opts);
         let response = self.0.send(request).await?;
@@ -463,13 +495,13 @@ impl InboxesSvc {
     #[maybe_async::maybe_async]
     pub async fn get_thread_email(
         &self,
-        inbox_id: &str,
+        inbox_id_or_email: &str,
         thread_id: &str,
         email_id: &str,
     ) -> Result<InboxThreadEmail> {
         let path = format!(
-            "{}/threads/{thread_id}/emails/{email_id}",
-            inbox_path(inbox_id)
+            "/inboxes/{}/threads/{thread_id}/emails/{email_id}",
+            urlencoding::encode(inbox_id_or_email)
         );
 
         let request = self.0.build(Method::GET, &path);
@@ -485,20 +517,22 @@ impl InboxesSvc {
     /// the reply goes to its `Reply-To` addresses, or to its sender when it has no `Reply-To`. For
     /// a message the inbox sent, the reply goes to that message's `to` recipients. Set
     /// `reply_all` to also copy the other recipients of the message. The reply threads under the
-    /// message through the `In-Reply-To` and `References` headers.
+    /// message through the `In-Reply-To` and `References` headers. When no recipient can be found
+    /// for the reply, the request returns a 422. The whole email, encoded, can be at most 40 MB,
+    /// or the request returns a 422.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/reply-thread-email>
     #[maybe_async::maybe_async]
     pub async fn reply_thread_email(
         &self,
-        inbox_id: &str,
+        inbox_id_or_email: &str,
         thread_id: &str,
         email_id: &str,
         reply: impl Into<Idempotent<ReplyInboxThreadEmailOptions>>,
     ) -> Result<ReplyInboxThreadEmailResponse> {
         let path = format!(
-            "{}/threads/{thread_id}/emails/{email_id}/reply",
-            inbox_path(inbox_id)
+            "/inboxes/{}/threads/{thread_id}/emails/{email_id}/reply",
+            urlencoding::encode(inbox_id_or_email)
         );
         let reply: Idempotent<ReplyInboxThreadEmailOptions> = reply.into();
 
@@ -526,14 +560,14 @@ impl InboxesSvc {
     #[maybe_async::maybe_async]
     pub async fn forward_thread_email(
         &self,
-        inbox_id: &str,
+        inbox_id_or_email: &str,
         thread_id: &str,
         email_id: &str,
         forward: impl Into<Idempotent<ForwardInboxThreadEmailOptions>>,
     ) -> Result<ForwardInboxThreadEmailResponse> {
         let path = format!(
-            "{}/threads/{thread_id}/emails/{email_id}/forward",
-            inbox_path(inbox_id)
+            "/inboxes/{}/threads/{thread_id}/emails/{email_id}/forward",
+            urlencoding::encode(inbox_id_or_email)
         );
         let forward: Idempotent<ForwardInboxThreadEmailOptions> = forward.into();
 
@@ -558,10 +592,10 @@ impl InboxesSvc {
     #[maybe_async::maybe_async]
     pub async fn list_drafts<T>(
         &self,
-        inbox_id: &str,
+        inbox_id_or_email: &str,
         list_opts: ListOptions<T>,
     ) -> Result<ListResponse<InboxDraftListItem>> {
-        let path = format!("{}/drafts", inbox_path(inbox_id));
+        let path = format!("/inboxes/{}/drafts", urlencoding::encode(inbox_id_or_email));
 
         let request = self.0.build(Method::GET, &path).query(&list_opts);
         let response = self.0.send(request).await?;
@@ -586,10 +620,10 @@ impl InboxesSvc {
     #[maybe_async::maybe_async]
     pub async fn create_draft(
         &self,
-        inbox_id: &str,
+        inbox_id_or_email: &str,
         draft: impl Into<Idempotent<CreateInboxDraftOptions>>,
     ) -> Result<CreateInboxDraftResponse> {
-        let path = format!("{}/drafts", inbox_path(inbox_id));
+        let path = format!("/inboxes/{}/drafts", urlencoding::encode(inbox_id_or_email));
         let draft: Idempotent<CreateInboxDraftOptions> = draft.into();
 
         let mut request = self.0.build(Method::POST, &path);
@@ -608,8 +642,11 @@ impl InboxesSvc {
     ///
     /// <https://resend.com/docs/api-reference/inboxes/get-draft>
     #[maybe_async::maybe_async]
-    pub async fn get_draft(&self, inbox_id: &str, draft_id: &str) -> Result<InboxDraft> {
-        let path = format!("{}/drafts/{draft_id}", inbox_path(inbox_id));
+    pub async fn get_draft(&self, inbox_id_or_email: &str, draft_id: &str) -> Result<InboxDraft> {
+        let path = format!(
+            "/inboxes/{}/drafts/{draft_id}",
+            urlencoding::encode(inbox_id_or_email)
+        );
 
         let request = self.0.build(Method::GET, &path);
         let response = self.0.send(request).await?;
@@ -631,11 +668,14 @@ impl InboxesSvc {
     #[maybe_async::maybe_async]
     pub async fn update_draft(
         &self,
-        inbox_id: &str,
+        inbox_id_or_email: &str,
         draft_id: &str,
         update: UpdateInboxDraftOptions,
     ) -> Result<UpdateInboxDraftResponse> {
-        let path = format!("{}/drafts/{draft_id}", inbox_path(inbox_id));
+        let path = format!(
+            "/inboxes/{}/drafts/{draft_id}",
+            urlencoding::encode(inbox_id_or_email)
+        );
 
         let request = self.0.build(Method::PATCH, &path);
         let response = self.0.send(request.json(&update)).await?;
@@ -651,10 +691,13 @@ impl InboxesSvc {
     #[maybe_async::maybe_async]
     pub async fn delete_draft(
         &self,
-        inbox_id: &str,
+        inbox_id_or_email: &str,
         draft_id: &str,
     ) -> Result<DeleteInboxDraftResponse> {
-        let path = format!("{}/drafts/{draft_id}", inbox_path(inbox_id));
+        let path = format!(
+            "/inboxes/{}/drafts/{draft_id}",
+            urlencoding::encode(inbox_id_or_email)
+        );
 
         let request = self.0.build(Method::DELETE, &path);
         let response = self.0.send(request).await?;
@@ -676,11 +719,14 @@ impl InboxesSvc {
     #[maybe_async::maybe_async]
     pub async fn send_draft(
         &self,
-        inbox_id: &str,
+        inbox_id_or_email: &str,
         draft_id: &str,
         opts: impl Into<Idempotent<SendInboxDraftOptions>>,
     ) -> Result<SendInboxDraftResponse> {
-        let path = format!("{}/drafts/{draft_id}/send", inbox_path(inbox_id));
+        let path = format!(
+            "/inboxes/{}/drafts/{draft_id}/send",
+            urlencoding::encode(inbox_id_or_email)
+        );
         let opts: Idempotent<SendInboxDraftOptions> = opts.into();
 
         let mut request = self.0.build(Method::POST, &path);
@@ -698,12 +744,6 @@ impl InboxesSvc {
 
         Ok(content)
     }
-}
-
-/// The path of an inbox. The API takes the inbox ID or the inbox email address, and an address
-/// must be percent-encoded to fit in the path.
-fn inbox_path(inbox_id: &str) -> String {
-    format!("/inboxes/{}", urlencoding::encode(inbox_id))
 }
 
 #[derive(serde::Serialize)]
@@ -753,8 +793,6 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct Inbox {
-        /// The object type. Always `inbox`.
-        pub object: String,
         /// The ID of the inbox.
         pub id: InboxId,
         /// Internal name for the inbox. Recipients do not see it. Falls back to the inbox email
@@ -866,8 +904,6 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct CreateInboxResponse {
-        /// Type of the response object.
-        pub object: String,
         /// The ID of the inbox.
         pub id: InboxId,
     }
@@ -909,8 +945,6 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct UpdateInboxResponse {
-        /// The object type.
-        pub object: String,
         /// The ID of the inbox.
         pub id: InboxId,
     }
@@ -918,8 +952,6 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct DeleteInboxResponse {
-        /// The object type.
-        pub object: String,
         /// The ID of the inbox.
         pub id: InboxId,
         /// Indicates whether the inbox was successfully deleted.
@@ -949,19 +981,18 @@ pub mod types {
         ConciseCasual,
         ExpandedProfessional,
         ExpandedCasual,
+        Null,
     }
 
     /// The agent settings of an inbox.
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct InboxAgent {
-        /// The object type. Always `inbox_agent`.
-        pub object: String,
         /// Instructions the agent follows when it handles the threads of the inbox. `None` when
         /// no instructions are set.
         pub instructions: Option<String>,
-        /// The tone the agent writes in. `None` when no tone is set.
-        pub tone: Option<InboxAgentTone>,
+        /// The tone the agent writes in. `null` when no tone is set.
+        pub tone: InboxAgentTone,
         /// The actions the agent can take. Empty when no actions are enabled.
         pub actions: Vec<InboxAgentAction>,
     }
@@ -976,7 +1007,7 @@ pub mod types {
         #[serde(skip_serializing_if = "Option::is_none")]
         instructions: Option<Nullable<String>>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        tone: Option<Nullable<InboxAgentTone>>,
+        tone: Option<InboxAgentTone>,
         #[serde(skip_serializing_if = "Option::is_none")]
         actions: Option<Vec<InboxAgentAction>>,
     }
@@ -1005,14 +1036,14 @@ pub mod types {
         /// The tone the agent writes in.
         #[inline]
         pub const fn with_tone(mut self, tone: InboxAgentTone) -> Self {
-            self.tone = Some(Nullable::Value(tone));
+            self.tone = Some(tone);
             self
         }
 
         /// Sends `null` to clear the tone.
         #[inline]
         pub fn clear_tone(mut self) -> Self {
-            self.tone = Some(Nullable::Null);
+            self.tone = Some(InboxAgentTone::Null);
             self
         }
 
@@ -1028,8 +1059,6 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct UpdateInboxAgentResponse {
-        /// The object type. Always `inbox_agent`.
-        pub object: String,
         /// The ID of the inbox agent.
         pub id: InboxAgentId,
     }
@@ -1051,8 +1080,6 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct ListInboxLabelsResponse {
-        /// Type of the response object.
-        pub object: String,
         /// The labels on the inbox, oldest first.
         pub data: Vec<InboxLabel>,
     }
@@ -1092,8 +1119,6 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct CreateInboxLabelResponse {
-        /// Type of the response object.
-        pub object: String,
         /// The ID of the label.
         pub id: InboxLabelId,
     }
@@ -1132,8 +1157,6 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct UpdateInboxLabelResponse {
-        /// Type of the response object.
-        pub object: String,
         /// The ID of the updated label.
         pub id: InboxLabelId,
     }
@@ -1141,8 +1164,6 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct DeleteInboxLabelResponse {
-        /// Type of the response object.
-        pub object: String,
         /// The ID of the removed label.
         pub id: InboxLabelId,
         /// Indicates whether the label was deleted.
@@ -1202,8 +1223,6 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct ListInboxThreadLabelsResponse {
-        /// The object type. Always `list`.
-        pub object: String,
         /// The labels on the thread.
         pub data: Vec<InboxThreadLabel>,
     }
@@ -1259,8 +1278,6 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct InboxThreadSummary {
-        /// The object type.
-        pub object: String,
         /// The ID of the thread.
         pub id: InboxThreadId,
         /// The subject of the thread.
@@ -1492,8 +1509,6 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct DeleteInboxThreadResponse {
-        /// The object type.
-        pub object: String,
         /// The ID of the thread.
         pub id: InboxThreadId,
         /// True when this call moved the thread to `trash`. False when the thread was already
@@ -1688,6 +1703,7 @@ pub mod types {
 
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
+    // FIXME: inconsistency between docs/spec
     pub struct ReplyInboxThreadEmailResponse {
         /// The ID of the sent email. Use it with the emails endpoints.
         pub id: EmailId,
@@ -1877,8 +1893,6 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct InboxDraft {
-        /// The object type.
-        pub object: String,
         /// The ID of the draft.
         pub id: InboxDraftId,
         /// `Reply` when the draft replies to an email in an existing thread. `Standalone` when
@@ -1936,10 +1950,10 @@ pub mod types {
         pub thread_id: Option<InboxThreadId>,
         /// The Email ID the draft replies to. `None` otherwise.
         pub reply_to_email_id: Option<InboxThreadEmailId>,
-        /// The files stored on the draft.
-        pub attachments: Vec<InboxDraftAttachment>,
         /// Timestamp when the draft was last saved.
         pub updated_at: String,
+        /// The files stored on the draft.
+        pub attachments: Vec<InboxDraftAttachment>,
     }
 
     /// See [relevant docs].
@@ -1964,11 +1978,11 @@ pub mod types {
         #[serde(skip_serializing_if = "Option::is_none")]
         text: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
+        attachments: Option<Vec<CreateInboxDraftAttachment>>,
+        #[serde(skip_serializing_if = "Option::is_none")]
         thread_id: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         reply_to_email_id: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        attachments: Option<Vec<CreateInboxDraftAttachment>>,
     }
 
     impl CreateInboxDraftOptions {
@@ -2067,8 +2081,6 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct CreateInboxDraftResponse {
-        /// Type of the response object.
-        pub object: String,
         /// The ID of the draft.
         pub id: InboxDraftId,
     }
@@ -2210,8 +2222,6 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct UpdateInboxDraftResponse {
-        /// The object type. Always `inbox_draft`.
-        pub object: String,
         /// The ID of the draft.
         pub id: InboxDraftId,
     }
@@ -2219,8 +2229,6 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct DeleteInboxDraftResponse {
-        /// The object type.
-        pub object: String,
         /// The ID of the draft.
         pub id: InboxDraftId,
         /// Indicates whether the draft was successfully deleted.
@@ -2296,7 +2304,7 @@ mod test {
     };
     use crate::{idempotent::Idempotent, list_opts::ListOptions, list_opts::ListResponse};
 
-    use super::{InboxThreadLabelsBody, inbox_path};
+    use super::InboxThreadLabelsBody;
 
     fn query(value: &impl serde::Serialize) -> String {
         let url = reqwest::Url::parse("https://api.resend.com/").unwrap();
@@ -2403,7 +2411,7 @@ mod test {
 }"#;
         let agent = serde_json::from_str::<InboxAgent>(agent).unwrap();
         assert!(agent.instructions.is_none());
-        assert_eq!(agent.tone, Some(InboxAgentTone::ConciseCasual));
+        assert_eq!(agent.tone, InboxAgentTone::ConciseCasual);
         assert_eq!(
             agent.actions,
             vec![
@@ -2557,18 +2565,6 @@ mod test {
     }
 
     #[test]
-    fn inbox_path_encodes_an_email_address() {
-        assert_eq!(
-            inbox_path("b3e2b2b6-3f0e-4c8e-9ad3-2f43a1e2c7f1"),
-            "/inboxes/b3e2b2b6-3f0e-4c8e-9ad3-2f43a1e2c7f1"
-        );
-        assert_eq!(
-            inbox_path("support@acme.com"),
-            "/inboxes/support%40acme.com"
-        );
-    }
-
-    #[test]
     fn thread_labels() {
         assert_eq!(
             serde_json::to_value(InboxThreadLabelsBody {
@@ -2587,15 +2583,13 @@ mod test {
   "data": [{ "id": "7f9c1d2e-4a6b-4c3d-8e15-9b0a7c6d5e34", "name": "Urgent", "color": "#E93D82" }]
 }"##;
         let labels = serde_json::from_str::<ListInboxThreadLabelsResponse>(labels).unwrap();
-        assert_eq!(labels.object, "list");
         assert_eq!(labels.data.first().unwrap().name, "Urgent");
     }
 
     #[test]
     fn deserialize_update_draft() {
         let update = r#"{ "object": "inbox_draft", "id": "c3a1e8b4-2d5f-4a7c-9e10-6b8d7f5a4c32" }"#;
-        let update = serde_json::from_str::<UpdateInboxDraftResponse>(update).unwrap();
-        assert_eq!(update.object, "inbox_draft");
+        let _update = serde_json::from_str::<UpdateInboxDraftResponse>(update).unwrap();
     }
 
     #[test]
