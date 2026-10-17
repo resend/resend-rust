@@ -15,8 +15,11 @@ use crate::{
     list_opts::{ListOptions, ListResponse},
     types::{
         BroadcastId, CreateEventOptions, CreateEventResponse, DeleteEventResponse, Domain, EmailId,
-        GetEventResponse, InboundAttachment, SegmentId, SendEventOptions, SendEventResponse,
-        SubscriptionType, TemplateId, TopicId, UpdateEventOptions, UpdateEventResponse,
+        GetEventResponse, InboundAttachment, Inbox, InboxDraftAttachment, InboxDraftId,
+        InboxDraftType, InboxEmailDirection, InboxFolder, InboxId, InboxThreadEmailId,
+        InboxThreadId, InboxThreadLabel, InboxThreadSummary, SegmentId, SendEventOptions,
+        SendEventResponse, SubscriptionType, TemplateId, TopicId, UpdateEventOptions,
+        UpdateEventResponse,
     },
 };
 
@@ -240,6 +243,7 @@ pub enum Event {
     DomainEvent(DomainEvent),
     SuppressionEvent(SuppressionEvent),
     TopicEvent(TopicEvent),
+    InboxEvent(InboxEvent),
 }
 
 /// Represents any [Resend Event Type](https://resend.com/docs/dashboard/webhooks/event-types).
@@ -252,6 +256,7 @@ pub enum EventType {
     DomainEventType(DomainEventType),
     SuppressionEventType(SuppressionEventType),
     TopicEventType(TopicEventType),
+    InboxEventType(InboxEventType),
 }
 
 impl From<EmailEventType> for EventType {
@@ -287,6 +292,12 @@ impl From<SuppressionEventType> for EventType {
 impl From<TopicEventType> for EventType {
     fn from(value: TopicEventType) -> Self {
         Self::TopicEventType(value)
+    }
+}
+
+impl From<InboxEventType> for EventType {
+    fn from(value: InboxEventType) -> Self {
+        Self::InboxEventType(value)
     }
 }
 
@@ -412,6 +423,110 @@ pub enum TopicEventType {
     TopicUpdated,
     #[serde(rename = "topic.deleted")]
     TopicDeleted,
+}
+
+#[derive(Debug, Copy, Clone, Deserialize, Serialize)]
+#[cfg_attr(test, derive(strum::EnumCount))]
+pub enum InboxEventType {
+    #[serde(rename = "inbox.created")]
+    InboxCreated,
+    #[serde(rename = "inbox.updated")]
+    InboxUpdated,
+    #[serde(rename = "inbox.deleted")]
+    InboxDeleted,
+    #[serde(rename = "inbox.thread.created")]
+    InboxThreadCreated,
+    #[serde(rename = "inbox.thread.folder.updated")]
+    InboxThreadFolderUpdated,
+    #[serde(rename = "inbox.thread.assigned")]
+    InboxThreadAssigned,
+    #[serde(rename = "inbox.thread.unassigned")]
+    InboxThreadUnassigned,
+    #[serde(rename = "inbox.thread.labels.updated")]
+    InboxThreadLabelsUpdated,
+    #[serde(rename = "inbox.email.received")]
+    InboxEmailReceived,
+    #[serde(rename = "inbox.email.sent")]
+    InboxEmailSent,
+    #[serde(rename = "inbox.draft.created")]
+    InboxDraftCreated,
+    #[serde(rename = "inbox.draft.updated")]
+    InboxDraftUpdated,
+    #[serde(rename = "inbox.draft.sent")]
+    InboxDraftSent,
+    #[serde(rename = "inbox.draft.deleted")]
+    InboxDraftDeleted,
+}
+
+/// An `inbox.*` event. The shape of `data` depends on the event type.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type")]
+#[allow(clippy::large_enum_variant)]
+pub enum InboxEvent {
+    #[serde(rename = "inbox.created")]
+    InboxCreated { created_at: String, data: InboxBody },
+    #[serde(rename = "inbox.updated")]
+    InboxUpdated { created_at: String, data: InboxBody },
+    #[serde(rename = "inbox.deleted")]
+    InboxDeleted {
+        created_at: String,
+        data: InboxDeletedBody,
+    },
+    #[serde(rename = "inbox.thread.created")]
+    InboxThreadCreated {
+        created_at: String,
+        data: InboxThreadEmailBody,
+    },
+    #[serde(rename = "inbox.thread.folder.updated")]
+    InboxThreadFolderUpdated {
+        created_at: String,
+        data: InboxThreadFolderUpdatedBody,
+    },
+    #[serde(rename = "inbox.thread.assigned")]
+    InboxThreadAssigned {
+        created_at: String,
+        data: InboxThreadAssignedBody,
+    },
+    #[serde(rename = "inbox.thread.unassigned")]
+    InboxThreadUnassigned {
+        created_at: String,
+        data: InboxThreadUnassignedBody,
+    },
+    #[serde(rename = "inbox.thread.labels.updated")]
+    InboxThreadLabelsUpdated {
+        created_at: String,
+        data: InboxThreadLabelsUpdatedBody,
+    },
+    #[serde(rename = "inbox.email.received")]
+    InboxEmailReceived {
+        created_at: String,
+        data: InboxThreadEmailBody,
+    },
+    #[serde(rename = "inbox.email.sent")]
+    InboxEmailSent {
+        created_at: String,
+        data: InboxThreadEmailBody,
+    },
+    #[serde(rename = "inbox.draft.created")]
+    InboxDraftCreated {
+        created_at: String,
+        data: InboxDraftBody,
+    },
+    #[serde(rename = "inbox.draft.updated")]
+    InboxDraftUpdated {
+        created_at: String,
+        data: InboxDraftBody,
+    },
+    #[serde(rename = "inbox.draft.sent")]
+    InboxDraftSent {
+        created_at: String,
+        data: InboxDraftSentBody,
+    },
+    #[serde(rename = "inbox.draft.deleted")]
+    InboxDraftDeleted {
+        created_at: String,
+        data: InboxDraftBody,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -541,13 +656,200 @@ pub struct TopicBody {
     pub updated_at: String,
 }
 
+/// What made the change in an `inbox.*` event.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum InboxEventSource {
+    Api,
+    Dashboard,
+    Agent,
+    System,
+}
+
+/// An attachment on an email in an `inbox.*` event.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InboxEventEmailAttachment {
+    /// The ID of the attachment.
+    pub id: String,
+    pub filename: Option<String>,
+    /// The size of the attachment in bytes.
+    pub size: Option<u64>,
+}
+
+/// The email carried by an `inbox.*` event. It has no `html` or `text`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InboxEventEmail {
+    pub id: InboxThreadEmailId,
+    pub direction: InboxEmailDirection,
+    /// The sender, as an address or as `Name <address>`.
+    pub from: String,
+    pub to: Vec<String>,
+    pub cc: Vec<String>,
+    pub bcc: Vec<String>,
+    pub reply_to: Vec<String>,
+    pub subject: Option<String>,
+    /// The Message-ID header of the email.
+    pub message_id: Option<String>,
+    pub attachments: Vec<InboxEventEmailAttachment>,
+    pub read: bool,
+    /// Timestamp when the email arrived or was sent.
+    pub received_at: String,
+}
+
+/// The draft carried by an `inbox.*` event. It has no `html` or `text`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InboxEventDraft {
+    pub object: String,
+    pub id: InboxDraftId,
+    #[serde(rename = "type")]
+    pub r#type: InboxDraftType,
+    pub to: Option<Vec<String>>,
+    pub cc: Vec<String>,
+    pub bcc: Vec<String>,
+    pub subject: Option<String>,
+    /// The ID of the thread when this draft is a reply. `None` otherwise.
+    pub thread_id: Option<InboxThreadId>,
+    /// The ID of the email this draft replies to. `None` otherwise.
+    pub reply_to_email_id: Option<InboxThreadEmailId>,
+    /// The ID of the queued outbound email after send. `None` until then.
+    pub email_id: Option<EmailId>,
+    /// The files stored on the draft.
+    pub attachments: Vec<InboxDraftAttachment>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+/// Data of [`InboxEvent::InboxCreated`] and [`InboxEvent::InboxUpdated`].
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InboxBody {
+    pub source: InboxEventSource,
+    pub inbox_id: InboxId,
+    /// The inbox as it is when the webhook is sent. Absent when the inbox no longer exists.
+    pub inbox: Option<Inbox>,
+}
+
+/// Data of [`InboxEvent::InboxDeleted`].
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InboxDeletedBody {
+    pub source: InboxEventSource,
+    pub inbox_id: InboxId,
+}
+
+/// Data of [`InboxEvent::InboxThreadCreated`], [`InboxEvent::InboxEmailReceived`] and
+/// [`InboxEvent::InboxEmailSent`].
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InboxThreadEmailBody {
+    pub source: InboxEventSource,
+    pub inbox_id: InboxId,
+    pub thread_id: InboxThreadId,
+    pub email_id: InboxThreadEmailId,
+    /// The thread as it is when the webhook is sent. Absent when the thread no longer exists.
+    pub thread: Option<InboxThreadSummary>,
+    /// The email as it is when the webhook is sent, without `html` or `text`. Absent when the
+    /// email no longer exists.
+    pub email: Option<InboxEventEmail>,
+}
+
+/// Data of [`InboxEvent::InboxThreadFolderUpdated`].
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InboxThreadFolderUpdatedBody {
+    /// The folder the thread was in.
+    pub from: InboxFolder,
+    /// The folder the thread moved to.
+    pub to: InboxFolder,
+    pub source: InboxEventSource,
+    pub inbox_id: InboxId,
+    pub thread_id: InboxThreadId,
+    /// The thread as it is when the webhook is sent. Absent when the thread no longer exists.
+    pub thread: Option<InboxThreadSummary>,
+}
+
+/// Data of [`InboxEvent::InboxThreadAssigned`].
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InboxThreadAssignedBody {
+    /// The email of the member the thread is now assigned to.
+    pub assignee_email: Option<String>,
+    /// The email of the member who made the assignment. `None` when no member made it.
+    pub assigned_by_email: Option<String>,
+    /// The email of the member the thread was assigned to before. `None` when it was unassigned.
+    pub previous_assignee_email: Option<String>,
+    pub source: InboxEventSource,
+    pub inbox_id: InboxId,
+    pub thread_id: InboxThreadId,
+    /// The thread as it is when the webhook is sent. Absent when the thread no longer exists.
+    pub thread: Option<InboxThreadSummary>,
+}
+
+/// Data of [`InboxEvent::InboxThreadUnassigned`].
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InboxThreadUnassignedBody {
+    /// The email of the member the thread was assigned to.
+    pub previous_assignee_email: Option<String>,
+    pub source: InboxEventSource,
+    pub inbox_id: InboxId,
+    pub thread_id: InboxThreadId,
+    /// The thread as it is when the webhook is sent. Absent when the thread no longer exists.
+    pub thread: Option<InboxThreadSummary>,
+}
+
+/// Data of [`InboxEvent::InboxThreadLabelsUpdated`]. One event carries one label, in either
+/// `added` or `removed`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InboxThreadLabelsUpdatedBody {
+    /// The labels applied to the thread.
+    pub added: Vec<InboxThreadLabel>,
+    /// The labels removed from the thread.
+    pub removed: Vec<InboxThreadLabel>,
+    pub source: InboxEventSource,
+    pub inbox_id: InboxId,
+    pub thread_id: InboxThreadId,
+    /// The thread as it is when the webhook is sent. Absent when the thread no longer exists.
+    pub thread: Option<InboxThreadSummary>,
+}
+
+/// Data of [`InboxEvent::InboxDraftCreated`], [`InboxEvent::InboxDraftUpdated`] and
+/// [`InboxEvent::InboxDraftDeleted`].
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InboxDraftBody {
+    pub source: InboxEventSource,
+    pub inbox_id: InboxId,
+    /// The ID of the thread. Only on reply drafts.
+    pub thread_id: Option<InboxThreadId>,
+    pub draft_id: InboxDraftId,
+    /// The thread as it is when the webhook is sent. Absent when the thread no longer exists.
+    /// Only on reply drafts.
+    pub thread: Option<InboxThreadSummary>,
+    /// The draft as it is when the webhook is sent, without `html` or `text`. Absent when the
+    /// draft no longer exists.
+    pub draft: Option<InboxEventDraft>,
+}
+
+/// Data of [`InboxEvent::InboxDraftSent`].
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InboxDraftSentBody {
+    pub source: InboxEventSource,
+    pub inbox_id: InboxId,
+    pub thread_id: InboxThreadId,
+    /// The ID of the sent email.
+    pub email_id: EmailId,
+    pub draft_id: InboxDraftId,
+    /// The thread as it is when the webhook is sent. Absent when the thread no longer exists.
+    pub thread: Option<InboxThreadSummary>,
+    /// The email as it is when the webhook is sent, without `html` or `text`. Only when the email
+    /// is already on the thread when the webhook is sent.
+    pub email: Option<InboxEventEmail>,
+    /// The draft as it is when the webhook is sent, without `html` or `text`. Absent when the
+    /// draft no longer exists.
+    pub draft: Option<InboxEventDraft>,
+}
+
 #[allow(clippy::unwrap_used)]
 #[cfg(test)]
 mod test {
     use crate::types::SendEventOptions;
     #[cfg(not(feature = "blocking"))]
     use crate::{
-        events::try_parse_event_type,
+        events::{InboxEventType, try_parse_event_type},
         list_opts::ListOptions,
         test::{CLIENT, DebugResult},
         types::{CreateContactOptions, CreateEventOptions},
@@ -558,9 +860,12 @@ mod test {
     use crate::{
         events::{
             ContactEventType, ContactTopicsEventType, DomainEventType, EmailEventType, Event,
-            SuppressionEventType, TopicEventType, try_parse_event,
+            EventType, InboxEvent, InboxEventSource, SuppressionEventType, TopicEventType,
+            try_parse_event,
         },
-        types::{ContactIdOrEmail, SubscriptionType},
+        types::{
+            ContactIdOrEmail, InboxDraftType, InboxEmailDirection, InboxFolder, SubscriptionType,
+        },
     };
 
     use serde_json::json;
@@ -1529,6 +1834,562 @@ mod test {
         }
     }
 
+    #[test]
+    fn inbox_event_types() {
+        for event_type in [
+            "inbox.created",
+            "inbox.updated",
+            "inbox.deleted",
+            "inbox.thread.created",
+            "inbox.thread.folder.updated",
+            "inbox.thread.assigned",
+            "inbox.thread.unassigned",
+            "inbox.thread.labels.updated",
+            "inbox.email.received",
+            "inbox.email.sent",
+            "inbox.draft.created",
+            "inbox.draft.updated",
+            "inbox.draft.sent",
+            "inbox.draft.deleted",
+        ] {
+            let parsed = serde_json::from_value::<EventType>(json!(event_type)).unwrap();
+            assert!(matches!(parsed, EventType::InboxEventType(_)));
+            assert_eq!(serde_json::to_value(parsed).unwrap(), json!(event_type));
+        }
+    }
+
+    fn parse_inbox_event(data: &str) -> InboxEvent {
+        match try_parse_event(data).unwrap() {
+            Event::InboxEvent(event) => event,
+            other => panic!("Wrong parsing: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn inbox_created() {
+        let data = r#"{
+          "type": "inbox.created",
+          "created_at": "2026-09-29T12:00:00.000Z",
+          "data": {
+            "source": "api",
+            "inbox_id": "b3e2b2b6-3f0e-4c8e-9ad3-2f43a1e2c7f1",
+            "inbox": {
+              "object": "inbox",
+              "id": "b3e2b2b6-3f0e-4c8e-9ad3-2f43a1e2c7f1",
+              "name": "Customer Support",
+              "email_address": "support@example.com",
+              "domain_id": "d91cd9bd-1176-453e-8fc1-35364d380206",
+              "receiving_address": null,
+              "from_name": "Ada from Support",
+              "unread": 0,
+              "drafts": 0,
+              "last_received": null,
+              "created_at": "2026-09-29T12:00:00.000Z",
+              "updated_at": "2026-09-29T12:00:00.000Z"
+            }
+          }
+        }"#;
+
+        match parse_inbox_event(data) {
+            InboxEvent::InboxCreated { data, .. } => {
+                assert_eq!(data.source, InboxEventSource::Api);
+                assert!(data.inbox.is_some());
+            }
+            other => panic!("Wrong parsing: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn inbox_updated() {
+        let data = r#"{
+          "type": "inbox.updated",
+          "created_at": "2026-09-29T12:00:00.000Z",
+          "data": {
+            "source": "dashboard",
+            "inbox_id": "b3e2b2b6-3f0e-4c8e-9ad3-2f43a1e2c7f1",
+            "inbox": {
+              "object": "inbox",
+              "id": "b3e2b2b6-3f0e-4c8e-9ad3-2f43a1e2c7f1",
+              "name": "Customer Support",
+              "email_address": "support@example.com",
+              "domain_id": "d91cd9bd-1176-453e-8fc1-35364d380206",
+              "receiving_address": null,
+              "from_name": "Ada from Support",
+              "unread": 3,
+              "drafts": 2,
+              "last_received": "2026-09-29T11:42:08.000Z",
+              "created_at": "2026-09-01T09:30:00.000Z",
+              "updated_at": "2026-09-29T12:00:00.000Z"
+            }
+          }
+        }"#;
+
+        match parse_inbox_event(data) {
+            InboxEvent::InboxUpdated { data, .. } => assert!(data.inbox.is_some()),
+            other => panic!("Wrong parsing: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn inbox_deleted() {
+        let data = r#"{
+          "type": "inbox.deleted",
+          "created_at": "2026-09-29T12:00:00.000Z",
+          "data": {
+            "source": "api",
+            "inbox_id": "b3e2b2b6-3f0e-4c8e-9ad3-2f43a1e2c7f1"
+          }
+        }"#;
+
+        match parse_inbox_event(data) {
+            InboxEvent::InboxDeleted { data, .. } => {
+                assert_eq!(
+                    data.inbox_id.as_ref(),
+                    "b3e2b2b6-3f0e-4c8e-9ad3-2f43a1e2c7f1"
+                );
+            }
+            other => panic!("Wrong parsing: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn inbox_thread_created() {
+        let data = r#"{
+          "type": "inbox.thread.created",
+          "created_at": "2026-09-29T12:00:00.000Z",
+          "data": {
+            "source": "system",
+            "inbox_id": "b3e2b2b6-3f0e-4c8e-9ad3-2f43a1e2c7f1",
+            "thread_id": "7c1f0a2e-5d3b-4e8a-9f61-2b8d4c6e1a90",
+            "email_id": "4ef9a417-02e9-4d39-ad75-9611e0fcc33c",
+            "thread": {
+              "object": "inbox_thread",
+              "id": "7c1f0a2e-5d3b-4e8a-9f61-2b8d4c6e1a90",
+              "subject": "Question about my invoice",
+              "folder": "inbox",
+              "labels": [],
+              "read": false
+            },
+            "email": {
+              "id": "4ef9a417-02e9-4d39-ad75-9611e0fcc33c",
+              "direction": "inbound",
+              "from": "Steve Wozniak <steve.wozniak@gmail.com>",
+              "to": ["support@example.com"],
+              "cc": [],
+              "bcc": [],
+              "reply_to": [],
+              "subject": "Question about my invoice",
+              "message_id": "<CAF7c1f0a2e5d3b@mail.gmail.com>",
+              "attachments": [
+                {
+                  "id": "2a0c9ce0-3112-4728-976e-47ddcd16a318",
+                  "filename": "invoice.pdf",
+                  "size": 48213
+                }
+              ],
+              "read": false,
+              "received_at": "2026-09-29T12:00:00.000Z"
+            }
+          }
+        }"#;
+
+        match parse_inbox_event(data) {
+            InboxEvent::InboxThreadCreated { data, .. } => {
+                assert_eq!(data.email.unwrap().attachments.len(), 1);
+            }
+            other => panic!("Wrong parsing: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn inbox_thread_folder_updated() {
+        let data = r#"{
+          "type": "inbox.thread.folder.updated",
+          "created_at": "2026-09-29T12:00:00.000Z",
+          "data": {
+            "from": "inbox",
+            "to": "archive",
+            "source": "dashboard",
+            "inbox_id": "b3e2b2b6-3f0e-4c8e-9ad3-2f43a1e2c7f1",
+            "thread_id": "7c1f0a2e-5d3b-4e8a-9f61-2b8d4c6e1a90",
+            "thread": {
+              "object": "inbox_thread",
+              "id": "7c1f0a2e-5d3b-4e8a-9f61-2b8d4c6e1a90",
+              "subject": "Question about my invoice",
+              "folder": "archive",
+              "labels": [],
+              "read": true
+            }
+          }
+        }"#;
+
+        match parse_inbox_event(data) {
+            InboxEvent::InboxThreadFolderUpdated { data, .. } => {
+                assert_eq!(data.from, InboxFolder::Inbox);
+                assert_eq!(data.to, InboxFolder::Archive);
+            }
+            other => panic!("Wrong parsing: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn inbox_thread_assigned() {
+        let data = r#"{
+          "type": "inbox.thread.assigned",
+          "created_at": "2026-09-29T12:00:00.000Z",
+          "data": {
+            "assignee_email": "ada@example.com",
+            "assigned_by_email": "grace@example.com",
+            "previous_assignee_email": null,
+            "source": "dashboard",
+            "inbox_id": "b3e2b2b6-3f0e-4c8e-9ad3-2f43a1e2c7f1",
+            "thread_id": "7c1f0a2e-5d3b-4e8a-9f61-2b8d4c6e1a90",
+            "thread": {
+              "object": "inbox_thread",
+              "id": "7c1f0a2e-5d3b-4e8a-9f61-2b8d4c6e1a90",
+              "subject": "Question about my invoice",
+              "folder": "inbox",
+              "labels": [],
+              "read": false
+            }
+          }
+        }"#;
+
+        match parse_inbox_event(data) {
+            InboxEvent::InboxThreadAssigned { data, .. } => {
+                assert!(data.previous_assignee_email.is_none());
+            }
+            other => panic!("Wrong parsing: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn inbox_thread_unassigned() {
+        let data = r#"{
+          "type": "inbox.thread.unassigned",
+          "created_at": "2026-09-29T12:00:00.000Z",
+          "data": {
+            "previous_assignee_email": "ada@example.com",
+            "source": "dashboard",
+            "inbox_id": "b3e2b2b6-3f0e-4c8e-9ad3-2f43a1e2c7f1",
+            "thread_id": "7c1f0a2e-5d3b-4e8a-9f61-2b8d4c6e1a90",
+            "thread": {
+              "object": "inbox_thread",
+              "id": "7c1f0a2e-5d3b-4e8a-9f61-2b8d4c6e1a90",
+              "subject": "Question about my invoice",
+              "folder": "inbox",
+              "labels": [],
+              "read": false
+            }
+          }
+        }"#;
+
+        match parse_inbox_event(data) {
+            InboxEvent::InboxThreadUnassigned { data, .. } => {
+                assert!(data.previous_assignee_email.is_some());
+            }
+            other => panic!("Wrong parsing: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn inbox_thread_labels_updated() {
+        let data = r##"{
+          "type": "inbox.thread.labels.updated",
+          "created_at": "2026-09-29T12:00:00.000Z",
+          "data": {
+            "added": [
+              {
+                "id": "c0a8012e-3b4f-4d7a-9e21-5f6a7b8c9d0e",
+                "name": "Billing",
+                "color": "#F76B15"
+              }
+            ],
+            "removed": [],
+            "source": "dashboard",
+            "inbox_id": "b3e2b2b6-3f0e-4c8e-9ad3-2f43a1e2c7f1",
+            "thread_id": "7c1f0a2e-5d3b-4e8a-9f61-2b8d4c6e1a90",
+            "thread": {
+              "object": "inbox_thread",
+              "id": "7c1f0a2e-5d3b-4e8a-9f61-2b8d4c6e1a90",
+              "subject": "Question about my invoice",
+              "folder": "inbox",
+              "labels": [
+                {
+                  "id": "c0a8012e-3b4f-4d7a-9e21-5f6a7b8c9d0e",
+                  "name": "Billing",
+                  "color": "#F76B15"
+                }
+              ],
+              "read": false
+            }
+          }
+        }"##;
+
+        match parse_inbox_event(data) {
+            InboxEvent::InboxThreadLabelsUpdated { data, .. } => {
+                assert_eq!(data.added.len(), 1);
+                assert!(data.removed.is_empty());
+            }
+            other => panic!("Wrong parsing: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn inbox_email_received() {
+        let data = r#"{
+          "type": "inbox.email.received",
+          "created_at": "2026-09-29T12:00:00.000Z",
+          "data": {
+            "source": "system",
+            "inbox_id": "b3e2b2b6-3f0e-4c8e-9ad3-2f43a1e2c7f1",
+            "thread_id": "7c1f0a2e-5d3b-4e8a-9f61-2b8d4c6e1a90",
+            "email_id": "4ef9a417-02e9-4d39-ad75-9611e0fcc33c",
+            "thread": {
+              "object": "inbox_thread",
+              "id": "7c1f0a2e-5d3b-4e8a-9f61-2b8d4c6e1a90",
+              "subject": "Question about my invoice",
+              "folder": "inbox",
+              "labels": [],
+              "read": false
+            },
+            "email": {
+              "id": "4ef9a417-02e9-4d39-ad75-9611e0fcc33c",
+              "direction": "inbound",
+              "from": "Steve Wozniak <steve.wozniak@gmail.com>",
+              "to": ["support@example.com"],
+              "cc": [],
+              "bcc": [],
+              "reply_to": [],
+              "subject": "Question about my invoice",
+              "message_id": "<CAF7c1f0a2e5d3b@mail.gmail.com>",
+              "attachments": [
+                {
+                  "id": "2a0c9ce0-3112-4728-976e-47ddcd16a318",
+                  "filename": "invoice.pdf",
+                  "size": 48213
+                }
+              ],
+              "read": false,
+              "received_at": "2026-09-29T12:00:00.000Z"
+            }
+          }
+        }"#;
+
+        match parse_inbox_event(data) {
+            InboxEvent::InboxEmailReceived { data, .. } => {
+                assert_eq!(data.email.unwrap().direction, InboxEmailDirection::Inbound);
+            }
+            other => panic!("Wrong parsing: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn inbox_email_sent() {
+        let data = r#"{
+          "type": "inbox.email.sent",
+          "created_at": "2026-09-29T12:00:00.000Z",
+          "data": {
+            "source": "system",
+            "inbox_id": "b3e2b2b6-3f0e-4c8e-9ad3-2f43a1e2c7f1",
+            "thread_id": "7c1f0a2e-5d3b-4e8a-9f61-2b8d4c6e1a90",
+            "email_id": "4ef9a417-02e9-4d39-ad75-9611e0fcc33c",
+            "thread": {
+              "object": "inbox_thread",
+              "id": "7c1f0a2e-5d3b-4e8a-9f61-2b8d4c6e1a90",
+              "subject": "Question about my invoice",
+              "folder": "inbox",
+              "labels": [],
+              "read": true
+            },
+            "email": {
+              "id": "4ef9a417-02e9-4d39-ad75-9611e0fcc33c",
+              "direction": "outbound",
+              "from": "Ada from Support <support@example.com>",
+              "to": ["steve.wozniak@gmail.com"],
+              "cc": [],
+              "bcc": [],
+              "reply_to": [],
+              "subject": "Re: Question about my invoice",
+              "message_id": "<0100019a4ef9a417@email.amazonses.com>",
+              "attachments": [],
+              "read": true,
+              "received_at": "2026-09-29T12:00:00.000Z"
+            }
+          }
+        }"#;
+
+        match parse_inbox_event(data) {
+            InboxEvent::InboxEmailSent { data, .. } => {
+                assert_eq!(data.email.unwrap().direction, InboxEmailDirection::Outbound);
+            }
+            other => panic!("Wrong parsing: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn inbox_draft_created() {
+        let data = r#"{
+          "type": "inbox.draft.created",
+          "created_at": "2026-09-29T12:00:00.000Z",
+          "data": {
+            "source": "api",
+            "inbox_id": "b3e2b2b6-3f0e-4c8e-9ad3-2f43a1e2c7f1",
+            "thread_id": "7c1f0a2e-5d3b-4e8a-9f61-2b8d4c6e1a90",
+            "draft_id": "9a2b7c4d-1e3f-4a5b-8c6d-0e1f2a3b4c5d",
+            "thread": {
+              "object": "inbox_thread",
+              "id": "7c1f0a2e-5d3b-4e8a-9f61-2b8d4c6e1a90",
+              "subject": "Question about my invoice",
+              "folder": "inbox",
+              "labels": [],
+              "read": false
+            },
+            "draft": {
+              "object": "inbox_draft",
+              "id": "9a2b7c4d-1e3f-4a5b-8c6d-0e1f2a3b4c5d",
+              "type": "reply",
+              "to": ["steve.wozniak@gmail.com"],
+              "cc": [],
+              "bcc": [],
+              "subject": "Re: Question about my invoice",
+              "thread_id": "7c1f0a2e-5d3b-4e8a-9f61-2b8d4c6e1a90",
+              "reply_to_email_id": "4ef9a417-02e9-4d39-ad75-9611e0fcc33c",
+              "email_id": null,
+              "attachments": [{ "id": "5c1e9d2a-7b3f-4e8a-9c6d-2f0a1b3c4d5e", "filename": "receipt.pdf", "content_type": "application/pdf", "size": 20841 }],
+              "created_at": "2026-09-29T11:58:00.000Z",
+              "updated_at": "2026-09-29T12:00:00.000Z"
+            }
+          }
+        }"#;
+
+        match parse_inbox_event(data) {
+            InboxEvent::InboxDraftCreated { data, .. } => {
+                let draft = data.draft.unwrap();
+                assert_eq!(draft.r#type, InboxDraftType::Reply);
+                assert_eq!(draft.attachments.first().unwrap().size, 20841);
+            }
+            other => panic!("Wrong parsing: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn inbox_draft_updated() {
+        let data = r#"{
+          "type": "inbox.draft.updated",
+          "created_at": "2026-09-29T12:00:00.000Z",
+          "data": {
+            "source": "agent",
+            "inbox_id": "b3e2b2b6-3f0e-4c8e-9ad3-2f43a1e2c7f1",
+            "thread_id": "7c1f0a2e-5d3b-4e8a-9f61-2b8d4c6e1a90",
+            "draft_id": "9a2b7c4d-1e3f-4a5b-8c6d-0e1f2a3b4c5d",
+            "thread": {
+              "object": "inbox_thread",
+              "id": "7c1f0a2e-5d3b-4e8a-9f61-2b8d4c6e1a90",
+              "subject": "Question about my invoice",
+              "folder": "inbox",
+              "labels": [],
+              "read": false
+            },
+            "draft": {
+              "object": "inbox_draft",
+              "id": "9a2b7c4d-1e3f-4a5b-8c6d-0e1f2a3b4c5d",
+              "type": "reply",
+              "to": ["steve.wozniak@gmail.com"],
+              "cc": [],
+              "bcc": [],
+              "subject": "Re: Question about my invoice",
+              "thread_id": "7c1f0a2e-5d3b-4e8a-9f61-2b8d4c6e1a90",
+              "reply_to_email_id": "4ef9a417-02e9-4d39-ad75-9611e0fcc33c",
+              "email_id": null,
+              "attachments": [{ "id": "5c1e9d2a-7b3f-4e8a-9c6d-2f0a1b3c4d5e", "filename": "receipt.pdf", "content_type": "application/pdf", "size": 20841 }],
+              "created_at": "2026-09-29T11:58:00.000Z",
+              "updated_at": "2026-09-29T12:00:00.000Z"
+            }
+          }
+        }"#;
+
+        match parse_inbox_event(data) {
+            InboxEvent::InboxDraftUpdated { data, .. } => {
+                assert_eq!(data.source, InboxEventSource::Agent);
+            }
+            other => panic!("Wrong parsing: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn inbox_draft_sent() {
+        let data = r#"{
+          "type": "inbox.draft.sent",
+          "created_at": "2026-09-29T12:00:00.000Z",
+          "data": {
+            "source": "api",
+            "inbox_id": "b3e2b2b6-3f0e-4c8e-9ad3-2f43a1e2c7f1",
+            "thread_id": "7c1f0a2e-5d3b-4e8a-9f61-2b8d4c6e1a90",
+            "email_id": "81ce9b8d-1b0a-4d02-a4d9-2a91f5ab6397",
+            "draft_id": "9a2b7c4d-1e3f-4a5b-8c6d-0e1f2a3b4c5d",
+            "thread": {
+              "object": "inbox_thread",
+              "id": "7c1f0a2e-5d3b-4e8a-9f61-2b8d4c6e1a90",
+              "subject": "Question about my invoice",
+              "folder": "inbox",
+              "labels": [],
+              "read": true
+            },
+            "draft": {
+              "object": "inbox_draft",
+              "id": "9a2b7c4d-1e3f-4a5b-8c6d-0e1f2a3b4c5d",
+              "type": "reply",
+              "to": ["steve.wozniak@gmail.com"],
+              "cc": [],
+              "bcc": [],
+              "subject": "Re: Question about my invoice",
+              "thread_id": "7c1f0a2e-5d3b-4e8a-9f61-2b8d4c6e1a90",
+              "reply_to_email_id": "4ef9a417-02e9-4d39-ad75-9611e0fcc33c",
+              "email_id": "81ce9b8d-1b0a-4d02-a4d9-2a91f5ab6397",
+              "attachments": [{ "id": "5c1e9d2a-7b3f-4e8a-9c6d-2f0a1b3c4d5e", "filename": "receipt.pdf", "content_type": "application/pdf", "size": 20841 }],
+              "created_at": "2026-09-29T11:58:00.000Z",
+              "updated_at": "2026-09-29T12:00:00.000Z"
+            }
+          }
+        }"#;
+
+        match parse_inbox_event(data) {
+            InboxEvent::InboxDraftSent { data, .. } => {
+                assert!(data.email.is_none());
+                assert!(data.draft.unwrap().email_id.is_some());
+            }
+            other => panic!("Wrong parsing: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn inbox_draft_deleted() {
+        let data = r#"{
+          "type": "inbox.draft.deleted",
+          "created_at": "2026-09-29T12:00:00.000Z",
+          "data": {
+            "source": "dashboard",
+            "inbox_id": "b3e2b2b6-3f0e-4c8e-9ad3-2f43a1e2c7f1",
+            "thread_id": "7c1f0a2e-5d3b-4e8a-9f61-2b8d4c6e1a90",
+            "draft_id": "9a2b7c4d-1e3f-4a5b-8c6d-0e1f2a3b4c5d",
+            "thread": {
+              "object": "inbox_thread",
+              "id": "7c1f0a2e-5d3b-4e8a-9f61-2b8d4c6e1a90",
+              "subject": "Question about my invoice",
+              "folder": "inbox",
+              "labels": [],
+              "read": false
+            }
+          }
+        }"#;
+
+        match parse_inbox_event(data) {
+            InboxEvent::InboxDraftDeleted { data, .. } => assert!(data.draft.is_none()),
+            other => panic!("Wrong parsing: {other:?}"),
+        }
+    }
+
     /// Similar to the test in `error.rs`
     #[allow(clippy::unwrap_used)]
     #[tokio_shared_rt::test(shared = true)]
@@ -1550,11 +2411,11 @@ mod test {
             + ContactTopicsEventType::COUNT
             + DomainEventType::COUNT
             + SuppressionEventType::COUNT
-            + TopicEventType::COUNT;
+            + TopicEventType::COUNT
+            + InboxEventType::COUNT;
         let actual = fragment
             .select(&selector)
             .map(|el| el.inner_html())
-            .filter(|el| !el.starts_with("inbox")) // TODO: These are currently in private beta and we dont support them YET
             .collect::<Vec<_>>();
 
         for el in &actual {
