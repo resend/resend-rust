@@ -981,7 +981,6 @@ pub mod types {
         ConciseCasual,
         ExpandedProfessional,
         ExpandedCasual,
-        Null,
     }
 
     /// The agent settings of an inbox.
@@ -991,8 +990,8 @@ pub mod types {
         /// Instructions the agent follows when it handles the threads of the inbox. `None` when
         /// no instructions are set.
         pub instructions: Option<String>,
-        /// The tone the agent writes in. `null` when no tone is set.
-        pub tone: InboxAgentTone,
+        /// The tone the agent writes in. `None` when no tone is set.
+        pub tone: Option<InboxAgentTone>,
         /// The actions the agent can take. Empty when no actions are enabled.
         pub actions: Vec<InboxAgentAction>,
     }
@@ -1007,7 +1006,7 @@ pub mod types {
         #[serde(skip_serializing_if = "Option::is_none")]
         instructions: Option<Nullable<String>>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        tone: Option<InboxAgentTone>,
+        tone: Option<Nullable<InboxAgentTone>>,
         #[serde(skip_serializing_if = "Option::is_none")]
         actions: Option<Vec<InboxAgentAction>>,
     }
@@ -1035,15 +1034,15 @@ pub mod types {
 
         /// The tone the agent writes in.
         #[inline]
-        pub const fn with_tone(mut self, tone: InboxAgentTone) -> Self {
-            self.tone = Some(tone);
+        pub fn with_tone(mut self, tone: InboxAgentTone) -> Self {
+            self.tone = Some(Nullable::Value(tone));
             self
         }
 
         /// Sends `null` to clear the tone.
         #[inline]
         pub fn clear_tone(mut self) -> Self {
-            self.tone = Some(InboxAgentTone::Null);
+            self.tone = Some(Nullable::Null);
             self
         }
 
@@ -2411,7 +2410,7 @@ mod test {
 }"#;
         let agent = serde_json::from_str::<InboxAgent>(agent).unwrap();
         assert!(agent.instructions.is_none());
-        assert_eq!(agent.tone, InboxAgentTone::ConciseCasual);
+        assert_eq!(agent.tone, Some(InboxAgentTone::ConciseCasual));
         assert_eq!(
             agent.actions,
             vec![
@@ -2420,6 +2419,15 @@ mod test {
                 InboxAgentAction::MoveToTrash
             ]
         );
+
+        let no_tone = r#"{
+  "object": "inbox_agent",
+  "instructions": null,
+  "tone": null,
+  "actions": []
+}"#;
+        let no_tone = serde_json::from_str::<InboxAgent>(no_tone).unwrap();
+        assert!(no_tone.tone.is_none());
 
         let update = UpdateInboxAgentOptions::new()
             .clear_instructions()
@@ -2432,6 +2440,11 @@ mod test {
                 "tone": "expanded_professional",
                 "actions": []
             })
+        );
+
+        assert_eq!(
+            serde_json::to_value(UpdateInboxAgentOptions::new().clear_tone()).unwrap(),
+            serde_json::json!({ "tone": null })
         );
 
         assert_eq!(
