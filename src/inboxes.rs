@@ -247,11 +247,14 @@ impl InboxesSvc {
     #[maybe_async::maybe_async]
     pub async fn list_threads<T>(
         &self,
-        inbox_id: &str,
+        inbox_id_or_email: &str,
         filters: ListInboxThreadsOptions,
         list_opts: ListOptions<T>,
     ) -> Result<ListResponse<InboxThread>> {
-        let path = format!("/inboxes/{}/threads", urlencoding::encode(inbox_id));
+        let path = format!(
+            "/inboxes/{}/threads",
+            urlencoding::encode(inbox_id_or_email)
+        );
 
         let request = self
             .0
