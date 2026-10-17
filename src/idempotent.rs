@@ -30,7 +30,10 @@
 //!  Ok(())
 //!}
 //! ```
-use crate::types::CreateEmailBaseOptions;
+use crate::types::{
+    CreateEmailBaseOptions, CreateInboxDraftOptions, ForwardInboxThreadEmailOptions,
+    ReplyInboxThreadEmailOptions, SendInboxDraftOptions,
+};
 
 /// Wrapper struct for adding an `idempotency_key` header to data `T`.
 #[derive(Debug, Clone, serde::Serialize)]
@@ -57,6 +60,10 @@ macro_rules! idempotent_from {
 
 idempotent_from!(CreateEmailBaseOptions);
 idempotent_from!(Vec<CreateEmailBaseOptions>);
+idempotent_from!(CreateInboxDraftOptions);
+idempotent_from!(ReplyInboxThreadEmailOptions);
+idempotent_from!(ForwardInboxThreadEmailOptions);
+idempotent_from!(SendInboxDraftOptions);
 
 /// Used to add easy conversion of trait impls to [`Idempotent`].
 pub trait IdempotentTrait<T> {
