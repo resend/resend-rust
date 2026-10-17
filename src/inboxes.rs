@@ -29,15 +29,6 @@ pub struct InboxesSvc(pub(crate) Arc<Config>);
 impl InboxesSvc {
     /// Creates an inbox that sends and receives email at an address on one of your domains.
     ///
-    /// The domain must belong to the team. Without `forwarding`, the domain must have receiving
-    /// enabled, with DKIM and SPF verified and the inbound MX record verified or pending. With
-    /// `forwarding` set to `true`, the domain only needs DKIM and SPF verified for sending, and
-    /// Resend generates a `receiving_address` on the team inbound domain, and a team without an
-    /// inbound domain gets a 422. A domain that does not meet these rules returns a 422
-    /// `validation_error`. An address or receiving address that is already in use returns a 409.
-    /// A team that has reached the inbox limit of its plan returns a 403 `validation_error`. A
-    /// blocked account returns a 451.
-    ///
     /// <https://resend.com/docs/api-reference/inboxes/create-inbox>
     #[maybe_async::maybe_async]
     pub async fn create(&self, inbox: CreateInboxOptions) -> Result<CreateInboxResponse> {
@@ -50,10 +41,6 @@ impl InboxesSvc {
 
     /// Returns the inboxes of the team, newest first.
     ///
-    /// The list items carry fewer fields than a single inbox. Retrieve an inbox to get all its
-    /// fields. The `after` and `before` cursors take an inbox ID, and only one of them can be
-    /// passed. A value that is not a UUID returns a 422, and an unknown ID returns a 404.
-    ///
     /// <https://resend.com/docs/api-reference/inboxes/list-inboxes>
     #[maybe_async::maybe_async]
     pub async fn list<T>(&self, list_opts: ListOptions<T>) -> Result<ListResponse<InboxListItem>> {
@@ -65,11 +52,6 @@ impl InboxesSvc {
     }
 
     /// Retrieve a single inbox by ID or email address.
-    ///
-    /// `inbox_id_or_email` is the Inbox ID or the inbox email address, such as
-    /// `support@acme.com`. A value that contains `@` must be a valid email address, and any other
-    /// value must be a UUID, or the request returns a 422. The address match is case-insensitive
-    /// and never falls back to the inbox `name`. An address that matches no inbox returns a 404.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/get-inbox>
     #[maybe_async::maybe_async]
@@ -84,7 +66,7 @@ impl InboxesSvc {
     }
 
     /// Updates the internal name of the inbox or the name recipients see when mail is sent from
-    /// it. At least one of `name` or `from_name` is required.
+    /// it.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/update-inbox>
     #[maybe_async::maybe_async]
@@ -102,8 +84,7 @@ impl InboxesSvc {
         Ok(content)
     }
 
-    /// Removes the inbox. An inbox that does not exist or was already removed returns a 404
-    /// `not_found`.
+    /// Removes the inbox.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/delete-inbox>
     #[maybe_async::maybe_async]
@@ -119,9 +100,6 @@ impl InboxesSvc {
 
     /// Returns the agent settings of the inbox.
     ///
-    /// An inbox without a configured agent returns empty settings: `instructions` and `tone` are
-    /// `None` and `actions` is empty.
-    ///
     /// <https://resend.com/docs/api-reference/inboxes/get-agent>
     #[maybe_async::maybe_async]
     pub async fn get_agent(&self, inbox_id_or_email: &str) -> Result<InboxAgent> {
@@ -134,8 +112,7 @@ impl InboxesSvc {
         Ok(content)
     }
 
-    /// Updates the agent settings of the inbox. The agent is created when the inbox has none.
-    /// Omitted fields keep their current value.
+    /// Updates the agent settings of the inbox.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/update-agent>
     #[maybe_async::maybe_async]
@@ -153,7 +130,7 @@ impl InboxesSvc {
         Ok(content)
     }
 
-    /// Returns every label on the inbox, oldest first. The list is not paginated.
+    /// Returns every label on the inbox, oldest first.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/list-labels>
     #[maybe_async::maybe_async]
@@ -168,10 +145,6 @@ impl InboxesSvc {
     }
 
     /// Create a label on an inbox.
-    ///
-    /// A label is a named, colored tag that belongs to one inbox. An inbox can have at most 100
-    /// labels. Label names are unique per inbox, compared without case. A duplicate name or a
-    /// full inbox returns a 422 `validation_error`.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/create-label>
     #[maybe_async::maybe_async]
@@ -189,10 +162,7 @@ impl InboxesSvc {
         Ok(content)
     }
 
-    /// Renames or recolors a label. Omitted fields keep their current value.
-    ///
-    /// A new name must not match another label on the inbox, compared without case, or the
-    /// request returns a 422 `validation_error`.
+    /// Renames or recolors a label.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/update-label>
     #[maybe_async::maybe_async]
@@ -237,12 +207,6 @@ impl InboxesSvc {
 
     /// Returns the threads in an inbox, most recently active first.
     ///
-    /// A thread is a conversation made up of one or more emails. The `after` and `before` cursors
-    /// take a thread ID, and only one of them can be passed. A cursor that is not a UUID, such as
-    /// a date, returns a 422 `validation_error`. A cursor thread that is not in the selected
-    /// folders returns a 404. To find threads by text, sender, recipient, attachment, or
-    /// date, use [`InboxesSvc::search_threads`].
-    ///
     /// <https://resend.com/docs/api-reference/inboxes/list-threads>
     #[maybe_async::maybe_async]
     pub async fn list_threads<T>(
@@ -270,15 +234,6 @@ impl InboxesSvc {
     /// Finds threads by the text of their emails, who sent or received them, whether they have
     /// attachments, and their dates.
     ///
-    /// Results are ordered by latest activity, newest first, and paginate like
-    /// [`InboxesSvc::list_threads`]. Search can be up to about a minute behind new emails.
-    /// Different parameters combine, so a thread must match all of them. `folders`, `labels`, and
-    /// `read` apply to the thread. `query`, `from`, `to`, `cc`, `bcc`, `has_attachment`,
-    /// `start_date`, and `end_date` must all match the same email in the thread. When any of these
-    /// email filters is set, the matching email must itself be in one of `folders`. For `sent`,
-    /// that means an email the inbox sent. When more than 10,000 threads match, search covers the
-    /// 10,000 with the newest matching email.
-    ///
     /// <https://resend.com/docs/api-reference/inboxes/search-threads>
     #[maybe_async::maybe_async]
     pub async fn search_threads<T>(
@@ -305,8 +260,7 @@ impl InboxesSvc {
         Ok(content)
     }
 
-    /// Returns the thread summary. The emails in the thread are listed with
-    /// [`InboxesSvc::list_thread_emails`].
+    /// Returns the thread summary.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/get-thread>
     #[maybe_async::maybe_async]
@@ -328,13 +282,6 @@ impl InboxesSvc {
     }
 
     /// Marks a thread read or unread, or moves it to a folder.
-    ///
-    /// At least one of `read` or `folder` is required. To change the labels of a thread, use
-    /// [`InboxesSvc::add_thread_labels`], [`InboxesSvc::set_thread_labels`] and
-    /// [`InboxesSvc::remove_thread_label`]. The removed `add_label_ids` and `remove_label_ids`
-    /// fields are ignored, so a body with only those fields returns a 422 `validation_error`.
-    /// Moving a thread out of `trash` restores it and clears its deletion deadline. The changes
-    /// apply in this order: `read`, then `folder`. They are not atomic.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/update-thread>
     #[maybe_async::maybe_async]
@@ -358,9 +305,6 @@ impl InboxesSvc {
 
     /// Moves the thread to `trash` and schedules it for deletion in 30 days.
     ///
-    /// This is reversible. To restore the thread, update its `folder` to `inbox`, `archive`, or
-    /// `spam`, which also clears the deletion deadline.
-    ///
     /// <https://resend.com/docs/api-reference/inboxes/delete-thread>
     #[maybe_async::maybe_async]
     pub async fn delete_thread(
@@ -381,11 +325,6 @@ impl InboxesSvc {
     }
 
     /// Applies one or more labels to the thread. Labels already on the thread stay on it.
-    ///
-    /// `labels` holds between 1 and 10 label IDs, each a label of the inbox. A label ID that is
-    /// not a label of the inbox returns a 404, and nothing changes. A thread that does not exist
-    /// in the inbox returns a 404. To replace the labels of the thread, use
-    /// [`InboxesSvc::set_thread_labels`]. Returns every label on the thread after the change.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/add-thread-labels>
     #[maybe_async::maybe_async]
@@ -412,11 +351,6 @@ impl InboxesSvc {
 
     /// Replaces every label on the thread with the given labels, in one atomic change.
     ///
-    /// `labels` holds up to 100 label IDs, each a label of the inbox. The labels themselves are
-    /// kept. An empty slice takes every label off the thread. A label ID that is not a label of
-    /// the inbox returns a 404, and nothing changes. A thread that does not exist in the inbox
-    /// returns a 404. Returns every label on the thread after the change.
-    ///
     /// <https://resend.com/docs/api-reference/inboxes/set-thread-labels>
     #[maybe_async::maybe_async]
     pub async fn set_thread_labels(
@@ -440,13 +374,7 @@ impl InboxesSvc {
         Ok(content)
     }
 
-    /// Takes one label off the thread. The label itself is kept, and stays on every other thread
-    /// that carries it.
-    ///
-    /// A label that is not on the thread returns the current labels. A label ID that is not a
-    /// label of the inbox, or a thread that does not exist in the inbox, returns a 404. To delete
-    /// the label, use [`InboxesSvc::delete_label`]. Returns every label on the thread after the
-    /// change.
+    /// Takes one label off the thread.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/remove-thread-label>
     #[maybe_async::maybe_async]
@@ -470,11 +398,6 @@ impl InboxesSvc {
 
     /// Returns the messages of a thread, oldest first.
     ///
-    /// Pass the `id` of the last message as `after` to get the next, newer page. Pass the `id` of
-    /// the first message as `before` to get the previous, older page. You cannot combine `after`
-    /// and `before`. A cursor that is not a UUID returns a 422. A cursor that is not a message of
-    /// the thread returns a 404.
-    ///
     /// <https://resend.com/docs/api-reference/inboxes/list-thread-emails>
     #[maybe_async::maybe_async]
     pub async fn list_thread_emails<T>(
@@ -497,9 +420,6 @@ impl InboxesSvc {
 
     /// Retrieve a single thread email.
     ///
-    /// `email_id` is the Email ID, as returned in `data[].id` by
-    /// [`InboxesSvc::list_thread_emails`].
-    ///
     /// <https://resend.com/docs/api-reference/inboxes/get-thread-email>
     #[maybe_async::maybe_async]
     pub async fn get_thread_email(
@@ -521,14 +441,6 @@ impl InboxesSvc {
     }
 
     /// Sends a reply from the inbox address right away, with no stored draft.
-    ///
-    /// The `to` recipients come from the message you reply to. For a message the inbox received,
-    /// the reply goes to its `Reply-To` addresses, or to its sender when it has no `Reply-To`. For
-    /// a message the inbox sent, the reply goes to that message's `to` recipients. Set
-    /// `reply_all` to also copy the other recipients of the message. The reply threads under the
-    /// message through the `In-Reply-To` and `References` headers. When no recipient can be found
-    /// for the reply, the request returns a 422. The whole email, encoded, can be at most 40 MB,
-    /// or the request returns a 422.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/reply-thread-email>
     #[maybe_async::maybe_async]
@@ -559,13 +471,6 @@ impl InboxesSvc {
 
     /// Forwards a message from the inbox address right away, with no stored draft.
     ///
-    /// The original message is quoted under a forwarded-message banner, below the optional
-    /// `html` or `text` note. The attachments of the original message are sent with the forward,
-    /// together with any `attachments` you add. The request returns a 422 when they exceed 25 MB
-    /// of `content` in total. An original attachment that was sent from a URL (`path`) cannot be
-    /// forwarded, and the request returns a 422. The whole email, encoded, can be at most 40 MB,
-    /// or the request returns a 422.
-    ///
     /// <https://resend.com/docs/api-reference/inboxes/forward-thread-email>
     #[maybe_async::maybe_async]
     pub async fn forward_thread_email(
@@ -595,10 +500,6 @@ impl InboxesSvc {
 
     /// Returns the unsent drafts on the inbox, most recently updated first.
     ///
-    /// The `after` and `before` cursors take a Draft ID from the current page, and only one of
-    /// them can be passed. A cursor that is not a UUID, or both cursors together, return a 422.
-    /// A cursor that is not an unsent draft on this inbox returns a 404.
-    ///
     /// <https://resend.com/docs/api-reference/inboxes/list-drafts>
     #[maybe_async::maybe_async]
     pub async fn list_drafts<T>(
@@ -616,19 +517,6 @@ impl InboxesSvc {
     }
 
     /// Creates an unsent draft on the inbox.
-    ///
-    /// Use [`CreateInboxDraftOptions::new`] for a draft that starts a new thread, and
-    /// [`CreateInboxDraftOptions::reply`] for a reply draft in an existing thread. At least one of
-    /// `to`, `cc`, `bcc`, `subject`, `text`, `html` or `attachments` must be non-empty. The
-    /// combined recipients of `to`, `cc` and `bcc` cannot exceed 50. Attachments are stored on the
-    /// draft, so each one needs `content`, `filename` and `content_type`. A new draft returns a
-    /// 201. Only one unsent reply draft can target an email, so a reply draft request for an email
-    /// that already has one returns a 200 with the ID of the existing draft. That request ignores
-    /// every other field, except `attachments`, which replaces the attachments of the existing
-    /// draft when sent. An unknown `thread_id`, or a `reply_to_email_id` that is not in that
-    /// thread, returns a 404. A reply draft created without `subject` stores an empty subject.
-    /// When it is sent, it takes the thread subject, prefixed with `Re:` when it does not already
-    /// start with it.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/create-draft>
     #[maybe_async::maybe_async]
@@ -671,13 +559,6 @@ impl InboxesSvc {
 
     /// Updates the content of an unsent draft. Omitted fields are left unchanged.
     ///
-    /// Send at least one of `to`, `cc`, `bcc`, `subject`, `text`, `html` or `attachments`.
-    /// Sending `attachments` replaces every attachment on the draft. A request that sets `text` or
-    /// `html` replaces the whole body. The body part you omit from that request becomes
-    /// `null`. The merged draft must still contain at least one non-empty field, and its combined
-    /// recipients cannot exceed 50. A draft that was already sent, or that changed during the
-    /// request, returns a 409. The response carries only `object` and `id`.
-    ///
     /// <https://resend.com/docs/api-reference/inboxes/update-draft>
     #[maybe_async::maybe_async]
     pub async fn update_draft(
@@ -698,8 +579,7 @@ impl InboxesSvc {
         Ok(content)
     }
 
-    /// Discards an unsent draft. A draft that was already sent, or that changed during the
-    /// request, returns a 409.
+    /// Discards an unsent draft.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/delete-draft>
     #[maybe_async::maybe_async]
@@ -721,15 +601,6 @@ impl InboxesSvc {
     }
 
     /// Sends the draft from the inbox address.
-    ///
-    /// A reply draft is sent in its thread. A draft without a thread starts a new thread. The
-    /// draft must have at least one `to` recipient and `html` or `text`, or the request returns a
-    /// 422. A standalone draft also needs a non-empty `subject`; a reply draft with an empty
-    /// `subject` is sent with the thread subject, prefixed with `Re:` when it does not already
-    /// start with it. A draft that was already sent returns a 409. The whole email, encoded, can
-    /// be at most 40 MB, or the request returns a 422. The request body is optional and takes
-    /// only `headers`. Use [`SendInboxDraftOptions::with_header`] to add custom headers, and
-    /// [`SendInboxDraftOptions::with_idempotency_key`] to send the draft only once.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/send-draft>
     #[maybe_async::maybe_async]
@@ -875,11 +746,6 @@ pub mod types {
 
     impl CreateInboxOptions {
         /// Creates a new [`CreateInboxOptions`].
-        ///
-        /// - `email_address`: The inbox email address on one of your domains. The API trims and
-        ///   lowercases it. The part before the `@` is at most 64 characters and contains only
-        ///   letters, numbers, and `. _ % -`. A `+` returns a 422. It cannot start or end with a
-        ///   dot or contain two dots in a row.
         pub fn new(email_address: impl Into<String>) -> Self {
             Self {
                 email_address: email_address.into(),
@@ -898,9 +764,7 @@ pub mod types {
         }
 
         /// The name recipients see when mail is sent from this inbox. A plain name, not a
-        /// `Name <email>` address. Max 78 characters. It cannot contain a colon, `<`, `>`, line
-        /// breaks, or other control characters. An email address inside the name must be on a
-        /// domain the team has verified for sending. An empty string leaves it unset.
+        /// `Name <email>` address. Max 78 characters.
         #[inline]
         pub fn with_from_name(mut self, from_name: impl Into<String>) -> Self {
             self.from_name = Some(from_name.into());
@@ -924,7 +788,7 @@ pub mod types {
         pub id: InboxId,
     }
 
-    /// List of changes to apply to an [`Inbox`]. Provide at least one of `name` or `from_name`.
+    /// List of changes to apply to an [`Inbox`].
     #[must_use]
     #[derive(Debug, Default, Clone, Serialize)]
     pub struct UpdateInboxOptions {
@@ -948,9 +812,7 @@ pub mod types {
         }
 
         /// The name recipients see when mail is sent from this inbox. A plain name, not a
-        /// `Name <email>` address. Max 78 characters. It cannot contain a colon, `<`, `>`, line
-        /// breaks, or other control characters. An email address inside the name must be on a
-        /// domain the team has verified for sending. An empty string removes it.
+        /// `Name <email>` address. Max 78 characters.
         #[inline]
         pub fn with_from_name(mut self, from_name: impl Into<String>) -> Self {
             self.from_name = Some(from_name.into());
@@ -1003,19 +865,15 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct InboxAgent {
-        /// Instructions the agent follows when it handles the threads of the inbox. `None` when
-        /// no instructions are set.
+        /// Instructions the agent follows when it handles the threads of the inbox.
         pub instructions: Option<String>,
-        /// The tone the agent writes in. `None` when no tone is set.
+        /// The tone the agent writes in.
         pub tone: Option<InboxAgentTone>,
-        /// The actions the agent can take. Empty when no actions are enabled.
+        /// The actions the agent can take.
         pub actions: Vec<InboxAgentAction>,
     }
 
     /// List of changes to apply to an [`InboxAgent`].
-    ///
-    /// At least one of `instructions`, `tone`, or `actions` must be provided. Omitted
-    /// fields keep their current value.
     #[must_use]
     #[derive(Debug, Default, Clone, Serialize)]
     pub struct UpdateInboxAgentOptions {
@@ -1172,16 +1030,13 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct UpdateInboxLabelResponse {
-        /// The ID of the updated label.
         pub id: InboxLabelId,
     }
 
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct DeleteInboxLabelResponse {
-        /// The ID of the removed label.
         pub id: InboxLabelId,
-        /// Indicates whether the label was deleted.
         pub deleted: bool,
     }
 
@@ -1190,15 +1045,10 @@ pub mod types {
     #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
     #[serde(rename_all = "snake_case")]
     pub enum InboxFolder {
-        /// Holds threads with at least one received email.
         Inbox,
-        /// Holds threads moved there.
         Archive,
-        /// Holds threads moved there.
         Spam,
-        /// Holds threads whose emails are all outbound, and is assigned automatically.
         Sent,
-        /// Holds threads scheduled for deletion in 30 days.
         Trash,
     }
 
@@ -1226,11 +1076,8 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct InboxThreadLabel {
-        /// The ID of the label.
         pub id: InboxLabelId,
-        /// The name of the label.
         pub name: String,
-        /// The color of the label, as a `#RRGGBB` hex color in uppercase.
         pub color: String,
     }
 
@@ -1238,7 +1085,6 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct ListInboxThreadLabelsResponse {
-        /// The labels on the thread.
         pub data: Vec<InboxThreadLabel>,
     }
 
@@ -1281,11 +1127,7 @@ pub mod types {
     pub struct InboxThreadSearchResult {
         #[serde(flatten)]
         pub thread: InboxThread,
-        /// The ID of the email in the thread that matched the search. When `query` has words or
-        /// phrases, it is the most relevant match. Otherwise, it is the newest. It is the same `id`
-        /// that [`InboxesSvc::list_thread_emails`](crate::services::InboxesSvc::list_thread_emails)
-        /// returns, so use it with the get, reply and forward thread email methods. `None` when the
-        /// search index returns no matched email for the thread.
+        /// The ID of the email in the thread that matched the search.
         pub matched_email_id: Option<InboxThreadEmailId>,
     }
 
@@ -1324,18 +1166,14 @@ pub mod types {
             Self::default()
         }
 
-        /// The folders to list. A thread is returned when any of its emails is in one of the
-        /// folders, so a thread in `inbox` with an email you sent matches both `inbox` and
-        /// `sent`. Defaults to `inbox`, or to `inbox,archive,sent` when `labels` is set. `spam`
-        /// and `trash` are only included when you name them.
+        /// The folders to list.
         #[inline]
         pub fn with_folders(mut self, folders: impl IntoIterator<Item = InboxFolder>) -> Self {
             self.folders = join(folders);
             self
         }
 
-        /// Label IDs. Returns threads with any of these labels. Up to 50 IDs. An ID that does not
-        /// exist in the inbox returns a 404.
+        /// Label IDs.
         #[inline]
         pub fn with_labels<S: AsRef<str>>(mut self, labels: impl IntoIterator<Item = S>) -> Self {
             self.labels = join(labels);
@@ -1440,8 +1278,7 @@ pub mod types {
         }
 
         /// Matches emails sent on or before this date. Same formats as `start_date`. A date
-        /// covers that whole day. A timestamp is used as given. An `end_date` before
-        /// `start_date` returns a 422 `validation_error`.
+        /// covers that whole day.
         #[inline]
         pub fn with_end_date(mut self, end_date: impl Into<String>) -> Self {
             self.end_date = Some(end_date.into());
@@ -1487,11 +1324,6 @@ pub mod types {
     }
 
     /// List of changes to apply to a thread.
-    ///
-    /// At least one of `read` or `folder` is required. To change the labels of a thread, use
-    /// [`InboxesSvc::add_thread_labels`](crate::services::InboxesSvc::add_thread_labels),
-    /// [`InboxesSvc::set_thread_labels`](crate::services::InboxesSvc::set_thread_labels) and
-    /// [`InboxesSvc::remove_thread_label`](crate::services::InboxesSvc::remove_thread_label).
     #[must_use]
     #[derive(Debug, Default, Clone, Copy, Serialize)]
     pub struct UpdateInboxThreadOptions {
@@ -1536,10 +1368,7 @@ pub mod types {
     #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
     #[serde(rename_all = "snake_case")]
     pub enum InboxEmailDirection {
-        /// The inbox received the message. A message the inbox sent to itself is `Inbound`, so a
-        /// reply to it goes to its sender.
         Inbound,
-        /// The inbox sent the message.
         Outbound,
     }
 
@@ -1547,11 +1376,8 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct InboxThreadEmailAttachment {
-        /// The ID of the attachment.
         pub id: String,
-        /// The filename of the attachment.
         pub filename: Option<String>,
-        /// The size of the attachment in bytes.
         pub size: Option<u64>,
     }
 
@@ -1592,8 +1418,6 @@ pub mod types {
     }
 
     /// See [relevant docs].
-    ///
-    /// At least one of `html` or `text` must contain more than whitespace.
     ///
     /// [relevant docs]: <https://resend.com/docs/api-reference/inboxes/reply-thread-email#body-parameters>
     #[must_use]
@@ -1718,9 +1542,7 @@ pub mod types {
 
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
-    // FIXME: inconsistency between docs/spec
     pub struct ReplyInboxThreadEmailResponse {
-        /// The ID of the sent email. Use it with the emails endpoints.
         pub id: EmailId,
     }
 
@@ -1804,8 +1626,6 @@ pub mod types {
 
         /// Adds an email header. The `In-Reply-To`, `References` and `Reply-To` headers are set by
         /// Resend and cannot be set here. Sending one of them, in any letter case, returns a 422.
-        /// A header name cannot be empty, and names and values cannot contain line breaks or null
-        /// characters, or the request returns a 422.
         #[inline]
         pub fn with_header(mut self, name: &str, value: &str) -> Self {
             let headers = self.headers.get_or_insert_with(HashMap::new);
@@ -1818,8 +1638,6 @@ pub mod types {
         /// share one limit with the attachments of the original message, which the forward also
         /// sends. Together they can have at most 25 MB of `content`. A `path` file does not count
         /// toward the 25 MB, because it is fetched when the email is sent.
-        /// An empty file, a blocked file type, or a `path` that is not an `http` or `https` URL or
-        /// that points to `localhost` returns a 422.
         #[inline]
         pub fn with_attachment(mut self, attachment: impl Into<CreateAttachment>) -> Self {
             self.attachments
@@ -1828,11 +1646,7 @@ pub mod types {
             self
         }
 
-        /// Adds an `Idempotency-Key` header to the request, so the forward is sent only once. 1 to 256
-        /// characters. A retry with the same key within 24 hours replays the first successful (2xx)
-        /// response, with the `idempotent-replayed: true` header. A failed request is not stored, so
-        /// you can retry it with the same key. Reusing the key with a different body, or while the
-        /// first request is still running, returns a 409.
+        /// Adds an `Idempotency-Key` header to the request.
         ///
         /// <https://resend.com/docs/dashboard/emails/idempotency-keys>
         #[inline]
@@ -1847,7 +1661,6 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct ForwardInboxThreadEmailResponse {
-        /// The ID of the sent email. Use it with the emails endpoints.
         pub id: EmailId,
     }
 
@@ -1856,9 +1669,7 @@ pub mod types {
     #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
     #[serde(rename_all = "snake_case")]
     pub enum InboxDraftType {
-        /// The draft starts a new thread.
         Standalone,
-        /// The draft replies to an email in an existing thread.
         Reply,
     }
 
@@ -1866,13 +1677,9 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct InboxDraftAttachment {
-        /// The ID of the attachment.
         pub id: String,
-        /// The filename of the attachment.
         pub filename: String,
-        /// The MIME type of the attachment.
         pub content_type: String,
-        /// The size of the attachment in bytes.
         pub size: u64,
     }
 
@@ -1887,10 +1694,6 @@ pub mod types {
 
     impl CreateInboxDraftAttachment {
         /// Creates a new [`CreateInboxDraftAttachment`].
-        ///
-        /// - `content`: The content of the file.
-        /// - `filename`: The filename of the attachment.
-        /// - `content_type`: The MIME type of the attachment, such as `application/pdf`.
         pub fn new(
             content: Vec<u8>,
             filename: impl Into<String>,
@@ -1973,8 +1776,7 @@ pub mod types {
 
     /// See [relevant docs].
     ///
-    /// At least one of `to`, `cc`, `bcc`, `subject`, `text`, `html` or `attachments` must be
-    /// non-empty. The combined recipients of `to`, `cc` and `bcc` cannot exceed 50. `thread_id`
+    /// The combined recipients of `to`, `cc` and `bcc` cannot exceed 50. `thread_id`
     /// and `reply_to_email_id` must be sent together or not at all.
     ///
     /// [relevant docs]: <https://resend.com/docs/api-reference/inboxes/create-draft#body-parameters>
@@ -2079,10 +1881,7 @@ pub mod types {
         }
 
         /// Adds an `Idempotency-Key` header to the request, so the draft is created only once. 1 to 256
-        /// characters. A retry with the same key within 24 hours replays the first successful (2xx)
-        /// response, with the `idempotent-replayed: true` header. A failed request is not stored, so
-        /// you can retry it with the same key. Reusing the key with a different body, or while the
-        /// first request is still running, returns a 409.
+        /// characters.
         ///
         /// <https://resend.com/docs/dashboard/emails/idempotency-keys>
         #[inline]
@@ -2270,8 +2069,6 @@ pub mod types {
 
         /// Adds an email header. The `In-Reply-To`, `References` and `Reply-To` headers are set by
         /// Resend and cannot be set here. Sending one of them, in any letter case, returns a 422.
-        /// A header name cannot be empty, and names and values cannot contain line breaks or null
-        /// characters, or the request returns a 422.
         #[inline]
         pub fn with_header(mut self, name: &str, value: &str) -> Self {
             let headers = self.headers.get_or_insert_with(HashMap::new);
@@ -2280,11 +2077,7 @@ pub mod types {
             self
         }
 
-        /// Adds an `Idempotency-Key` header to the request, so the draft is sent only once. 1 to 256
-        /// characters. A retry with the same key within 24 hours replays the first successful (2xx)
-        /// response, with the `idempotent-replayed: true` header. A failed request is not stored, so
-        /// you can retry it with the same key. Reusing the key with a different body, or while the
-        /// first request is still running, returns a 409.
+        /// Adds an `Idempotency-Key` header to the request.
         ///
         /// <https://resend.com/docs/dashboard/emails/idempotency-keys>
         #[inline]
