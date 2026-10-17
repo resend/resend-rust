@@ -32,10 +32,11 @@ impl InboxesSvc {
     /// The domain must belong to the team. Without `forwarding`, the domain must have receiving
     /// enabled, with DKIM and SPF verified and the inbound MX record verified or pending. With
     /// `forwarding` set to `true`, the domain only needs DKIM and SPF verified for sending, and
-    /// Resend generates a `receiving_address` on the team inbound domain. A domain that does not
-    /// meet these rules returns a 422 `validation_error`. An address or receiving address that is
-    /// already in use returns a 409. A team that has reached the inbox limit of its plan returns
-    /// a 403 `validation_error`. A blocked account returns a 451.
+    /// Resend generates a `receiving_address` on the team inbound domain, and a team without an
+    /// inbound domain gets a 422. A domain that does not meet these rules returns a 422
+    /// `validation_error`. An address or receiving address that is already in use returns a 409.
+    /// A team that has reached the inbox limit of its plan returns a 403 `validation_error`. A
+    /// blocked account returns a 451.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/create-inbox>
     #[maybe_async::maybe_async]
@@ -50,8 +51,8 @@ impl InboxesSvc {
     /// Returns the inboxes of the team, newest first.
     ///
     /// The list items carry fewer fields than a single inbox. Retrieve an inbox to get all its
-    /// fields. The `after` and `before` cursors take an inbox ID. A value that is not a UUID
-    /// returns a 422, and an unknown ID returns a 404.
+    /// fields. The `after` and `before` cursors take an inbox ID, and only one of them can be
+    /// passed. A value that is not a UUID returns a 422, and an unknown ID returns a 404.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/list-inboxes>
     #[maybe_async::maybe_async]
@@ -237,8 +238,9 @@ impl InboxesSvc {
     /// Returns the threads in an inbox, most recently active first.
     ///
     /// A thread is a conversation made up of one or more emails. The `after` and `before` cursors
-    /// take a thread ID, and only one of them can be passed. A cursor thread that is not in the
-    /// selected folders returns a 404. To find threads by text, sender, recipient, attachment, or
+    /// take a thread ID, and only one of them can be passed. A cursor that is not a UUID, such as
+    /// a date, returns a 422 `validation_error`. A cursor thread that is not in the selected
+    /// folders returns a 404. To find threads by text, sender, recipient, attachment, or
     /// date, use [`InboxesSvc::search_threads`].
     ///
     /// <https://resend.com/docs/api-reference/inboxes/list-threads>
@@ -326,9 +328,10 @@ impl InboxesSvc {
     ///
     /// At least one of `read` or `folder` is required. To change the labels of a thread, use
     /// [`InboxesSvc::add_thread_labels`], [`InboxesSvc::set_thread_labels`] and
-    /// [`InboxesSvc::remove_thread_label`]. Moving a thread out of `trash` restores it and clears
-    /// its deletion deadline. The changes apply in this order: `read`, then `folder`. They are not
-    /// atomic.
+    /// [`InboxesSvc::remove_thread_label`]. The removed `add_label_ids` and `remove_label_ids`
+    /// fields are ignored, so a body with only those fields returns a 422 `validation_error`.
+    /// Moving a thread out of `trash` restores it and clears its deletion deadline. The changes
+    /// apply in this order: `read`, then `folder`. They are not atomic.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/update-thread>
     #[maybe_async::maybe_async]
@@ -377,9 +380,9 @@ impl InboxesSvc {
     /// Applies one or more labels to the thread. Labels already on the thread stay on it.
     ///
     /// `labels` holds between 1 and 10 label IDs, each a label of the inbox. A label ID that is
-    /// not a label of the inbox returns a 404, and nothing changes. To replace the labels of the
-    /// thread, use [`InboxesSvc::set_thread_labels`]. Returns every label on the thread after the
-    /// change.
+    /// not a label of the inbox returns a 404, and nothing changes. A thread that does not exist
+    /// in the inbox returns a 404. To replace the labels of the thread, use
+    /// [`InboxesSvc::set_thread_labels`]. Returns every label on the thread after the change.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/add-thread-labels>
     #[maybe_async::maybe_async]
@@ -408,8 +411,8 @@ impl InboxesSvc {
     ///
     /// `labels` holds up to 100 label IDs, each a label of the inbox. The labels themselves are
     /// kept. An empty slice takes every label off the thread. A label ID that is not a label of
-    /// the inbox returns a 404, and nothing changes. Returns every label on the thread after the
-    /// change.
+    /// the inbox returns a 404, and nothing changes. A thread that does not exist in the inbox
+    /// returns a 404. Returns every label on the thread after the change.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/set-thread-labels>
     #[maybe_async::maybe_async]
@@ -437,8 +440,10 @@ impl InboxesSvc {
     /// Takes one label off the thread. The label itself is kept, and stays on every other thread
     /// that carries it.
     ///
-    /// A label that is not on the thread returns the current labels. To delete the label, use
-    /// [`InboxesSvc::delete_label`]. Returns every label on the thread after the change.
+    /// A label that is not on the thread returns the current labels. A label ID that is not a
+    /// label of the inbox, or a thread that does not exist in the inbox, returns a 404. To delete
+    /// the label, use [`InboxesSvc::delete_label`]. Returns every label on the thread after the
+    /// change.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/remove-thread-label>
     #[maybe_async::maybe_async]
@@ -464,7 +469,8 @@ impl InboxesSvc {
     ///
     /// Pass the `id` of the last message as `after` to get the next, newer page. Pass the `id` of
     /// the first message as `before` to get the previous, older page. You cannot combine `after`
-    /// and `before`. A cursor that is not a message of the thread returns a 404.
+    /// and `before`. A cursor that is not a UUID returns a 422. A cursor that is not a message of
+    /// the thread returns a 404.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/list-thread-emails>
     #[maybe_async::maybe_async]
@@ -552,9 +558,10 @@ impl InboxesSvc {
     ///
     /// The original message is quoted under a forwarded-message banner, below the optional
     /// `html` or `text` note. The attachments of the original message are sent with the forward,
-    /// together with any `attachments` you add. The request fails when they exceed 25 MB of
-    /// `content` in total. An original attachment that was sent from a URL (`path`) cannot be
-    /// forwarded, and the request returns a 422.
+    /// together with any `attachments` you add. The request returns a 422 when they exceed 25 MB
+    /// of `content` in total. An original attachment that was sent from a URL (`path`) cannot be
+    /// forwarded, and the request returns a 422. The whole email, encoded, can be at most 40 MB,
+    /// or the request returns a 422.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/forward-thread-email>
     #[maybe_async::maybe_async]
@@ -585,8 +592,9 @@ impl InboxesSvc {
 
     /// Returns the unsent drafts on the inbox, most recently updated first.
     ///
-    /// The `after` and `before` cursors take a Draft ID from the current page. A cursor that is
-    /// not an unsent draft on this inbox returns a 404.
+    /// The `after` and `before` cursors take a Draft ID from the current page, and only one of
+    /// them can be passed. A cursor that is not a UUID, or both cursors together, return a 422.
+    /// A cursor that is not an unsent draft on this inbox returns a 404.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/list-drafts>
     #[maybe_async::maybe_async]
@@ -609,12 +617,15 @@ impl InboxesSvc {
     /// Use [`CreateInboxDraftOptions::new`] for a draft that starts a new thread, and
     /// [`CreateInboxDraftOptions::reply`] for a reply draft in an existing thread. At least one of
     /// `to`, `cc`, `bcc`, `subject`, `text`, `html` or `attachments` must be non-empty. The
-    /// combined recipients of `to`, `cc` and `bcc` cannot exceed 50. Only one unsent reply draft
-    /// can target an email, so a reply draft request for an email that already has one returns
-    /// the ID of the existing draft. That request ignores every other field, except
-    /// `attachments`, which replaces the attachments of the existing draft when sent. A reply
-    /// draft created without `subject` stores an empty subject and gets no `Re:` prefix, so set
-    /// one before you send it.
+    /// combined recipients of `to`, `cc` and `bcc` cannot exceed 50. Attachments are stored on the
+    /// draft, so each one needs `content`, `filename` and `content_type`. A new draft returns a
+    /// 201. Only one unsent reply draft can target an email, so a reply draft request for an email
+    /// that already has one returns a 200 with the ID of the existing draft. That request ignores
+    /// every other field, except `attachments`, which replaces the attachments of the existing
+    /// draft when sent. An unknown `thread_id`, or a `reply_to_email_id` that is not in that
+    /// thread, returns a 404. A reply draft created without `subject` stores an empty subject.
+    /// When it is sent, it takes the thread subject, prefixed with `Re:` when it does not already
+    /// start with it.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/create-draft>
     #[maybe_async::maybe_async]
@@ -709,11 +720,13 @@ impl InboxesSvc {
     /// Sends the draft from the inbox address.
     ///
     /// A reply draft is sent in its thread. A draft without a thread starts a new thread. The
-    /// draft must have at least one `to` recipient, a non-empty `subject`, and `html` or `text`,
-    /// or the request returns a 422. A draft that was already sent returns a 409. The request
-    /// body is optional and takes only `headers`. Use [`SendInboxDraftOptions::with_header`] to
-    /// add custom headers, and [`SendInboxDraftOptions::with_idempotency_key`] to send the draft
-    /// only once.
+    /// draft must have at least one `to` recipient and `html` or `text`, or the request returns a
+    /// 422. A standalone draft also needs a non-empty `subject`; a reply draft with an empty
+    /// `subject` is sent with the thread subject, prefixed with `Re:` when it does not already
+    /// start with it. A draft that was already sent returns a 409. The whole email, encoded, can
+    /// be at most 40 MB, or the request returns a 422. The request body is optional and takes
+    /// only `headers`. Use [`SendInboxDraftOptions::with_header`] to add custom headers, and
+    /// [`SendInboxDraftOptions::with_idempotency_key`] to send the draft only once.
     ///
     /// <https://resend.com/docs/api-reference/inboxes/send-draft>
     #[maybe_async::maybe_async]
@@ -862,8 +875,8 @@ pub mod types {
         ///
         /// - `email_address`: The inbox email address on one of your domains. The API trims and
         ///   lowercases it. The part before the `@` is at most 64 characters and contains only
-        ///   letters, numbers, and `. _ % + -`. It cannot start or end with a dot or contain two
-        ///   dots in a row.
+        ///   letters, numbers, and `. _ % -`. A `+` returns a 422. It cannot start or end with a
+        ///   dot or contain two dots in a row.
         pub fn new(email_address: impl Into<String>) -> Self {
             Self {
                 email_address: email_address.into(),
@@ -1958,7 +1971,8 @@ pub mod types {
     /// See [relevant docs].
     ///
     /// At least one of `to`, `cc`, `bcc`, `subject`, `text`, `html` or `attachments` must be
-    /// non-empty. The combined recipients of `to`, `cc` and `bcc` cannot exceed 50.
+    /// non-empty. The combined recipients of `to`, `cc` and `bcc` cannot exceed 50. `thread_id`
+    /// and `reply_to_email_id` must be sent together or not at all.
     ///
     /// [relevant docs]: <https://resend.com/docs/api-reference/inboxes/create-draft#body-parameters>
     #[must_use]
