@@ -30,7 +30,7 @@ jobs:
           targets: x86_64-unknown-linux-gnu
 
       - name: Use cached dependencies
-        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
         with:
           key: "ubuntu-24.04-x86_64-unknown-linux-gnu"
 
@@ -55,7 +55,7 @@ jobs:
           targets: aarch64-unknown-linux-gnu
 
       - name: Use cached dependencies
-        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
         with:
           key: "ubuntu-24.04-aarch64-unknown-linux-gnu"
 
@@ -75,7 +75,7 @@ jobs:
           targets: x86_64-apple-darwin
 
       - name: Use cached dependencies
-        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
         with:
           key: "macos-15-x86_64-apple-darwin"
 
@@ -95,7 +95,7 @@ jobs:
           targets: x86_64-pc-windows-msvc
 
       - name: Use cached dependencies
-        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
         with:
           key: "windows-2022-x86_64-pc-windows-msvc"
 
