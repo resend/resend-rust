@@ -2674,7 +2674,7 @@ mod test {
     fn draft_path_attachments() {
         let with_path_attachment = UpdateInboxDraftOptions::new().with_attachments([
             CreateInboxDraftAttachment::from_path(
-                "https://resend.com/static/sample/invoice.pdf",
+                "https://example.com/invoice.pdf",
                 "invoice.pdf",
             ),
             CreateInboxDraftAttachment::from_path("https://example.com/pic", "pic.png")
@@ -2684,7 +2684,7 @@ mod test {
             serde_json::to_value(&with_path_attachment).unwrap(),
             serde_json::json!({
                 "attachments": [
-                    { "path": "https://resend.com/static/sample/invoice.pdf", "filename": "invoice.pdf" },
+                    { "path": "https://example.com/invoice.pdf", "filename": "invoice.pdf" },
                     { "path": "https://example.com/pic", "filename": "pic.png", "content_type": "image/png" }
                 ]
             })
