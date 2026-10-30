@@ -1711,7 +1711,8 @@ pub mod types {
 
         /// Creates a new [`CreateInboxDraftAttachment`] from a URL. The file is downloaded when
         /// the request is made and stored on the draft. Its content type defaults to the one of
-        /// the downloaded file.
+        /// the downloaded file. The URL must be `http` or `https`. A URL that cannot be
+        /// downloaded returns a 422.
         pub fn from_path(path: impl Into<String>, filename: impl Into<String>) -> Self {
             Self {
                 content_or_path: ContentOrPath::Path(path.into()),
