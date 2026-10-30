@@ -2673,10 +2673,7 @@ mod test {
     #[test]
     fn draft_path_attachments() {
         let with_path_attachment = UpdateInboxDraftOptions::new().with_attachments([
-            CreateInboxDraftAttachment::from_path(
-                "https://example.com/invoice.pdf",
-                "invoice.pdf",
-            ),
+            CreateInboxDraftAttachment::from_path("https://example.com/invoice.pdf", "invoice.pdf"),
             CreateInboxDraftAttachment::from_path("https://example.com/pic", "pic.png")
                 .with_content_type("image/png"),
         ]);
