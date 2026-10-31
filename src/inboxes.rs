@@ -645,7 +645,7 @@ pub mod types {
     use serde::{Deserialize, Serialize};
 
     use crate::idempotent::Idempotent;
-    use crate::types::{CreateAttachment, DomainId, EmailId};
+    use crate::types::{ContentOrPath, CreateAttachment, DomainId, EmailId};
 
     crate::define_id_type!(InboxId);
     crate::define_id_type!(InboxAgentId);
@@ -1683,27 +1683,48 @@ pub mod types {
         pub size: u64,
     }
 
-    /// A file to store on a draft. Each one needs `content`, `filename` and `content_type`.
+    /// A file to store on a draft. Each one needs a `filename` and either `content` with a
+    /// `content_type`, or a `path` URL that is downloaded when the request is made.
     #[must_use]
     #[derive(Debug, Clone, Serialize)]
     pub struct CreateInboxDraftAttachment {
-        content: Vec<u8>,
+        #[serde(flatten)]
+        content_or_path: ContentOrPath,
         filename: String,
-        content_type: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        content_type: Option<String>,
     }
 
     impl CreateInboxDraftAttachment {
-        /// Creates a new [`CreateInboxDraftAttachment`].
+        /// Creates a new [`CreateInboxDraftAttachment`] from the content of a file.
         pub fn new(
             content: Vec<u8>,
             filename: impl Into<String>,
             content_type: impl Into<String>,
         ) -> Self {
             Self {
-                content,
+                content_or_path: ContentOrPath::Content(content),
                 filename: filename.into(),
-                content_type: content_type.into(),
+                content_type: Some(content_type.into()),
             }
+        }
+
+        /// Creates a new [`CreateInboxDraftAttachment`] from a URL. The file is downloaded when
+        /// the request is made and stored on the draft. Its content type defaults to the one of
+        /// the downloaded file. The URL must be `http` or `https`. A URL that cannot be
+        /// downloaded returns a 422.
+        pub fn from_path(path: impl Into<String>, filename: impl Into<String>) -> Self {
+            Self {
+                content_or_path: ContentOrPath::Path(path.into()),
+                filename: filename.into(),
+                content_type: None,
+            }
+        }
+
+        /// Sets the content type of the file.
+        pub fn with_content_type(mut self, content_type: impl Into<String>) -> Self {
+            self.content_type = Some(content_type.into());
+            self
         }
     }
 
@@ -2647,6 +2668,24 @@ mod test {
         assert_eq!(
             serde_json::to_value(&clear).unwrap(),
             serde_json::json!({ "attachments": null })
+        );
+    }
+
+    #[test]
+    fn draft_path_attachments() {
+        let with_path_attachment = UpdateInboxDraftOptions::new().with_attachments([
+            CreateInboxDraftAttachment::from_path("https://example.com/invoice.pdf", "invoice.pdf"),
+            CreateInboxDraftAttachment::from_path("https://example.com/pic", "pic.png")
+                .with_content_type("image/png"),
+        ]);
+        assert_eq!(
+            serde_json::to_value(&with_path_attachment).unwrap(),
+            serde_json::json!({
+                "attachments": [
+                    { "path": "https://example.com/invoice.pdf", "filename": "invoice.pdf" },
+                    { "path": "https://example.com/pic", "filename": "pic.png", "content_type": "image/png" }
+                ]
+            })
         );
     }
 }

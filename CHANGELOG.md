@@ -8,6 +8,18 @@ and this project adheres to
 
 <!--## Unreleased-->
 
+## [0.35.1] - 2026-10-31
+
+### Added
+
+- `CreateInboxDraftAttachment::from_path`
+
+### Changed
+
+- `CreateInboxDraftAttachment`:
+  - `content_type` is optional
+
+
 ## [0.35.0] - 2026-10-18
 
 ### Added
@@ -665,6 +677,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+[0.35.1]: https://crates.io/crates/resend-rs/0.35.1
 [0.35.0]: https://crates.io/crates/resend-rs/0.35.0
 [0.34.0]: https://crates.io/crates/resend-rs/0.34.0
 [0.33.0]: https://crates.io/crates/resend-rs/0.33.0
