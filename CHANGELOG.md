@@ -17,7 +17,6 @@ and this project adheres to
 ### Changed
 
 - `CreateInboxDraftAttachment`:
-  - `content` is now `content_or_path`
   - `content_type` is optional
 
 
