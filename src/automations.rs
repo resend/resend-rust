@@ -137,7 +137,7 @@ impl AutomationsSvc {
             .0
             .build(Method::GET, &path)
             .query(&list_opts)
-            .query(&status_filter);
+            .query(&[("status", status_filter)]);
         let response = self.0.send(request).await?;
         let content = response.json::<ListResponse<AutomationRun>>().await?;
 
@@ -573,6 +573,72 @@ mod test {
           }"#;
 
         let _res = serde_json::from_str::<Automation>(tmp).unwrap();
+    }
+
+    /// Serves one empty list response on a local port and returns the base url together with
+    /// a handle that yields the request line the client sent.
+    #[cfg(not(feature = "blocking"))]
+    fn serve_empty_list() -> (String, std::thread::JoinHandle<String>) {
+        use std::io::{BufRead, BufReader, Write};
+
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let base_url = format!("http://{}", listener.local_addr().unwrap());
+
+        let handle = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut reader = BufReader::new(stream.try_clone().unwrap());
+
+            let mut request_line = String::new();
+            let _ = reader.read_line(&mut request_line).unwrap();
+            let mut header = String::new();
+            while reader.read_line(&mut header).unwrap() > 2 {
+                header.clear();
+            }
+
+            let body = r#"{"object":"list","has_more":false,"data":[]}"#;
+            write!(
+                stream,
+                "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{body}",
+                body.len()
+            )
+            .unwrap();
+
+            request_line
+        });
+
+        (base_url, handle)
+    }
+
+    #[tokio::test]
+    #[cfg(not(feature = "blocking"))]
+    async fn list_runs_sends_status_filter() {
+        for (status_filter, expected_path) in [
+            (
+                Some("completed".to_owned()),
+                "/automations/auto_123/runs?status=completed ",
+            ),
+            (None, "/automations/auto_123/runs "),
+        ] {
+            let (base_url, handle) = serve_empty_list();
+            let resend = crate::Resend::with_config(
+                crate::Config::builder("re_test")
+                    .base_url(base_url.parse().unwrap())
+                    .build(),
+            );
+
+            let runs = resend
+                .automations
+                .list_runs("auto_123", status_filter, ListOptions::default())
+                .await
+                .unwrap();
+            assert!(runs.data.is_empty());
+
+            let request_line = handle.join().unwrap();
+            assert!(
+                request_line.starts_with(&format!("GET {expected_path}")),
+                "unexpected request line: {request_line}"
+            );
+        }
     }
 
     #[tokio_shared_rt::test(shared = true)]
