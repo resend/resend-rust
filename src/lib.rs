@@ -145,7 +145,8 @@ pub mod types {
         DomainClaimId, DomainClaimRecord, DomainClaimRecordType, DomainClaimStatus,
         DomainDkimRecord, DomainId, DomainRecord, DomainRecordStatus, DomainSpfRecord,
         DomainStatus, EnableForgeOptions, ProxyStatus, ReceivingRecord, ReceivingRecordType,
-        Region, SpfRecordType, Tls, UpdateDomainResponse, UpdateForgeRequest, VerifyDomainResponse,
+        Region, SpfRecordType, Tls, UpdateDomainResponse, VerifyDomainOptions,
+        VerifyDomainResponse, VerifyDomainScope,
     };
     pub use super::emails::types::{
         Attachment, CancelScheduleResponse, ContentDisposition, ContentOrPath, CreateAttachment,
