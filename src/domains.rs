@@ -7,7 +7,10 @@ use types::DeleteDomainResponse;
 use crate::{Config, Result, domains::types::VerifyDomainResponse};
 use crate::{
     list_opts::{ListOptions, ListResponse},
-    types::{CreateDomainClaimOptions, CreateDomainOptions, Domain, DomainChanges, DomainClaim},
+    types::{
+        CreateDomainClaimOptions, CreateDomainOptions, Domain, DomainChanges, DomainClaim,
+        EnableForgeOptions,
+    },
 };
 
 use self::types::UpdateDomainResponse;
@@ -141,6 +144,65 @@ impl DomainsSvc {
         let request = self.0.build(Method::POST, &path);
         let response = self.0.send(request).await?;
         let content = response.json::<DomainClaim>().await?;
+
+        Ok(content)
+    }
+
+    /// Enables Forge on a domain and returns the full domain.
+    ///
+    /// Enabling an already-migrated domain is idempotent on the API side and
+    /// returns the domain's current state.
+    ///
+    /// <https://resend.com/docs/api-reference/domains/enable-forge>
+    #[maybe_async::maybe_async]
+    pub async fn enable_forge(
+        &self,
+        domain_id: &str,
+        options: EnableForgeOptions,
+    ) -> Result<Domain> {
+        let path = format!("/domains/{domain_id}/forge");
+
+        let request = self.0.build(Method::POST, &path);
+        let response = self.0.send(request.json(&options)).await?;
+        let content = response.json::<Domain>().await?;
+
+        Ok(content)
+    }
+
+    /// Moves the Forge return path and re-verifies the domain, returning the
+    /// full domain.
+    ///
+    /// Once the domain has verified, the API refuses this with a 422
+    /// `return_path_unavailable` error.
+    ///
+    /// <https://resend.com/docs/api-reference/domains/update-forge>
+    #[maybe_async::maybe_async]
+    pub async fn update_forge(&self, domain_id: &str, return_path: &str) -> Result<Domain> {
+        let path = format!("/domains/{domain_id}/forge");
+
+        let update = types::UpdateForgeRequest {
+            return_path: return_path.to_owned(),
+        };
+
+        let request = self.0.build(Method::PATCH, &path);
+        let response = self.0.send(request.json(&update)).await?;
+        let content = response.json::<Domain>().await?;
+
+        Ok(content)
+    }
+
+    /// Triggers asynchronous Forge verification for a domain.
+    ///
+    /// Poll [`DomainsSvc::get`] to follow the state of the domain's records.
+    ///
+    /// <https://resend.com/docs/api-reference/domains/verify-forge>
+    #[maybe_async::maybe_async]
+    pub async fn verify_forge(&self, domain_id: &str) -> Result<VerifyDomainResponse> {
+        let path = format!("/domains/{domain_id}/forge/verify");
+
+        let request = self.0.build(Method::POST, &path);
+        let response = self.0.send(request).await?;
+        let content = response.json::<VerifyDomainResponse>().await?;
 
         Ok(content)
     }
@@ -564,6 +626,39 @@ pub mod types {
         pub id: DomainId,
     }
 
+    /// Options for enabling Forge on a [`Domain`].
+    #[must_use]
+    #[derive(Debug, Default, Clone, Serialize)]
+    pub struct EnableForgeOptions {
+        /// Subdomain for the Return-Path address. Defaults to the domain's
+        /// current custom return path.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        return_path: Option<String>,
+    }
+
+    impl EnableForgeOptions {
+        /// Creates a new [`EnableForgeOptions`].
+        #[inline]
+        pub fn new() -> Self {
+            Self::default()
+        }
+
+        /// Subdomain for the Return-Path address. Defaults to the domain's
+        /// current custom return path.
+        #[inline]
+        pub fn with_return_path(mut self, return_path: impl Into<String>) -> Self {
+            self.return_path = Some(return_path.into());
+            self
+        }
+    }
+
+    #[must_use]
+    #[derive(Debug, Clone, Serialize)]
+    pub struct UpdateForgeRequest {
+        /// The new subdomain for the Return-Path address.
+        pub return_path: String,
+    }
+
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct DeleteDomainResponse {
         /// The ID of the domain.
@@ -843,5 +938,27 @@ mod test {
 
         let domain: Domain = serde_json::from_str(json).expect("domain deserializes");
         assert!(matches!(domain.status, DomainStatus::PartiallyFailed));
+    }
+
+    #[test]
+    fn serialize_forge_request_bodies() {
+        use crate::domains::types::{EnableForgeOptions, UpdateForgeRequest};
+
+        let empty = serde_json::to_value(EnableForgeOptions::new()).expect("serializes");
+        assert_eq!(empty, serde_json::json!({}));
+
+        let with_return_path =
+            serde_json::to_value(EnableForgeOptions::new().with_return_path("send"))
+                .expect("serializes");
+        assert_eq!(
+            with_return_path,
+            serde_json::json!({ "return_path": "send" })
+        );
+
+        let update = serde_json::to_value(UpdateForgeRequest {
+            return_path: "outbound".to_owned(),
+        })
+        .expect("serializes");
+        assert_eq!(update, serde_json::json!({ "return_path": "outbound" }));
     }
 }
