@@ -37,7 +37,6 @@ and this project adheres to
 - `CreateInboxDraftAttachment`:
   - `content_type` is optional
 
-
 ## [0.35.0] - 2026-10-18
 
 ### Added
@@ -187,7 +186,7 @@ and this project adheres to
 
 ## [0.25.1] - 2026-04-29
 
-### Fixed 
+### Fixed
 
 - Batch emails no longer ignore the Idempotency-Key header (https://github.com/resend/resend-rust/pull/54)
 
@@ -212,7 +211,7 @@ and this project adheres to
 
 ## [0.24.0] - 2026-04-16
 
-### Added 
+### Added
 
 - `TrackingRecord` and `TrackingCaaRecord` in `ProxyStatus`
 
@@ -235,7 +234,7 @@ and this project adheres to
 
 ## [0.22.0] - 2026-03-31
 
-### Added 
+### Added
 
 - Lots of structs that previously only implemented `Deserialize` now also implement `Serialize`
 - New `receiving::forward` endpoint for forwarding received emails
@@ -308,7 +307,7 @@ and this project adheres to
   - and 2 new contact-topic endpoints
 - 4 new [Inbound](https://resend.com/docs/dashboard/inbound/introduction#inbound-emails) endpoints
 - 2 new [Email](https://resend.com/docs/api-reference/attachments/) endpoints
-- 5 new [Webhook](https://resend.com/docs/api-reference/webhooks/list-webhooks) endpoints 
+- 5 new [Webhook](https://resend.com/docs/api-reference/webhooks/list-webhooks) endpoints
 - Added `email.received` and `email.failed` webhook event types
 - 3 new contact-segment methods
 - Added 5 new [contact properties](https://resend.com/docs/api-reference/contact-properties/) endpoints
@@ -416,7 +415,7 @@ let _emails = resend
     `with_idempotency_key` method returns an instance of the new `Idempotent<T>` struct which
     is then consumed by methods that support it. Because the methods that support it (`send` for now)
     now take `Into<Idempotent<CreateEmailBaseOptions>>` and `CreateEmailBaseOptions` automatically
-    implements that, existing code should *just* work.
+    implements that, existing code should _just_ work.
 
     In order for batch emails to work similarly, a new trait `idempotent::IdempotentTrait` was
     created. Importing that adds the `with_idempotency_key` to iterators of type
@@ -599,7 +598,6 @@ Yanked due to some method naming, use `0.9.1` instead.
 - HTML server responses instead of proper JSON errors (which should mostly happen in outages)
   now have better error messages
 
-
 ## [0.6.0] - 2024-06-16
 
 ### Changed
@@ -653,7 +651,7 @@ Yanked due to some method naming, use `0.9.1` instead.
 - `contacts.delete_by_email` and `contacts.delete_by_contact_id` now return the `deleted` boolean
 - Renamed `Client` to `Resend`
 - `Domain` no longer has the `dns_provider` field.
-- `Domain.delete` now returns a `DeleteDomainResponse` 
+- `Domain.delete` now returns a `DeleteDomainResponse`
 - `Email.Tag.value` is no longer an optional
 - `Email.html` and `Email.reply_to` are now both optional
 
