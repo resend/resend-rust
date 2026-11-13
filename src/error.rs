@@ -120,6 +120,15 @@ pub mod types {
 
         /// 409 Conflict
         ///
+        /// - `forge_not_enabled`
+        ///
+        /// Forge is not enabled on this domain.
+        ///
+        /// Call `POST /domains/{id}/forge` first.
+        ForgeNotEnabled,
+
+        /// 409 Conflict
+        ///
         /// - `invalid_idempotent_request`
         ///
         /// Same idempotency key used with a different request payload.
@@ -135,6 +144,16 @@ pub mod types {
         ///
         /// Retry the request after a short delay.
         ResourceLocked,
+
+        /// 422 Unprocessable Content
+        ///
+        /// - `forge_unavailable`
+        ///
+        /// Forge is not available for this domain.
+        ///
+        /// The message names the reason: a dedicated IP, a legacy DKIM setup, a receive-only domain
+        /// or a pending claim. Contact `support@resend.com` if you need Forge on it.
+        ForgeUnavailable,
 
         /// 422 Unprocessable Content.
         ///
@@ -172,6 +191,15 @@ pub mod types {
         ///
         /// Check the error message to see the list of missing parameters.
         MissingRequiredParameter,
+
+        /// 422 Unprocessable Content.
+        ///
+        /// - `return_path_unavailable`
+        ///
+        /// The requested return path cannot be used for Forge.
+        ///
+        /// Choose a `return_path` label that has no DNS records yet and differs from the current SES return path.
+        ReturnPathUnavailable,
 
         /// 429 Too Many Requests.
         ///
@@ -216,9 +244,23 @@ pub mod types {
         ///
         /// An unexpected error occurred.
         ///
-        /// Try the request again later. If the error does not resolve, check our status page
+        /// Try the request again later. If the error does not resolve, check our [status page]
         /// for service updates.
+        ///
+        /// [status page]: https://resend-status.com/
         ApplicationError,
+
+        /// 503 Service Unavailable
+        ///
+        /// - `dns_lookup_failed`
+        ///
+        /// An unexpected error occurred.
+        ///
+        /// Try the request again later. If the error does not resolve, check our [status page]
+        /// for service updates.
+        ///
+        /// [status page]: https://resend-status.com/
+        DnsLookupFailed,
 
         /// 500 Service Unavailable
         ///
@@ -251,16 +293,20 @@ pub mod types {
                 "not_found" => Self::NotFound,
                 "method_not_allowed" => Self::MethodNotAllowed,
                 "concurrent_idempotent_requests" => Self::ConcurrentIdempotentRequests,
+                "forge_not_enabled" => Self::ForgeNotEnabled,
                 "invalid_idempotent_request" => Self::InvalidIdempotentRequest,
                 "resource_locked" => Self::ResourceLocked,
+                "forge_unavailable" => Self::ForgeUnavailable,
                 "invalid_attachment" => Self::InvalidAttachment,
                 "invalid_parameter" => Self::InvalidParameter,
                 "missing_required_field" => Self::MissingRequiredField,
                 "missing_required_parameter" => Self::MissingRequiredParameter,
+                "return_path_unavailable" => Self::ReturnPathUnavailable,
                 "daily_quota_exceeded" => Self::DailyQuotaExceeded,
                 "monthly_quota_exceeded" => Self::MonthlyQuotaExceeded,
                 "rate_limit_exceeded" => Self::RateLimitExceeded,
                 "application_error" => Self::ApplicationError,
+                "dns_lookup_failed" => Self::DnsLookupFailed,
                 "service_unavailable" => Self::ServiceUnavailable,
                 _ => Self::Unrecognized,
             }
