@@ -7,7 +7,10 @@ use types::DeleteDomainResponse;
 use crate::{Config, Result, domains::types::VerifyDomainResponse};
 use crate::{
     list_opts::{ListOptions, ListResponse},
-    types::{CreateDomainClaimOptions, CreateDomainOptions, Domain, DomainChanges, DomainClaim},
+    types::{
+        CreateDomainClaimOptions, CreateDomainOptions, Domain, DomainChanges, DomainClaim,
+        EnableForgeOptions, VerifyDomainOptions,
+    },
 };
 
 use self::types::UpdateDomainResponse;
@@ -45,12 +48,23 @@ impl DomainsSvc {
 
     /// Verifies an existing domain.
     ///
+    /// By default all of the domain's records are checked and no request body
+    /// is sent. Use [`VerifyDomainOptions::with_scope`] to re-check only
+    /// specific records, such as the Forge record.
+    ///
     /// <https://resend.com/docs/api-reference/domains/verify-domain>
     #[maybe_async::maybe_async]
-    pub async fn verify(&self, domain_id: &str) -> Result<VerifyDomainResponse> {
+    pub async fn verify(
+        &self,
+        domain_id: &str,
+        options: VerifyDomainOptions,
+    ) -> Result<VerifyDomainResponse> {
         let path = format!("/domains/{domain_id}/verify");
 
-        let request = self.0.build(Method::POST, &path);
+        let mut request = self.0.build(Method::POST, &path);
+        if options.has_scope() {
+            request = request.json(&options);
+        }
         let response = self.0.send(request).await?;
         let content = response.json::<VerifyDomainResponse>().await?;
 
@@ -141,6 +155,28 @@ impl DomainsSvc {
         let request = self.0.build(Method::POST, &path);
         let response = self.0.send(request).await?;
         let content = response.json::<DomainClaim>().await?;
+
+        Ok(content)
+    }
+
+    /// Enables Forge on a domain and returns the full domain.
+    ///
+    /// Enabling an already-migrated domain is idempotent on the API side and
+    /// returns the domain's current state. When no return path is given, the
+    /// server picks a free DNS label.
+    ///
+    /// <https://resend.com/docs/api-reference/domains/enable-forge>
+    #[maybe_async::maybe_async]
+    pub async fn enable_forge(
+        &self,
+        domain_id: &str,
+        options: EnableForgeOptions,
+    ) -> Result<Domain> {
+        let path = format!("/domains/{domain_id}/forge");
+
+        let request = self.0.build(Method::POST, &path);
+        let response = self.0.send(request.json(&options)).await?;
+        let content = response.json::<Domain>().await?;
 
         Ok(content)
     }
@@ -505,6 +541,44 @@ pub mod types {
         pub id: DomainId,
     }
 
+    /// Record scope for [`VerifyDomainOptions`].
+    #[derive(Debug, Copy, Clone, Serialize)]
+    #[serde(rename_all = "snake_case")]
+    pub enum VerifyDomainScope {
+        Forge,
+    }
+
+    /// Options for verifying a [`Domain`].
+    #[must_use]
+    #[derive(Debug, Default, Clone, Serialize)]
+    pub struct VerifyDomainOptions {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        scope: Option<Vec<VerifyDomainScope>>,
+    }
+
+    impl VerifyDomainOptions {
+        /// Creates a new [`VerifyDomainOptions`].
+        #[inline]
+        pub fn new() -> Self {
+            Self::default()
+        }
+
+        /// Limits the check to specific records. Pass
+        /// [`VerifyDomainScope::Forge`] to verify only the Forge record and
+        /// leave the other records untouched; this requires Forge to be
+        /// enabled on the domain. When no scope is given, all records are
+        /// checked.
+        #[inline]
+        pub fn with_scope(mut self, scope: impl IntoIterator<Item = VerifyDomainScope>) -> Self {
+            self.scope = Some(scope.into_iter().collect());
+            self
+        }
+
+        pub(crate) fn has_scope(&self) -> bool {
+            self.scope.is_some()
+        }
+    }
+
     /// List of changes to apply to a [`Domain`].
     #[must_use]
     #[derive(Debug, Default, Clone, Serialize)]
@@ -521,6 +595,8 @@ pub mod types {
         capabilities: Option<DomainCapabilities>,
         #[serde(skip_serializing_if = "Option::is_none")]
         tracking_subdomain: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        forge_return_path: Option<String>,
     }
 
     impl DomainChanges {
@@ -556,12 +632,52 @@ pub mod types {
             self.tracking_subdomain = Some(tracking_subdomain.into());
             self
         }
+
+        /// Moves the domain's Forge return path to another host. Only
+        /// possible while the Forge record is still verifying. Moving the
+        /// path does not start verification: fetch the new record with
+        /// [`DomainsSvc::get`], add it to your DNS, then call
+        /// [`DomainsSvc::verify`] with the `forge` scope.
+        ///
+        /// [`DomainsSvc::get`]: crate::services::DomainsSvc::get
+        /// [`DomainsSvc::verify`]: crate::services::DomainsSvc::verify
+        #[inline]
+        pub fn with_forge_return_path(mut self, forge_return_path: impl Into<String>) -> Self {
+            self.forge_return_path = Some(forge_return_path.into());
+            self
+        }
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct UpdateDomainResponse {
         /// The ID of the updated domain.
         pub id: DomainId,
+    }
+
+    /// Options for enabling Forge on a [`Domain`].
+    #[must_use]
+    #[derive(Debug, Default, Clone, Serialize)]
+    pub struct EnableForgeOptions {
+        /// Subdomain for the Return-Path address. When omitted, the server
+        /// picks a free DNS label.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        return_path: Option<String>,
+    }
+
+    impl EnableForgeOptions {
+        /// Creates a new [`EnableForgeOptions`].
+        #[inline]
+        pub fn new() -> Self {
+            Self::default()
+        }
+
+        /// Subdomain for the Return-Path address. When omitted, the server
+        /// picks a free DNS label.
+        #[inline]
+        pub fn with_return_path(mut self, return_path: impl Into<String>) -> Self {
+            self.return_path = Some(return_path.into());
+            self
+        }
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -843,5 +959,51 @@ mod test {
 
         let domain: Domain = serde_json::from_str(json).expect("domain deserializes");
         assert!(matches!(domain.status, DomainStatus::PartiallyFailed));
+    }
+
+    #[test]
+    fn serialize_enable_forge_body() {
+        use crate::domains::types::EnableForgeOptions;
+
+        let empty = serde_json::to_value(EnableForgeOptions::new()).expect("serializes");
+        assert_eq!(empty, serde_json::json!({}));
+
+        let with_return_path =
+            serde_json::to_value(EnableForgeOptions::new().with_return_path("send"))
+                .expect("serializes");
+        assert_eq!(
+            with_return_path,
+            serde_json::json!({ "return_path": "send" })
+        );
+    }
+
+    #[test]
+    fn serialize_scoped_verify_body() {
+        use crate::domains::types::{VerifyDomainOptions, VerifyDomainScope};
+
+        assert!(!VerifyDomainOptions::new().has_scope());
+
+        let scoped = VerifyDomainOptions::new().with_scope([VerifyDomainScope::Forge]);
+        assert!(scoped.has_scope());
+        assert_eq!(
+            serde_json::to_value(scoped).expect("serializes"),
+            serde_json::json!({ "scope": ["forge"] })
+        );
+    }
+
+    #[test]
+    fn serialize_forge_return_path_change() {
+        use crate::domains::types::DomainChanges;
+
+        let changes = DomainChanges::new()
+            .with_click_tracking(true)
+            .with_forge_return_path("outbound");
+        assert_eq!(
+            serde_json::to_value(changes).expect("serializes"),
+            serde_json::json!({
+                "click_tracking": true,
+                "forge_return_path": "outbound"
+            })
+        );
     }
 }
