@@ -8,7 +8,7 @@ and this project adheres to
 
 <!--## Unreleased-->
 
-## [0.35.3] - 2026-11-13
+## [0.36.0] - 2026-11-13
 
 ### Fixed
 
@@ -693,6 +693,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+[0.36.0]: https://crates.io/crates/resend-rs/0.36.0
 [0.35.3]: https://crates.io/crates/resend-rs/0.35.3
 [0.35.2]: https://crates.io/crates/resend-rs/0.35.2
 [0.35.1]: https://crates.io/crates/resend-rs/0.35.1
