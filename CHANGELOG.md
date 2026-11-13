@@ -6,11 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+<!--## Unreleased-->
+
+## [0.35.3] - 2026-11-13
 
 ### Fixed
 
 - `ReceivingSvc::forward` with `passthrough` now keeps the real `Content-ID` value of attachments (it used the header name before), so `cid:` references in the HTML keep working
+- Some disparities compared to the current node implementation
+  - nested attachments are now forwarded correctly
+  - forward with passthrough now reads the real `Content-ID` value instead of the header name, so `cid:` references
+    resolve
+  - The original text/html body is now parsed and re-sent, so the forwarded HTML keeps pointing at the forwarded
+    attachments.
 
 ## [0.35.2] - 2026-11-05
 
@@ -687,6 +695,7 @@ Disabled `reqwest`'s default features and enabled `rustls-tls`.
 
 Initial release.
 
+[0.35.3]: https://crates.io/crates/resend-rs/0.35.3
 [0.35.2]: https://crates.io/crates/resend-rs/0.35.2
 [0.35.1]: https://crates.io/crates/resend-rs/0.35.1
 [0.35.0]: https://crates.io/crates/resend-rs/0.35.0
