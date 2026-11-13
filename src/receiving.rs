@@ -105,50 +105,7 @@ impl ReceivingSvc {
         let email_svc = EmailsSvc(Arc::<Config>::clone(&self.0));
 
         if opts.passthrough {
-            let parsed =
-                mailparse::parse_mail(&raw_response_content).map_err(|e| Error::Parse {
-                    message: "Failed to parse raw email".to_owned(),
-                    source: Some(Box::new(e)),
-                })?;
-
-            let attachments = parsed
-                .subparts
-                .iter()
-                .filter(|el| {
-                    el.get_content_disposition().disposition == DispositionType::Attachment
-                })
-                .map(|attachment| {
-                    let disposition = attachment.get_content_disposition();
-
-                    let filename = disposition
-                        .params
-                        .get("filename")
-                        .ok_or_else(|| Error::Other("Could not get filename".to_string()))?
-                        .to_owned();
-                    let content = attachment
-                        .get_body_raw()
-                        .map_err(|_e| Error::Other("Could not get attachment body".to_string()))?;
-                    let content_type = attachment.ctype.mimetype.clone();
-
-                    if let Some(content_id) = attachment.headers.get_first_header("Content-ID") {
-                        let mut content_id = content_id.get_key();
-                        if content_id.starts_with('<') {
-                            content_id = content_id[1..content_id.len() - 1].to_string();
-                        }
-
-                        let attachment = CreateAttachment::from_content(content)
-                            .with_content_id(&content_id)
-                            .with_filename(&filename)
-                            .with_content_type(&content_type);
-                        Ok(attachment)
-                    } else {
-                        let attachment = CreateAttachment::from_content(content)
-                            .with_filename(&filename)
-                            .with_content_type(&content_type);
-                        Ok(attachment)
-                    }
-                })
-                .collect::<Result<Vec<_>>>()?;
+            let attachments = passthrough_attachments(&raw_response_content)?;
 
             let mut email = CreateEmailBaseOptions::new(opts.from, opts.to, email_response.subject)
                 .with_attachments(attachments);
@@ -342,6 +299,54 @@ pub mod types {
     }
 }
 
+/// Extracts the attachments of a raw MIME message so they can be re-sent as-is.
+fn passthrough_attachments(raw: &[u8]) -> Result<Vec<CreateAttachment>> {
+    let parsed = mailparse::parse_mail(raw).map_err(|e| Error::Parse {
+        message: "Failed to parse raw email".to_owned(),
+        source: Some(Box::new(e)),
+    })?;
+
+    let attachments = parsed
+        .subparts
+        .iter()
+        .filter(|el| el.get_content_disposition().disposition == DispositionType::Attachment)
+        .map(|attachment| {
+            let disposition = attachment.get_content_disposition();
+
+            let filename = disposition
+                .params
+                .get("filename")
+                .ok_or_else(|| Error::Other("Could not get filename".to_string()))?
+                .to_owned();
+            let content = attachment
+                .get_body_raw()
+                .map_err(|_e| Error::Other("Could not get attachment body".to_string()))?;
+            let content_type = attachment.ctype.mimetype.clone();
+
+            if let Some(content_id) = attachment.headers.get_first_header("Content-ID") {
+                let content_id = content_id.get_value();
+                let content_id = content_id
+                    .trim()
+                    .trim_start_matches('<')
+                    .trim_end_matches('>');
+
+                let attachment = CreateAttachment::from_content(content)
+                    .with_content_id(content_id)
+                    .with_filename(&filename)
+                    .with_content_type(&content_type);
+                Ok(attachment)
+            } else {
+                let attachment = CreateAttachment::from_content(content)
+                    .with_filename(&filename)
+                    .with_content_type(&content_type);
+                Ok(attachment)
+            }
+        })
+        .collect::<Result<Vec<_>>>()?;
+
+    Ok(attachments)
+}
+
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 #[allow(clippy::needless_return)]
@@ -396,6 +401,14 @@ mod test {
             .await?;
 
         Ok(())
+    }
+
+    #[test]
+    fn passthrough_keeps_attachment_content_id() {
+        let raw = b"Content-Type: multipart/mixed; boundary=x\r\n\r\n--x\r\nContent-Type: image/png\r\nContent-Disposition: attachment; filename=logo.png\r\nContent-ID: <logo@example.test>\r\n\r\nPNG\r\n--x--\r\n";
+        let attachments = super::passthrough_attachments(raw).unwrap();
+        let json = serde_json::to_value(attachments.first().unwrap()).unwrap();
+        assert_eq!(json.get("content_id").unwrap(), "logo@example.test");
     }
 
     #[test]
