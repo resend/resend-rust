@@ -105,58 +105,25 @@ impl ReceivingSvc {
         let email_svc = EmailsSvc(Arc::<Config>::clone(&self.0));
 
         if opts.passthrough {
-            let parsed =
-                mailparse::parse_mail(&raw_response_content).map_err(|e| Error::Parse {
-                    message: "Failed to parse raw email".to_owned(),
-                    source: Some(Box::new(e)),
-                })?;
-
-            let attachments = parsed
-                .subparts
-                .iter()
-                .filter(|el| {
-                    el.get_content_disposition().disposition == DispositionType::Attachment
-                })
-                .map(|attachment| {
-                    let disposition = attachment.get_content_disposition();
-
-                    let filename = disposition
-                        .params
-                        .get("filename")
-                        .ok_or_else(|| Error::Other("Could not get filename".to_string()))?
-                        .to_owned();
-                    let content = attachment
-                        .get_body_raw()
-                        .map_err(|_e| Error::Other("Could not get attachment body".to_string()))?;
-                    let content_type = attachment.ctype.mimetype.clone();
-
-                    if let Some(content_id) = attachment.headers.get_first_header("Content-ID") {
-                        let mut content_id = content_id.get_key();
-                        if content_id.starts_with('<') {
-                            content_id = content_id[1..content_id.len() - 1].to_string();
-                        }
-
-                        let attachment = CreateAttachment::from_content(content)
-                            .with_content_id(&content_id)
-                            .with_filename(&filename)
-                            .with_content_type(&content_type);
-                        Ok(attachment)
-                    } else {
-                        let attachment = CreateAttachment::from_content(content)
-                            .with_filename(&filename)
-                            .with_content_type(&content_type);
-                        Ok(attachment)
-                    }
-                })
-                .collect::<Result<Vec<_>>>()?;
+            let content = passthrough_content(&raw_response_content)?;
 
             let mut email = CreateEmailBaseOptions::new(opts.from, opts.to, email_response.subject)
-                .with_attachments(attachments);
+                .with_attachments(content.attachments);
 
-            if let Some(text) = &opts.text {
-                email = email.with_text(text);
-            } else if let Some(html) = &opts.html {
-                email = email.with_html(html);
+            // A caller supplied body wins, otherwise the original one is re-sent so
+            // that `cid:` references in the HTML keep resolving to the attachments.
+            let (text, html) = if opts.text.is_some() || opts.html.is_some() {
+                (opts.text, opts.html)
+            } else {
+                (content.text, content.html)
+            };
+
+            if let Some(text) = text {
+                email = email.with_text(&text);
+            }
+
+            if let Some(html) = html {
+                email = email.with_html(&html);
             }
 
             let res = email_svc.send(email).await?;
@@ -342,6 +309,126 @@ pub mod types {
     }
 }
 
+/// The parts of a raw MIME message that `ReceivingSvc::forward` with `passthrough`
+/// re-sends as-is.
+struct PassthroughContent {
+    attachments: Vec<CreateAttachment>,
+    text: Option<String>,
+    html: Option<String>,
+}
+
+/// Extracts the body and the attachments of a raw MIME message so they can be
+/// re-sent as-is.
+///
+/// Parts are collected from the whole MIME tree, not only from the top level, so
+/// attachments nested inside e.g. a `multipart/related` are kept. Inline parts
+/// such as `cid:` images are kept as well, see [`is_passthrough_attachment`].
+fn passthrough_content(raw: &[u8]) -> Result<PassthroughContent> {
+    let parsed = mailparse::parse_mail(raw).map_err(|e| Error::Parse {
+        message: "Failed to parse raw email".to_owned(),
+        source: Some(Box::new(e)),
+    })?;
+
+    let attachments = parsed
+        .parts()
+        .filter(|part| is_passthrough_attachment(part))
+        .map(create_passthrough_attachment)
+        .collect::<Result<Vec<_>>>()?;
+
+    Ok(PassthroughContent {
+        attachments,
+        text: collect_body(&parsed, "text/plain"),
+        html: collect_body(&parsed, "text/html"),
+    })
+}
+
+/// Builds the [`CreateAttachment`] that re-sends a single MIME part.
+fn create_passthrough_attachment(part: &mailparse::ParsedMail<'_>) -> Result<CreateAttachment> {
+    let content = part
+        .get_body_raw()
+        .map_err(|_e| Error::Other("Could not get attachment body".to_string()))?;
+    let content_type = part.ctype.mimetype.clone();
+
+    // The filename is usually on `Content-Disposition`, but inline parts
+    // sometimes only carry it as the `name` parameter of `Content-Type`.
+    let filename = part
+        .get_content_disposition()
+        .params
+        .get("filename")
+        .or_else(|| part.ctype.params.get("name"))
+        .map(ToOwned::to_owned);
+
+    // The angle brackets around a `Content-ID` are not part of the value.
+    let content_id = part
+        .headers
+        .get_first_header("Content-ID")
+        .map(|header| {
+            header
+                .get_value()
+                .trim()
+                .trim_start_matches('<')
+                .trim_end_matches('>')
+                .to_owned()
+        })
+        .filter(|content_id| !content_id.is_empty());
+
+    let mut attachment = CreateAttachment::from_content(content).with_content_type(&content_type);
+
+    if let Some(filename) = filename {
+        attachment = attachment.with_filename(&filename);
+    }
+
+    if let Some(content_id) = content_id {
+        attachment = attachment.with_content_id(&content_id);
+    }
+
+    Ok(attachment)
+}
+
+/// Collects the decoded bodies of all non-attachment parts of the given MIME type.
+fn collect_body(parsed: &mailparse::ParsedMail<'_>, mimetype: &str) -> Option<String> {
+    let bodies = parsed
+        .parts()
+        .filter(|part| {
+            part.ctype.mimetype == mimetype
+                && part.get_content_disposition().disposition != DispositionType::Attachment
+        })
+        .filter_map(decoded_body)
+        .collect::<Vec<_>>();
+
+    if bodies.is_empty() {
+        None
+    } else {
+        Some(bodies.join("\n"))
+    }
+}
+
+/// Returns the decoded body of a MIME part, falling back to a lossy decoding so a
+/// single oddly encoded part cannot fail the whole forward.
+fn decoded_body(part: &mailparse::ParsedMail<'_>) -> Option<String> {
+    part.get_body().ok().or_else(|| {
+        part.get_body_raw()
+            .ok()
+            .map(|raw| String::from_utf8_lossy(&raw).into_owned())
+    })
+}
+
+/// Returns whether a MIME part of a raw email should be re-sent as an attachment.
+///
+/// This mirrors the reference implementation: every part that is neither a
+/// `multipart/*` container nor one of the message bodies (`text/plain` or
+/// `text/html` without an `attachment` disposition) is treated as an attachment.
+/// That covers regular `Content-Disposition: attachment` parts as well as inline
+/// parts, which is where `cid:` referenced images usually live.
+fn is_passthrough_attachment(part: &mailparse::ParsedMail<'_>) -> bool {
+    if part.ctype.mimetype.starts_with("multipart/") {
+        return false;
+    }
+
+    part.get_content_disposition().disposition == DispositionType::Attachment
+        || !matches!(part.ctype.mimetype.as_str(), "text/plain" | "text/html")
+}
+
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 #[allow(clippy::needless_return)]
@@ -396,6 +483,112 @@ mod test {
             .await?;
 
         Ok(())
+    }
+
+    #[test]
+    fn passthrough_keeps_attachment_content_id() {
+        let raw = b"Content-Type: multipart/mixed; boundary=x\r\n\r\n--x\r\nContent-Type: image/png\r\nContent-Disposition: attachment; filename=logo.png\r\nContent-ID: <logo@example.test>\r\n\r\nPNG\r\n--x--\r\n";
+        let attachments = super::passthrough_content(raw).unwrap().attachments;
+        let json = serde_json::to_value(attachments.first().unwrap()).unwrap();
+        assert_eq!(json.get("content_id").unwrap(), "logo@example.test");
+    }
+
+    #[test]
+    fn passthrough_finds_nested_attachments() {
+        let raw = b"Content-Type: multipart/mixed; boundary=out\r\n\r\n--out\r\nContent-Type: multipart/related; boundary=in\r\n\r\n--in\r\nContent-Type: text/html\r\n\r\n<img src=\"cid:logo@example.test\">\r\n--in\r\nContent-Type: image/png\r\nContent-Disposition: attachment; filename=logo.png\r\nContent-ID: <logo@example.test>\r\n\r\nPNG\r\n--in--\r\n--out--\r\n";
+        let attachments = super::passthrough_content(raw).unwrap().attachments;
+        assert_eq!(attachments.len(), 1);
+
+        let json = serde_json::to_value(attachments.first().unwrap()).unwrap();
+        assert_eq!(
+            json.get("content_id").and_then(serde_json::Value::as_str),
+            Some("logo@example.test")
+        );
+        assert_eq!(
+            json.get("filename").and_then(serde_json::Value::as_str),
+            Some("logo.png")
+        );
+    }
+
+    #[test]
+    fn passthrough_keeps_inline_cid_attachments() {
+        let raw = b"Content-Type: multipart/related; boundary=x\r\n\r\n--x\r\nContent-Type: text/html\r\n\r\n<img src=\"cid:logo@example.test\">\r\n--x\r\nContent-Type: image/png\r\nContent-Disposition: inline; filename=logo.png\r\nContent-ID: <logo@example.test>\r\n\r\nPNG\r\n--x--\r\n";
+        let attachments = super::passthrough_content(raw).unwrap().attachments;
+        assert_eq!(attachments.len(), 1);
+
+        let json = serde_json::to_value(attachments.first().unwrap()).unwrap();
+        assert_eq!(
+            json.get("content_id").and_then(serde_json::Value::as_str),
+            Some("logo@example.test")
+        );
+        assert_eq!(
+            json.get("filename").and_then(serde_json::Value::as_str),
+            Some("logo.png")
+        );
+    }
+
+    #[test]
+    fn passthrough_falls_back_to_content_type_name_for_filename() {
+        let raw = b"Content-Type: multipart/related; boundary=x\r\n\r\n--x\r\nContent-Type: text/html\r\n\r\n<img src=\"cid:photo@example.test\">\r\n--x\r\nContent-Type: image/jpeg; name=\"photo.jpg\"\r\nContent-ID: <photo@example.test>\r\n\r\nJPEG\r\n--x--\r\n";
+        let attachments = super::passthrough_content(raw).unwrap().attachments;
+        assert_eq!(attachments.len(), 1);
+
+        let json = serde_json::to_value(attachments.first().unwrap()).unwrap();
+        assert_eq!(
+            json.get("filename").and_then(serde_json::Value::as_str),
+            Some("photo.jpg")
+        );
+        assert_eq!(
+            json.get("content_id").and_then(serde_json::Value::as_str),
+            Some("photo@example.test")
+        );
+    }
+
+    #[test]
+    fn passthrough_allows_attachments_without_filename() {
+        let raw = b"Content-Type: multipart/mixed; boundary=x\r\n\r\n--x\r\nContent-Type: text/plain\r\n\r\nbody\r\n--x\r\nContent-Type: application/pdf\r\nContent-Disposition: attachment\r\nContent-ID: <doc@example.test>\r\n\r\nPDF\r\n--x--\r\n";
+        let attachments = super::passthrough_content(raw).unwrap().attachments;
+        assert_eq!(attachments.len(), 1);
+
+        let json = serde_json::to_value(attachments.first().unwrap()).unwrap();
+        assert!(json.get("filename").is_none());
+        assert_eq!(
+            json.get("content_id").and_then(serde_json::Value::as_str),
+            Some("doc@example.test")
+        );
+    }
+
+    #[test]
+    fn passthrough_resends_the_original_body() {
+        let raw = b"Content-Type: multipart/alternative; boundary=x\r\n\r\n--x\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nHello\r\n--x\r\nContent-Type: text/html; charset=utf-8\r\nContent-Transfer-Encoding: base64\r\n\r\nPGI+SGVsbG8gPGltZyBzcmM9ImNpZDpsb2dvQGV4YW1wbGUudGVzdCI+PC9iPg==\r\n--x--\r\n";
+        let content = super::passthrough_content(raw).unwrap();
+
+        assert_eq!(content.text.as_deref(), Some("Hello"));
+        assert_eq!(
+            content.html.as_deref(),
+            Some("<b>Hello <img src=\"cid:logo@example.test\"></b>")
+        );
+        assert!(content.attachments.is_empty());
+    }
+
+    #[test]
+    fn passthrough_resends_body_and_attachments_together() {
+        let raw = b"Content-Type: multipart/related; boundary=x\r\n\r\n--x\r\nContent-Type: multipart/alternative; boundary=y\r\n\r\n--y\r\nContent-Type: text/plain\r\n\r\nHello\r\n--y\r\nContent-Type: text/html\r\n\r\n<p>Hello <img src=\"cid:logo@example.test\"></p>\r\n--y--\r\n--x\r\nContent-Type: image/png\r\nContent-Disposition: inline; filename=logo.png\r\nContent-ID: <logo@example.test>\r\n\r\nPNG\r\n--x--\r\n";
+        let content = super::passthrough_content(raw).unwrap();
+
+        assert_eq!(content.text.as_deref(), Some("Hello"));
+        assert_eq!(
+            content.html.as_deref(),
+            Some("<p>Hello <img src=\"cid:logo@example.test\"></p>")
+        );
+        assert_eq!(content.attachments.len(), 1);
+        assert_eq!(
+            serde_json::to_value(content.attachments.first().unwrap())
+                .unwrap()
+                .get("content_id")
+                .and_then(serde_json::Value::as_str),
+            Some("logo@example.test")
+        );
     }
 
     #[test]
