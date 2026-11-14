@@ -145,7 +145,7 @@ scraper = "0.27.0"
 regex = "1.13.1"
 # Used in examples
 axum = "0.8.9"
-svix = "1.99.1"
+svix = "2.0.0"
 http-body-util = "0.1.5"
 tokio-shared-rt = "0.1.0"
 anyhow = "1.0"
