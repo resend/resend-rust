@@ -116,7 +116,7 @@ pub async fn send_with_retry_opts<A: Future<Output = Result<B>> + Send, B: Send>
 
         let sleep_millis = ratelimit_reset.map_or(opts.duration_ms, |r| r.saturating_mul(1000));
         let jitter = rand::rng().random_range(opts.jitter_range_ms.clone());
-        std::thread::sleep(Duration::from_millis(sleep_millis + jitter));
+        futures_timer::Delay::new(Duration::from_millis(sleep_millis + jitter)).await;
 
         #[cfg(test)]
         {
@@ -245,6 +245,52 @@ mod test {
         let res = send_with_retry_opts(f, &opts, &mut run_count).await;
         assert!(res.is_err());
         assert_eq!(run_count, 0);
+    }
+
+    /// The wait between retries must not block the executor thread: another task running on
+    /// the same single-threaded runtime has to make progress while a retry is pending.
+    #[tokio::test(flavor = "current_thread")]
+    #[cfg(not(feature = "blocking"))]
+    async fn test_retry_does_not_block_executor() {
+        use std::sync::atomic::{AtomicU32, Ordering};
+
+        let ticks = AtomicU32::new(0);
+        let ticks_seen_on_retry = AtomicU32::new(0);
+        let calls = AtomicU32::new(0);
+
+        let f = || async {
+            if calls.fetch_add(1, Ordering::SeqCst) == 1 {
+                ticks_seen_on_retry.store(ticks.load(Ordering::SeqCst), Ordering::SeqCst);
+                return Result::<(), Error>::Ok(());
+            }
+            Err(Error::RateLimit {
+                ratelimit_limit: None,
+                ratelimit_remaining: None,
+                ratelimit_reset: None,
+            })
+        };
+        let opts = RetryOptions {
+            duration_ms: 200,
+            jitter_range_ms: 0..1,
+            max_retries: 1,
+        };
+
+        let ticker = async {
+            for _ in 0..5 {
+                let _ = ticks.fetch_add(1, Ordering::SeqCst);
+                tokio::task::yield_now().await;
+            }
+        };
+
+        let mut retry_count = 0u32;
+        let (res, ()) = tokio::join!(send_with_retry_opts(f, &opts, &mut retry_count), ticker);
+
+        assert!(res.is_ok());
+        assert_eq!(retry_count, 1);
+        assert!(
+            ticks_seen_on_retry.load(Ordering::SeqCst) > 0,
+            "other tasks were starved while waiting to retry"
+        );
     }
 
     #[tokio_shared_rt::test(shared = true)]
