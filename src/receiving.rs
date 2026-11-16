@@ -142,14 +142,7 @@ impl ReceivingSvc {
                 .with_filename("forwarded_message.eml")
                 .with_content_type("message/rfc822");
 
-            let mut email = CreateEmailBaseOptions::new(opts.from, opts.to, subject)
-                .with_attachments(vec![attachment]);
-
-            if let Some(text) = &opts.text {
-                email = email.with_text(text);
-            } else if let Some(html) = &opts.html {
-                email = email.with_html(html);
-            }
+            let email = non_passthrough_email(opts, subject, attachment);
 
             let res = email_svc.send(email).await?;
 
@@ -158,6 +151,27 @@ impl ReceivingSvc {
             })
         }
     }
+}
+
+/// Builds the email sent by a forward without `passthrough`: the raw message is attached and
+/// both the caller supplied text and HTML bodies are kept.
+fn non_passthrough_email(
+    opts: ForwardReceivingEmail,
+    subject: String,
+    attachment: CreateAttachment,
+) -> CreateEmailBaseOptions {
+    let mut email =
+        CreateEmailBaseOptions::new(opts.from, opts.to, subject).with_attachments(vec![attachment]);
+
+    if let Some(text) = &opts.text {
+        email = email.with_text(text);
+    }
+
+    if let Some(html) = &opts.html {
+        email = email.with_html(html);
+    }
+
+    email
 }
 
 #[allow(unreachable_pub)]
@@ -483,6 +497,31 @@ mod test {
             .await?;
 
         Ok(())
+    }
+
+    #[test]
+    fn non_passthrough_forward_keeps_text_and_html() {
+        use crate::types::{CreateAttachment, ForwardReceivingEmail, InboundEmailId};
+
+        let opts = ForwardReceivingEmail::new(
+            InboundEmailId::new("id"),
+            "from@example.test",
+            vec!["to@example.test"],
+        )
+        .with_text("plain")
+        .with_html("<p>rich</p>");
+        let attachment = CreateAttachment::from_content(b"raw".to_vec());
+
+        let email = super::non_passthrough_email(opts, "Fwd: hi".to_owned(), attachment);
+        let json = serde_json::to_value(email).unwrap();
+        assert_eq!(
+            json.get("text").and_then(serde_json::Value::as_str),
+            Some("plain")
+        );
+        assert_eq!(
+            json.get("html").and_then(serde_json::Value::as_str),
+            Some("<p>rich</p>")
+        );
     }
 
     #[test]
