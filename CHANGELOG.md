@@ -12,6 +12,7 @@ and this project adheres to
 
 - `retry!` and `retry_opts!` now resolve `RetryOptions` and `send_with_retry_opts` through `$crate`, so they compile in
   crates that have not imported them
+- `ReceivingSvc::forward` without `passthrough` no longer drops the HTML body when both `text` and `html` are set
 
 ## [0.36.1] - 2026-11-13
 
