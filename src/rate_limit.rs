@@ -173,8 +173,8 @@ pub async fn send_with_retry<A: Future<Output = Result<B>> + Send, B: Send>(
 #[macro_export]
 macro_rules! retry {
     ( $f:expr ) => {{
-        let retry_opts = RetryOptions::default();
-        send_with_retry_opts(|| $f, &retry_opts).await
+        let retry_opts = $crate::rate_limit::RetryOptions::default();
+        $crate::rate_limit::send_with_retry_opts(|| $f, &retry_opts).await
     }};
 }
 
@@ -202,7 +202,7 @@ macro_rules! retry {
 /// ```
 #[macro_export]
 macro_rules! retry_opts {
-    ( $f:expr, $opts:expr ) => {{ send_with_retry_opts(|| $f, &$opts).await }};
+    ( $f:expr, $opts:expr ) => {{ $crate::rate_limit::send_with_retry_opts(|| $f, &$opts).await }};
 }
 
 #[cfg(test)]
