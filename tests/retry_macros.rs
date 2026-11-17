@@ -17,6 +17,6 @@ async fn uses_retry_opts() -> resend_rs::Result<()> {
 #[cfg(not(feature = "blocking"))]
 #[tokio::test]
 async fn macros_resolve_without_imports() {
-    uses_retry().await.unwrap();
-    uses_retry_opts().await.unwrap();
+    uses_retry().await.expect("Retry succeeded");
+    uses_retry_opts().await.expect("Retry succeeded");
 }
