@@ -198,7 +198,7 @@ pub mod types {
         ///
         /// The requested return path cannot be used for Forge.
         ///
-        /// Choose a `return_path` label that has no DNS records yet and differs from the current SES return path.
+        /// Choose a `custom_return_path` label that has no DNS records yet and differs from the current SES return path.
         ReturnPathUnavailable,
 
         /// 429 Too Many Requests.
