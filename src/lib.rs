@@ -1,4 +1,5 @@
 #![forbid(unsafe_code)]
+#![doc(test(attr(deny(unused_imports))))]
 #![doc = include_str!("../README.md")]
 //! ### Rate Limits
 //!
