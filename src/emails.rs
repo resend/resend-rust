@@ -1282,7 +1282,7 @@ mod test {
         types::{CreateAttachment, CreateEmailBaseOptions, Email, ShareEmailResponse, Tag},
     };
     #[cfg(not(feature = "blocking"))]
-    use jiff::{Span, Timestamp, Zoned};
+    use jiff::{SignedDuration, Span, Timestamp, ZonedDateTime};
 
     use std::collections::HashMap;
 
@@ -1427,13 +1427,13 @@ mod test {
     async fn schedule_email() -> DebugResult<()> {
         use crate::emails::types::EmailEvent;
 
-        let now_plus_1h = Zoned::now()
+        let now_plus_1h = ZonedDateTime::now()
             .checked_add(Span::new().hours(1))
             .expect("Valid date")
             .timestamp()
             .to_string();
 
-        let now_plus_2h = Zoned::now()
+        let now_plus_2h = ZonedDateTime::now()
             .checked_add(Span::new().hours(2))
             .expect("Valid date")
             .timestamp()
@@ -1462,10 +1462,7 @@ mod test {
             .parse::<Timestamp>()
             .expect("Valid timestamp");
         let time_delta = (time - Timestamp::now()).round(jiff::Unit::Hour).unwrap();
-        assert_eq!(
-            time_delta.compare(Span::new().hours(1)).unwrap(),
-            std::cmp::Ordering::Equal
-        );
+        assert_eq!(time_delta, SignedDuration::from_hours(1));
 
         // Update
         let changes = UpdateEmailOptions::new().with_scheduled_at(&now_plus_2h);
@@ -1482,10 +1479,7 @@ mod test {
             .parse::<Timestamp>()
             .expect("Valid timestamp");
         let time_delta = (time - Timestamp::now()).round(jiff::Unit::Hour).unwrap();
-        assert_eq!(
-            time_delta.compare(Span::new().hours(2)).unwrap(),
-            std::cmp::Ordering::Equal
-        );
+        assert_eq!(time_delta, SignedDuration::from_hours(2));
 
         // Cancel
         let _cancelled = resend.emails.cancel(&email.id).await?;
