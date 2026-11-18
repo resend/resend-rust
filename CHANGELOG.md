@@ -11,6 +11,7 @@ and this project adheres to
 ### Fixed
 
 - `ReceivingSvc::forward` now returns an error when downloading the raw message fails (for example an HTTP 404 for an expired link) instead of forwarding the error body as the `.eml` attachment
+- The async rate limiter now replenishes `RESEND_RATE_LIMIT` requests per 1,100 ms instead of one request per 1,100 ms after the initial burst
 
 ## [0.36.2] - 2026-11-17
 
