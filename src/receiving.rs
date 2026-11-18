@@ -725,10 +725,10 @@ mod test {
 
         let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
         let url = format!("http://{}/raw", listener.local_addr().unwrap());
-        std::thread::spawn(move || {
+        let _t = std::thread::spawn(move || {
             let (mut stream, _) = listener.accept().unwrap();
             let mut buf = [0u8; 1024];
-            let _ = stream.read(&mut buf);
+            let _res = stream.read(&mut buf);
             stream.write_all(response.as_bytes()).unwrap();
         });
         url
