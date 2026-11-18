@@ -114,7 +114,12 @@ pub async fn send_with_retry_opts<A: Future<Output = Result<B>> + Send, B: Send>
         };
 
         let sleep_millis = ratelimit_reset.map_or(opts.duration_ms, |r| r.saturating_mul(1000));
-        let jitter = rand::rng().random_range(opts.jitter_range_ms.clone());
+        // `random_range` panics on an empty range, so treat one (e.g. `0..0`) as "no jitter".
+        let jitter = if opts.jitter_range_ms.is_empty() {
+            0
+        } else {
+            rand::rng().random_range(opts.jitter_range_ms.clone())
+        };
         futures_timer::Delay::new(Duration::from_millis(sleep_millis + jitter)).await;
 
         #[cfg(test)]
@@ -289,6 +294,31 @@ mod test {
             ticks_seen_on_retry.load(Ordering::SeqCst) > 0,
             "other tasks were starved while waiting to retry"
         );
+    }
+
+    /// An empty jitter range (e.g. `0..0`, meaning "no jitter") must not panic.
+    #[tokio::test]
+    #[cfg(not(feature = "blocking"))]
+    async fn test_retry_empty_jitter_range() {
+        let mut retry_count = 0u32;
+
+        let f = || async {
+            Result::<(), Error>::Err(Error::RateLimit {
+                ratelimit_limit: None,
+                ratelimit_remaining: None,
+                ratelimit_reset: Some(0),
+            })
+        };
+        let opts = RetryOptions {
+            duration_ms: 0,
+            jitter_range_ms: 0..0,
+            max_retries: 1,
+        };
+
+        let res = send_with_retry_opts(f, &opts, &mut retry_count).await;
+
+        assert!(res.is_err());
+        assert_eq!(retry_count, 1);
     }
 
     #[tokio_shared_rt::test(shared = true)]

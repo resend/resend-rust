@@ -10,6 +10,8 @@ and this project adheres to
 
 ### Fixed
 
+- `send_with_retry_opts` (and the `retry!`/`retry_opts!` macros) no longer panic when `RetryOptions::jitter_range_ms` is
+  an empty range such as `0..0`; an empty range now means no jitter
 - `ReceivingSvc::forward` now returns an error when downloading the raw message fails (for example an HTTP 404 for an expired link) instead of forwarding the error body as the `.eml` attachment
 - The async rate limiter now replenishes `RESEND_RATE_LIMIT` requests per 1,100 ms instead of one request per 1,100 ms after the initial burst
 
