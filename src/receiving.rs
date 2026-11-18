@@ -720,6 +720,7 @@ mod test {
     }
 
     /// Serves one canned HTTP response on a local port and returns the URL.
+    #[cfg(not(feature = "blocking"))]
     fn serve_once(response: &'static str) -> String {
         use std::io::{Read, Write};
 
