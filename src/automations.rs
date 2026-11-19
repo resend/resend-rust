@@ -238,6 +238,8 @@ pub mod types {
         pub subject: Option<String>,
         pub from: Option<String>,
         pub reply_to: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub topic_id: Option<String>,
         pub variables: Option<Value>,
     }
 
@@ -249,6 +251,7 @@ pub mod types {
                 subject: None,
                 from: None,
                 reply_to: None,
+                topic_id: None,
                 variables: None,
             }
         }
@@ -268,6 +271,12 @@ pub mod types {
         #[inline]
         pub fn with_reply_to(mut self, reply_to: impl Into<String>) -> Self {
             self.reply_to = Some(reply_to.into());
+            self
+        }
+
+        #[inline]
+        pub fn with_topic_id(mut self, topic_id: impl Into<String>) -> Self {
+            self.topic_id = Some(topic_id.into());
             self
         }
 
@@ -521,6 +530,7 @@ mod test {
                         subject: None,
                         from: None,
                         reply_to: None,
+                        topic_id: None,
                         variables: None,
                         template: crate::automations::types::AutomationTemplate {
                             id: "34a080c9-b17d-4187-ad80-5af20266e535".to_owned(),
@@ -537,6 +547,36 @@ mod test {
         };
 
         println!("{}", serde_json::to_string(&tmp).unwrap());
+    }
+
+    #[test]
+    fn send_email_topic_id_round_trip() {
+        let config = SendEmailStepConfig::new(crate::automations::types::AutomationTemplate {
+            id: "34a080c9-b17d-4187-ad80-5af20266e535".to_owned(),
+            variables: None,
+        })
+        .with_topic_id("b6d24b8e-af0b-4c3c-be0c-359bbd97381e");
+
+        let json = serde_json::to_value(&config).unwrap();
+        assert_eq!(
+            json.get("topic_id").and_then(|v| v.as_str()),
+            Some("b6d24b8e-af0b-4c3c-be0c-359bbd97381e")
+        );
+
+        let parsed: SendEmailStepConfig = serde_json::from_value(json).unwrap();
+        assert_eq!(
+            parsed.topic_id.as_deref(),
+            Some("b6d24b8e-af0b-4c3c-be0c-359bbd97381e")
+        );
+
+        let without = serde_json::to_value(SendEmailStepConfig::new(
+            crate::automations::types::AutomationTemplate {
+                id: "34a080c9-b17d-4187-ad80-5af20266e535".to_owned(),
+                variables: None,
+            },
+        ))
+        .unwrap();
+        assert!(without.get("topic_id").is_none());
     }
 
     #[test]
