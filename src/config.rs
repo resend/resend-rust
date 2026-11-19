@@ -186,6 +186,34 @@ impl Config {
             .header(USER_AGENT, self.user_agent.as_str())
     }
 
+    /// Builds the error for a 429 response.
+    ///
+    /// Quota errors (`daily_quota_exceeded`, `monthly_quota_exceeded`) are returned as
+    /// [`Error::Resend`] since retrying won't help; anything else is a [`Error::RateLimit`].
+    fn too_many_requests_error(headers: &reqwest::header::HeaderMap, body: &str) -> Error {
+        if let Ok(error) = serde_json::from_str::<ErrorResponse>(body)
+            && matches!(
+                error.name.as_str(),
+                "daily_quota_exceeded" | "monthly_quota_exceeded"
+            )
+        {
+            return Error::Resend(error);
+        }
+
+        let header_u64 = |name: &str| {
+            headers
+                .get(name)
+                .and_then(|v| v.to_str().ok())
+                .and_then(|v| v.parse::<u64>().ok())
+        };
+
+        Error::RateLimit {
+            ratelimit_limit: header_u64("ratelimit-limit"),
+            ratelimit_remaining: header_u64("ratelimit-remaining"),
+            ratelimit_reset: header_u64("ratelimit-reset"),
+        }
+    }
+
     #[allow(unreachable_pub)]
     #[maybe_async::maybe_async]
     pub async fn send(&self, request: RequestBuilder) -> Result<Response> {
@@ -202,26 +230,10 @@ impl Config {
 
         match response.status() {
             StatusCode::TOO_MANY_REQUESTS => {
-                let headers = response.headers();
+                let headers = response.headers().clone();
+                let body = response.text().await.unwrap_or_default();
 
-                let ratelimit_limit = headers
-                    .get("ratelimit-limit")
-                    .and_then(|v| v.to_str().ok())
-                    .and_then(|v| v.parse::<u64>().ok());
-                let ratelimit_remaining = headers
-                    .get("ratelimit-remaining")
-                    .and_then(|v| v.to_str().ok())
-                    .and_then(|v| v.parse::<u64>().ok());
-                let ratelimit_reset = headers
-                    .get("ratelimit-reset")
-                    .and_then(|v| v.to_str().ok())
-                    .and_then(|v| v.parse::<u64>().ok());
-
-                Err(Error::RateLimit {
-                    ratelimit_limit,
-                    ratelimit_remaining,
-                    ratelimit_reset,
-                })
+                Err(Self::too_many_requests_error(&headers, &body))
             }
             x if x.is_client_error() || x.is_server_error() => {
                 // TODO: Make this more testable
@@ -322,5 +334,44 @@ mod test {
             url_for("https://proxy.example.com/resend/", "/emails/abc"),
             "https://proxy.example.com/resend/emails/abc"
         );
+    }
+
+    #[test]
+    fn too_many_requests_quota_errors_are_resend_errors() {
+        use crate::types::ErrorKind;
+
+        let headers = reqwest::header::HeaderMap::new();
+        for (name, kind) in [
+            ("daily_quota_exceeded", ErrorKind::DailyQuotaExceeded),
+            ("monthly_quota_exceeded", ErrorKind::MonthlyQuotaExceeded),
+        ] {
+            let body = format!(r#"{{"statusCode":429,"name":"{name}","message":"quota"}}"#);
+            match Config::too_many_requests_error(&headers, &body) {
+                Error::Resend(e) => assert_eq!(e.kind(), kind),
+                other => panic!("expected Error::Resend, got {other:?}"),
+            }
+        }
+    }
+
+    #[test]
+    fn too_many_requests_rate_limit_keeps_headers() {
+        let mut headers = reqwest::header::HeaderMap::new();
+        drop(headers.insert("ratelimit-limit", "2".parse().unwrap()));
+        drop(headers.insert("ratelimit-remaining", "0".parse().unwrap()));
+        drop(headers.insert("ratelimit-reset", "1".parse().unwrap()));
+        let body = r#"{"statusCode":429,"name":"rate_limit_exceeded","message":"slow down"}"#;
+
+        assert!(matches!(
+            Config::too_many_requests_error(&headers, body),
+            Error::RateLimit {
+                ratelimit_limit: Some(2),
+                ratelimit_remaining: Some(0),
+                ratelimit_reset: Some(1),
+            }
+        ));
+        assert!(matches!(
+            Config::too_many_requests_error(&headers, "not json"),
+            Error::RateLimit { .. }
+        ));
     }
 }
