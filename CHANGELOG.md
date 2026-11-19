@@ -8,6 +8,10 @@ and this project adheres to
 
 ## Unreleased
 
+### Added
+
+- `SendEmailStepConfig::topic_id`
+
 ### Fixed
 
 - `send_with_retry_opts` (and the `retry!`/`retry_opts!` macros) no longer panic when `RetryOptions::jitter_range_ms` is
