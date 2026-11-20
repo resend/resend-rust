@@ -100,7 +100,7 @@ impl ReceivingSvc {
             })
         })?;
 
-        let raw_response_content = reqwest::get(raw.download_url).await?.bytes().await?;
+        let raw_response_content = download_raw(raw.download_url).await?;
 
         let email_svc = EmailsSvc(Arc::<Config>::clone(&self.0));
 
@@ -138,7 +138,7 @@ impl ReceivingSvc {
                 format!("Fwd: {}", email_response.subject)
             };
 
-            let attachment = CreateAttachment::from_content(raw_response_content.to_vec())
+            let attachment = CreateAttachment::from_content(raw_response_content)
                 .with_filename("forwarded_message.eml")
                 .with_content_type("message/rfc822");
 
@@ -151,6 +151,18 @@ impl ReceivingSvc {
             })
         }
     }
+}
+
+/// Downloads the raw message, failing on a non success status so that an error page is never
+/// forwarded as if it were the original email.
+#[maybe_async::maybe_async]
+async fn download_raw(url: String) -> Result<Vec<u8>> {
+    Ok(reqwest::get(url)
+        .await?
+        .error_for_status()?
+        .bytes()
+        .await?
+        .to_vec())
 }
 
 /// Builds the email sent by a forward without `passthrough`: the raw message is attached and
@@ -705,5 +717,41 @@ mod test {
         let email = data.data.first().unwrap();
         assert!(email.raw.is_some());
         assert_eq!(email.received_for, vec!["forwarded@example.com"]);
+    }
+
+    /// Serves one canned HTTP response on a local port and returns the URL.
+    #[cfg(not(feature = "blocking"))]
+    fn serve_once(response: &'static str) -> String {
+        use std::io::{Read, Write};
+
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}/raw", listener.local_addr().unwrap());
+        let _t = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut buf = [0u8; 1024];
+            let _res = stream.read(&mut buf);
+            stream.write_all(response.as_bytes()).unwrap();
+        });
+        url
+    }
+
+    #[tokio::test]
+    #[cfg(not(feature = "blocking"))]
+    async fn download_raw_rejects_error_status() {
+        let url = serve_once(
+            "HTTP/1.1 404 Not Found\r\nContent-Length: 9\r\nConnection: close\r\n\r\nnot found",
+        );
+
+        let res = super::download_raw(url).await;
+        assert!(matches!(res, Err(crate::Error::Http(_))), "{res:?}");
+    }
+
+    #[tokio::test]
+    #[cfg(not(feature = "blocking"))]
+    async fn download_raw_returns_body_on_success() {
+        let url = serve_once("HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok");
+
+        let res = super::download_raw(url).await.unwrap();
+        assert_eq!(res, b"ok");
     }
 }

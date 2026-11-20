@@ -149,11 +149,7 @@ impl Config {
             .expect("env variable `RESEND_RATE_LIMIT` should be a valid u32");
 
         #[cfg(not(feature = "blocking"))]
-        let quota = Quota::with_period(Duration::from_millis(1100))
-            .expect("Valid quota")
-            .allow_burst(
-                NonZeroU32::new(rate_limit_per_sec).expect("Rate limit is a valid non zero u32"),
-            );
+        let quota = Self::rate_limit_quota(rate_limit_per_sec);
 
         #[cfg(not(feature = "blocking"))]
         let limiter = Arc::new(RateLimiter::direct_with_clock(quota, MonotonicClock));
@@ -167,6 +163,15 @@ impl Config {
             #[cfg(not(feature = "blocking"))]
             limiter,
         }
+    }
+
+    #[cfg(not(feature = "blocking"))]
+    fn rate_limit_quota(rate_limit: u32) -> Quota {
+        let rate = NonZeroU32::new(rate_limit).expect("Rate limit is a valid non zero u32");
+        // Governor replenishes one cell per period; burst size only sets capacity.
+        Quota::with_period(Duration::from_millis(1100) / rate.get())
+            .expect("Valid quota")
+            .allow_burst(rate)
     }
 
     /// Constructs a new [`RequestBuilder`].
@@ -263,6 +268,28 @@ impl fmt::Debug for Config {
 #[allow(clippy::unwrap_used)]
 mod test {
     use super::*;
+
+    #[cfg(not(feature = "blocking"))]
+    #[test]
+    fn rate_limit_quota_replenishes_configured_rate() {
+        use governor::clock::FakeRelativeClock;
+
+        for rate in [1, 9, 20] {
+            let clock = FakeRelativeClock::default();
+            let limiter =
+                RateLimiter::direct_with_clock(Config::rate_limit_quota(rate), clock.clone());
+
+            for _ in 0..rate {
+                assert!(limiter.check().is_ok());
+            }
+            assert!(limiter.check().is_err());
+
+            clock.advance(Duration::from_millis(1100));
+            let replenished = (0..rate).filter(|_| limiter.check().is_ok()).count();
+            assert_eq!(replenished, rate as usize, "rate {rate}");
+            assert!(limiter.check().is_err());
+        }
+    }
 
     fn url_for(base_url: &str, path: &str) -> String {
         let config = Config::builder("re_test")
