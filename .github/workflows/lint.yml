@@ -19,7 +19,7 @@ concurrency:
 jobs:
   lint:
     name: Lint
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     # Three feature configurations now build instead of one, and the rustls path
     # additionally compiles aws-lc-rs, which is slow on a cold cache.
     timeout-minutes: 25
