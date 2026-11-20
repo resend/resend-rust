@@ -351,6 +351,7 @@ struct PassthroughContent {
 /// such as `cid:` images are kept as well, see [`is_passthrough_attachment`].
 fn passthrough_content(raw: &[u8]) -> Result<PassthroughContent> {
     let parsed = mailparse::parse_mail(raw).map_err(|e| Error::Parse {
+        status: None,
         message: "Failed to parse raw email".to_owned(),
         source: Some(Box::new(e)),
     })?;

@@ -314,6 +314,7 @@ impl ContactsSvc {
         let _size = file
             .read_to_string(&mut contents)
             .map_err(|err| Error::Parse {
+                status: None,
                 message: "Error while reading file".to_owned(),
                 source: Some(Box::new(err)),
             })?;
@@ -330,6 +331,7 @@ impl ContactsSvc {
 
         if let Some(column_map) = contact_import.column_map {
             let json = serde_json::to_string(&column_map).map_err(|e| Error::Parse {
+                status: None,
                 message: "Could not convert field to JSON".to_owned(),
                 source: Some(Box::new(e)),
             })?;
@@ -351,6 +353,7 @@ impl ContactsSvc {
         match value {
             Some(v) => {
                 let val = serde_json::to_value(v).map_err(|e| Error::Parse {
+                    status: None,
                     message: "Could not convert field to JSON".to_owned(),
                     source: Some(Box::new(e)),
                 })?;

@@ -233,8 +233,14 @@ pub enum Error {
     Resend(#[from] types::ErrorResponse),
 
     /// Errors that may occur during the parsing of an API response.
+    ///
+    /// When this comes from a non-2xx HTTP response, `status` is the HTTP status and `message`
+    /// is the raw response body.
     #[error("Failed to parse Resend API response. Received: \n{message}")]
     Parse {
+        /// The HTTP status of the response, when this came from an HTTP response.
+        status: Option<u16>,
+        /// The raw response body, or the text that failed to parse.
         message: String,
         source: Option<Box<dyn std::error::Error + Send + Sync>>,
     },
