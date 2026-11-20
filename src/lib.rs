@@ -253,10 +253,43 @@ pub enum Error {
     /// [`types::ErrorKind::RateLimitExceeded`].
     #[error("Too many requests. Limit is {ratelimit_limit:?} per {ratelimit_reset:?} seconds.")]
     RateLimit {
+        /// The raw response body.
+        body: String,
         ratelimit_limit: Option<u64>,
         ratelimit_remaining: Option<u64>,
         ratelimit_reset: Option<u64>,
     },
+}
+
+impl Error {
+    /// Returns the HTTP status code of the response that caused this error, if any.
+    #[must_use]
+    pub fn status(&self) -> Option<u16> {
+        match self {
+            Self::Resend(error) => Some(error.status_code),
+            Self::RateLimit { .. } => Some(429),
+            Self::Parse { status, .. } => *status,
+            Self::Http(error) => error.status().map(|status| status.as_u16()),
+            Self::Other(_) => None,
+        }
+    }
+
+    /// Returns the raw response body, when the SDK could not parse it into an
+    /// [`types::ErrorResponse`].
+    ///
+    /// Parsed API errors are available through [`Error::Resend`].
+    #[must_use]
+    pub fn raw_body(&self) -> Option<&str> {
+        match self {
+            Self::RateLimit { body, .. } => Some(body),
+            Self::Parse {
+                status: Some(_),
+                message,
+                ..
+            } => Some(message),
+            _ => None,
+        }
+    }
 }
 
 macro_rules! define_id_type {
