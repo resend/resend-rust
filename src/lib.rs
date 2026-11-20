@@ -235,6 +235,7 @@ pub enum Error {
         /// The HTTP status code of the response.
         status: u16,
         /// The parsed error returned by the API.
+        #[source]
         error: types::ErrorResponse,
     },
 
