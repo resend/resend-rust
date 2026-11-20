@@ -719,6 +719,98 @@ mod test {
         assert_eq!(email.received_for, vec!["forwarded@example.com"]);
     }
 
+    #[test]
+    fn deserialize_test3() {
+        let email = r#"{
+          "object": "email",
+          "id": "4ef9a417-02e9-4d39-ad75-9611e0fcc33c",
+          "to": ["delivered@resend.dev"],
+          "from": "onboarding@resend.dev",
+          "created_at": "2026-04-03T22:13:42.674Z",
+          "subject": "Hello World",
+          "html": "Congrats on sending your <strong>first email</strong>!",
+          "html_format": "data_uri",
+          "text": null,
+          "headers": {
+            "from": "Acme <onboarding@resend.dev>",
+            "return-path": "lucas.costa@resend.com",
+            "mime-version": "1.0"
+          },
+          "bcc": [],
+          "cc": [],
+          "reply_to": [],
+          "received_for": ["forwarded@example.com"],
+          "authentication": {
+            "spf": "pass",
+            "dkim": "pass",
+            "dmarc": "pass"
+          },
+          "message_id": "<111-222-333@email.example.com>",
+          "raw": {
+            "download_url": "https://example.resend.com/receiving/raw/054da427-439a-4e91-b785-e4fb1966285f?Signature=...",
+            "expires_at": "2026-04-03T23:13:42.674Z"
+          },
+          "attachments": [
+            {
+              "id": "2a0c9ce0-3112-4728-976e-47ddcd16a318",
+              "filename": "avatar.png",
+              "content_type": "image/png",
+              "content_disposition": "inline",
+              "content_id": "img001",
+              "size": 4096
+            },
+            {
+              "id": "3b1d0df1-4223-5839-087f-54eedd27b419",
+              "filename": "document.pdf",
+              "content_type": "application/pdf",
+              "content_disposition": null,
+              "content_id": null,
+              "size": 13264
+            }
+          ]
+        }"#;
+
+        let res = serde_json::from_str::<InboundEmail>(email);
+        assert!(res.is_ok());
+        assert_eq!(res.unwrap().headers.keys().len(), 3);
+    }
+
+    #[test]
+    fn deserialize_test4() {
+        let email = r#"    {
+          "id": "a39999a6-88e3-48b1-888b-beaabcde1b33",
+          "to": ["recipient@example.com"],
+          "from": "sender@example.com",
+          "created_at": "2025-10-09 14:37:40.951732+00",
+          "subject": "Hello World",
+          "bcc": [],
+          "cc": [],
+          "reply_to": [],
+          "received_for": ["forwarded@example.com"],
+          "message_id": "<111-222-333@email.provider.example.com>",
+          "raw": {
+            "download_url": "https://example.com/emails/raw/abc123?signature=xyz789",
+            "expires_at": "2023-04-08 00:13:52.669661+00"
+          },
+          "headers": [
+            { "name": "References", "value": ["<id1@example.com>", "<id2@example.com>"] }
+          ],
+          "attachments": [
+            {
+              "filename": "example.txt",
+              "content_type": "text/plain",
+              "content_id": null,
+              "content_disposition": "attachment",
+              "id": "47e999c7-c89c-4999-bf32-aaaaa1c3ff21",
+              "size": 13
+            }
+          ]
+        }"#;
+
+        let res = serde_json::from_str::<InboundEmail>(email);
+        assert!(res.is_ok());
+    }
+
     /// Serves one canned HTTP response on a local port and returns the URL.
     #[cfg(not(feature = "blocking"))]
     fn serve_once(response: &'static str) -> String {
