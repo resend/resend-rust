@@ -229,9 +229,14 @@ pub enum Error {
     #[error("http error: {0}")]
     Http(#[from] reqwest::Error),
 
-    /// Errors that may occur during the processing of the API request.
-    #[error("resend error: {0}")]
-    Resend(#[from] types::ErrorResponse),
+    /// Errors returned by the Resend API.
+    #[error("resend error: {error}")]
+    Resend {
+        /// The HTTP status code of the response.
+        status: u16,
+        /// The parsed error returned by the API.
+        error: types::ErrorResponse,
+    },
 
     /// Errors that may occur during the parsing of an API response.
     ///
@@ -262,12 +267,21 @@ pub enum Error {
     },
 }
 
+impl From<types::ErrorResponse> for Error {
+    fn from(error: types::ErrorResponse) -> Self {
+        Self::Resend {
+            status: error.status_code,
+            error,
+        }
+    }
+}
+
 impl Error {
     /// Returns the HTTP status code of the response that caused this error, if any.
     #[must_use]
     pub fn status(&self) -> Option<u16> {
         match self {
-            Self::Resend(error) => Some(error.status_code),
+            Self::Resend { status, .. } => Some(*status),
             Self::RateLimit { .. } => Some(429),
             Self::Parse { status, .. } => *status,
             Self::Http(error) => error.status().map(|status| status.as_u16()),
@@ -275,10 +289,10 @@ impl Error {
         }
     }
 
-    /// Returns the raw response body, when the SDK could not parse it into an
-    /// [`types::ErrorResponse`].
+    /// Returns the raw response body for rate limit errors and for non-2xx responses whose body
+    /// could not be parsed into an [`types::ErrorResponse`].
     ///
-    /// Parsed API errors are available through [`Error::Resend`].
+    /// Parsed API errors (other than rate limits) are available through [`Error::Resend`].
     #[must_use]
     pub fn raw_body(&self) -> Option<&str> {
         match self {

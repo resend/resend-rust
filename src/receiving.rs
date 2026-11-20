@@ -92,12 +92,13 @@ impl ReceivingSvc {
             .get(&opts.email_id, GetInboundEmailOptions::default())
             .await?;
 
-        let raw = email_response.raw.ok_or_else(|| {
-            Error::Resend(crate::types::ErrorResponse {
+        let raw = email_response.raw.ok_or_else(|| Error::Resend {
+            status: 400,
+            error: crate::types::ErrorResponse {
                 status_code: 400,
                 message: "Raw email content is not available for this email".to_owned(),
                 name: "validation_error".to_owned(),
-            })
+            },
         })?;
 
         let raw_response_content = download_raw(raw.download_url).await?;
