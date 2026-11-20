@@ -11,6 +11,7 @@ and this project adheres to
 ### Added
 
 - `domains::enable_forge`
+- `EmailEvent::Unknown` preventing unknown/new events from causing parsing errors
 
 ### Changed
 
