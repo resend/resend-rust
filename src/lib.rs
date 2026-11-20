@@ -222,19 +222,32 @@ pub mod types {
 /// Error type for operations of a [`Resend`] client.
 ///
 /// <https://resend.com/docs/api-reference/errors>
+#[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     /// Errors that may occur during the processing an HTTP request.
     #[error("http error: {0}")]
     Http(#[from] reqwest::Error),
 
-    /// Errors that may occur during the processing of the API request.
-    #[error("resend error: {0}")]
-    Resend(#[from] types::ErrorResponse),
+    /// Errors returned by the Resend API.
+    #[error("resend error: {error}")]
+    Resend {
+        /// The HTTP status code of the response.
+        status: u16,
+        /// The parsed error returned by the API.
+        #[source]
+        error: types::ErrorResponse,
+    },
 
     /// Errors that may occur during the parsing of an API response.
+    ///
+    /// When this comes from a non-2xx HTTP response, `status` is the HTTP status and `message`
+    /// is the raw response body.
     #[error("Failed to parse Resend API response. Received: \n{message}")]
     Parse {
+        /// The HTTP status of the response, when this came from an HTTP response.
+        status: Option<u16>,
+        /// The raw response body, or the text that failed to parse.
         message: String,
         source: Option<Box<dyn std::error::Error + Send + Sync>>,
     },
@@ -247,10 +260,52 @@ pub enum Error {
     /// [`types::ErrorKind::RateLimitExceeded`].
     #[error("Too many requests. Limit is {ratelimit_limit:?} per {ratelimit_reset:?} seconds.")]
     RateLimit {
+        /// The raw response body.
+        body: String,
         ratelimit_limit: Option<u64>,
         ratelimit_remaining: Option<u64>,
         ratelimit_reset: Option<u64>,
     },
+}
+
+impl From<types::ErrorResponse> for Error {
+    fn from(error: types::ErrorResponse) -> Self {
+        Self::Resend {
+            status: error.status_code,
+            error,
+        }
+    }
+}
+
+impl Error {
+    /// Returns the HTTP status code of the response that caused this error, if any.
+    #[must_use]
+    pub fn status(&self) -> Option<u16> {
+        match self {
+            Self::Resend { status, .. } => Some(*status),
+            Self::RateLimit { .. } => Some(429),
+            Self::Parse { status, .. } => *status,
+            Self::Http(error) => error.status().map(|status| status.as_u16()),
+            Self::Other(_) => None,
+        }
+    }
+
+    /// Returns the raw response body for rate limit errors and for non-2xx responses whose body
+    /// could not be parsed into an [`types::ErrorResponse`].
+    ///
+    /// Parsed API errors (other than rate limits) are available through [`Error::Resend`].
+    #[must_use]
+    pub fn raw_body(&self) -> Option<&str> {
+        match self {
+            Self::RateLimit { body, .. } => Some(body),
+            Self::Parse {
+                status: Some(_),
+                message,
+                ..
+            } => Some(message),
+            _ => None,
+        }
+    }
 }
 
 macro_rules! define_id_type {

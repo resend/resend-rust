@@ -12,10 +12,21 @@ and this project adheres to
 
 - `domains::enable_forge`
 - `EmailEvent::Unknown` preventing unknown/new events from causing parsing errors
+- `Error::status` and `Error::raw_body`, exposing the HTTP status and raw response body of API
+  errors
 
 ### Changed
 
 - `domains::verify` now takes an `options: VerifyDomainOptions` argument.
+- `Error` is now `#[non_exhaustive]`; `Error::Resend` carries the HTTP status,
+  `Error::Parse` carries an optional HTTP `status`, and `Error::RateLimit` carries the raw
+  response `body`.
+
+### Fixed
+
+- Errors from non-standard HTTP error bodies now keep their HTTP status, and non-quota 429
+  responses keep their raw body. `Error::status` now reports the transport status for parsed API
+  errors instead of relying on the body's `statusCode`.
 
 ## [0.37.0] - 2026-11-19
 

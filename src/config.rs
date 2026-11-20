@@ -193,14 +193,17 @@ impl Config {
     ///
     /// Quota errors (`daily_quota_exceeded`, `monthly_quota_exceeded`) are returned as
     /// [`Error::Resend`] since retrying won't help; anything else is a [`Error::RateLimit`].
-    fn too_many_requests_error(headers: &reqwest::header::HeaderMap, body: &str) -> Error {
-        if let Ok(error) = serde_json::from_str::<ErrorResponse>(body)
+    fn too_many_requests_error(headers: &reqwest::header::HeaderMap, body: String) -> Error {
+        if let Ok(error) = serde_json::from_str::<ErrorResponse>(&body)
             && matches!(
                 error.kind(),
                 ErrorKind::DailyQuotaExceeded | ErrorKind::MonthlyQuotaExceeded
             )
         {
-            return Error::Resend(error);
+            return Error::Resend {
+                status: StatusCode::TOO_MANY_REQUESTS.as_u16(),
+                error,
+            };
         }
 
         let header_u64 = |name: &str| {
@@ -211,9 +214,33 @@ impl Config {
         };
 
         Error::RateLimit {
+            body,
             ratelimit_limit: header_u64("ratelimit-limit"),
             ratelimit_remaining: header_u64("ratelimit-remaining"),
             ratelimit_reset: header_u64("ratelimit-reset"),
+        }
+    }
+
+    /// Builds the error for a non-2xx response that is not a 429.
+    fn response_error(status: StatusCode, content_type_is_html: bool, body: String) -> Error {
+        if content_type_is_html {
+            return Error::Parse {
+                status: Some(status.as_u16()),
+                message: body,
+                source: None,
+            };
+        }
+
+        match serde_json::from_str::<ErrorResponse>(&body) {
+            Ok(error) => Error::Resend {
+                status: status.as_u16(),
+                error,
+            },
+            Err(source) => Error::Parse {
+                status: Some(status.as_u16()),
+                message: body,
+                source: Some(Box::new(source)),
+            },
         }
     }
 
@@ -236,32 +263,22 @@ impl Config {
                 let headers = response.headers().clone();
                 let body = response.text().await.unwrap_or_default();
 
-                Err(Self::too_many_requests_error(&headers, &body))
+                Err(Self::too_many_requests_error(&headers, body))
             }
             x if x.is_client_error() || x.is_server_error() => {
-                // TODO: Make this more testable
                 let content_type_is_html = response
                     .headers()
                     .get("content-type")
                     .and_then(|el| el.to_str().ok())
                     .is_some_and(|content_type| content_type.contains("html"));
 
-                if content_type_is_html {
-                    return Err(Error::Parse {
-                        message: response.text().await?,
-                        source: None,
-                    });
-                }
-
-                let error_raw = response.text().await?;
-                let error = serde_json::from_str::<ErrorResponse>(&error_raw).map_err(|e| {
-                    Error::Parse {
-                        message: error_raw,
-                        source: Some(Box::new(e)),
-                    }
+                let body = response.text().await.map_err(|source| Error::Parse {
+                    status: Some(x.as_u16()),
+                    message: String::new(),
+                    source: Some(Box::new(source)),
                 })?;
 
-                Err(Error::Resend(error))
+                Err(Self::response_error(x, content_type_is_html, body))
             }
             _ => Ok(response),
         }
@@ -347,32 +364,90 @@ mod test {
             ("monthly_quota_exceeded", ErrorKind::MonthlyQuotaExceeded),
         ] {
             let body = format!(r#"{{"statusCode":429,"name":"{name}","message":"quota"}}"#);
-            match Config::too_many_requests_error(&headers, &body) {
-                Error::Resend(e) => assert_eq!(e.kind(), kind),
+            let error = Config::too_many_requests_error(&headers, body);
+            assert_eq!(error.status(), Some(429));
+            match error {
+                Error::Resend { error, .. } => assert_eq!(error.kind(), kind),
                 other => panic!("expected Error::Resend, got {other:?}"),
             }
         }
     }
 
     #[test]
-    fn too_many_requests_rate_limit_keeps_headers() {
+    fn too_many_requests_rate_limit_keeps_headers_and_body() {
         let mut headers = reqwest::header::HeaderMap::new();
         drop(headers.insert("ratelimit-limit", "2".parse().unwrap()));
         drop(headers.insert("ratelimit-remaining", "0".parse().unwrap()));
         drop(headers.insert("ratelimit-reset", "1".parse().unwrap()));
         let body = r#"{"statusCode":429,"name":"rate_limit_exceeded","message":"slow down"}"#;
 
+        let error = Config::too_many_requests_error(&headers, body.to_owned());
+        assert_eq!(error.status(), Some(429));
+        assert_eq!(error.raw_body(), Some(body));
         assert!(matches!(
-            Config::too_many_requests_error(&headers, body),
+            error,
             Error::RateLimit {
                 ratelimit_limit: Some(2),
                 ratelimit_remaining: Some(0),
                 ratelimit_reset: Some(1),
+                ..
             }
         ));
+
+        let error = Config::too_many_requests_error(&headers, "not json".to_owned());
+        assert_eq!(error.status(), Some(429));
+        assert_eq!(error.raw_body(), Some("not json"));
+        assert!(matches!(error, Error::RateLimit { .. }));
+    }
+
+    #[test]
+    fn standard_api_errors_are_resend_errors() {
+        let body = r#"{"statusCode":404,"name":"not_found","message":"Email not found"}"#;
+
+        let error = Config::response_error(StatusCode::NOT_FOUND, false, body.to_owned());
+
+        assert!(matches!(error, Error::Resend { .. }));
+        assert_eq!(error.status(), Some(404));
+        assert_eq!(error.raw_body(), None);
+    }
+
+    #[test]
+    fn parsed_errors_report_the_transport_status() {
+        // The body deliberately disagrees with the transport status.
+        let body = r#"{"statusCode":400,"name":"not_found","message":"Email not found"}"#;
+
+        let error = Config::response_error(StatusCode::NOT_FOUND, false, body.to_owned());
+
+        assert_eq!(error.status(), Some(404));
+        assert!(matches!(error, Error::Resend { status: 404, .. }));
+    }
+
+    #[test]
+    fn non_standard_bodies_keep_status_and_body() {
+        let json = r#"{"name":"not_found","message":"Email not found"}"#;
+        let error = Config::response_error(StatusCode::NOT_FOUND, false, json.to_owned());
+        assert_eq!(error.status(), Some(404));
+        assert_eq!(error.raw_body(), Some(json));
         assert!(matches!(
-            Config::too_many_requests_error(&headers, "not json"),
-            Error::RateLimit { .. }
+            error,
+            Error::Parse {
+                status: Some(404),
+                source: Some(_),
+                ..
+            }
+        ));
+
+        let html = "<html><body>Bad gateway</body></html>";
+        let error = Config::response_error(StatusCode::BAD_GATEWAY, true, html.to_owned());
+        assert_eq!(error.status(), Some(502));
+        assert_eq!(error.raw_body(), Some(html));
+        assert!(matches!(
+            error,
+            Error::Parse {
+                status: Some(502),
+                source: None,
+                ..
+            }
         ));
     }
 }
