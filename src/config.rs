@@ -15,7 +15,10 @@ use std::{env, fmt};
 #[cfg(not(feature = "blocking"))]
 use std::{num::NonZeroU32, sync::Arc, time::Duration};
 
-use crate::{Error, Result, error::types::ErrorResponse};
+use crate::{
+    Error, Result,
+    error::types::{ErrorKind, ErrorResponse},
+};
 
 #[cfg(doc)]
 use crate::Resend;
@@ -193,8 +196,8 @@ impl Config {
     fn too_many_requests_error(headers: &reqwest::header::HeaderMap, body: &str) -> Error {
         if let Ok(error) = serde_json::from_str::<ErrorResponse>(body)
             && matches!(
-                error.name.as_str(),
-                "daily_quota_exceeded" | "monthly_quota_exceeded"
+                error.kind(),
+                ErrorKind::DailyQuotaExceeded | ErrorKind::MonthlyQuotaExceeded
             )
         {
             return Error::Resend(error);
@@ -338,8 +341,6 @@ mod test {
 
     #[test]
     fn too_many_requests_quota_errors_are_resend_errors() {
-        use crate::types::ErrorKind;
-
         let headers = reqwest::header::HeaderMap::new();
         for (name, kind) in [
             ("daily_quota_exceeded", ErrorKind::DailyQuotaExceeded),
