@@ -16,6 +16,13 @@ and this project adheres to
 ### Changed
 
 - `domains::verify` now takes an `options: VerifyDomainOptions` argument.
+- `Error` is now `#[non_exhaustive]`; `Error::Parse` carries an optional HTTP `status`, and
+  `Error::RateLimit` carries the raw response `body`.
+
+### Fixed
+
+- Errors from non-standard HTTP error bodies now keep their HTTP status, and 429 responses keep
+  their body. `Error::status` and `Error::raw_body` expose both uniformly.
 
 ## [0.37.0] - 2026-11-19
 
