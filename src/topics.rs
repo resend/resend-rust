@@ -110,6 +110,7 @@ pub mod types {
     }
 
     #[must_use]
+    #[non_exhaustive]
     #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
     #[serde(rename_all = "snake_case")]
     pub enum SubscriptionType {
@@ -166,6 +167,7 @@ pub mod types {
     }
 
     #[must_use]
+    #[non_exhaustive]
     #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
     #[serde(rename_all = "kebab-case")]
     pub enum TopicVisibility {

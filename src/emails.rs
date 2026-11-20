@@ -626,6 +626,7 @@ pub mod types {
     /// Strongly typed `last_event`.
     ///
     /// <https://resend.com/docs/dashboard/emails/introduction#understand-email-events>
+    #[non_exhaustive]
     #[derive(Debug, Clone, Copy, Serialize, Deserialize, Eq, PartialEq)]
     #[serde(rename_all = "snake_case")]
     pub enum EmailEvent {
@@ -672,6 +673,7 @@ pub mod types {
     }
 
     #[must_use]
+    #[non_exhaustive]
     #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
     #[serde(rename_all = "snake_case")]
     pub enum ContentDisposition {
@@ -1057,6 +1059,7 @@ pub mod types {
     ///
     /// <https://resend.com/docs/api-reference/emails/metrics>
     #[must_use]
+    #[non_exhaustive]
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
     #[serde(rename_all = "snake_case")]
     pub enum Metric {
@@ -1082,6 +1085,11 @@ pub mod types {
         BounceRate,
         ComplaintRate,
         UnsubscribeRate,
+        /// A metric this version of the SDK does not know about yet.
+        ///
+        /// This is only produced when deserializing; do not use it as a query parameter.
+        #[serde(other)]
+        Unknown,
     }
 
     impl Metric {
@@ -1112,6 +1120,7 @@ pub mod types {
                 Self::BounceRate => "bounce_rate",
                 Self::ComplaintRate => "complaint_rate",
                 Self::UnsubscribeRate => "unsubscribe_rate",
+                Self::Unknown => "unknown",
             }
         }
     }
@@ -1139,6 +1148,7 @@ pub mod types {
     ///
     /// <https://resend.com/docs/api-reference/emails/metrics>
     #[must_use]
+    #[non_exhaustive]
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
     #[serde(rename_all = "snake_case")]
     pub enum Dimension {
@@ -1146,6 +1156,11 @@ pub mod types {
         Domain,
         Email,
         Broadcast,
+        /// A dimension this version of the SDK does not know about yet.
+        ///
+        /// This is only produced when deserializing; do not use it as a query parameter.
+        #[serde(other)]
+        Unknown,
     }
 
     impl Dimension {
@@ -1158,6 +1173,7 @@ pub mod types {
                 Self::Domain => "domain",
                 Self::Email => "email",
                 Self::Broadcast => "broadcast",
+                Self::Unknown => "unknown",
             }
         }
     }
@@ -1180,6 +1196,7 @@ pub mod types {
 
     /// Bucket size used when [`Dimension::Period`] is requested.
     #[must_use]
+    #[non_exhaustive]
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(rename_all = "snake_case")]
     pub enum MetricsGranularity {
@@ -1187,6 +1204,11 @@ pub mod types {
         Daily,
         Weekly,
         Monthly,
+        /// A granularity this version of the SDK does not know about yet.
+        ///
+        /// This is only produced when deserializing; do not use it as a query parameter.
+        #[serde(other)]
+        Unknown,
     }
 
     /// Response of [`crate::emails::EmailsSvc::metrics`].
@@ -1853,5 +1875,19 @@ mod test {
 
         assert_eq!(metrics.dimensions, Vec::<Dimension>::new());
         assert!(metrics.data.is_none());
+    }
+
+    #[test]
+    fn deserialize_unknown_metric_values() {
+        let metric: Metric = serde_json::from_str(r#""a_new_metric""#).unwrap();
+        assert_eq!(metric, Metric::Unknown);
+        assert_eq!(metric.as_str(), "unknown");
+
+        let dimension: Dimension = serde_json::from_str(r#""a_new_dimension""#).unwrap();
+        assert_eq!(dimension, Dimension::Unknown);
+        assert_eq!(dimension.as_str(), "unknown");
+
+        let granularity: MetricsGranularity = serde_json::from_str(r#""yearly""#).unwrap();
+        assert_eq!(granularity, MetricsGranularity::Unknown);
     }
 }

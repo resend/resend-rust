@@ -233,6 +233,7 @@ pub fn try_parse_event_type(data: &str) -> Result<EventType> {
 }
 
 /// Represents any [Resend Event](https://resend.com/docs/dashboard/webhooks/event-types).
+#[non_exhaustive]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 #[allow(clippy::large_enum_variant)]
@@ -247,6 +248,7 @@ pub enum Event {
 }
 
 /// Represents any [Resend Event Type](https://resend.com/docs/dashboard/webhooks/event-types).
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum EventType {
@@ -349,6 +351,7 @@ pub struct TopicEvent {
     pub data: TopicBody,
 }
 
+#[non_exhaustive]
 #[derive(Debug, Copy, Clone, Deserialize, Serialize)]
 #[cfg_attr(test, derive(strum::EnumCount))]
 pub enum EmailEventType {
@@ -376,6 +379,7 @@ pub enum EmailEventType {
     EmailFailed,
 }
 
+#[non_exhaustive]
 #[derive(Debug, Copy, Clone, Deserialize, Serialize)]
 #[cfg_attr(test, derive(strum::EnumCount))]
 pub enum ContactEventType {
@@ -387,6 +391,7 @@ pub enum ContactEventType {
     ContactDeleted,
 }
 
+#[non_exhaustive]
 #[derive(Debug, Copy, Clone, Deserialize, Serialize)]
 #[cfg_attr(test, derive(strum::EnumCount))]
 pub enum ContactTopicsEventType {
@@ -394,6 +399,7 @@ pub enum ContactTopicsEventType {
     ContactTopicsUpdated,
 }
 
+#[non_exhaustive]
 #[derive(Debug, Copy, Clone, Deserialize, Serialize)]
 #[cfg_attr(test, derive(strum::EnumCount))]
 pub enum DomainEventType {
@@ -405,6 +411,7 @@ pub enum DomainEventType {
     DomainDeleted,
 }
 
+#[non_exhaustive]
 #[derive(Debug, Copy, Clone, Deserialize, Serialize)]
 #[cfg_attr(test, derive(strum::EnumCount))]
 pub enum SuppressionEventType {
@@ -414,6 +421,7 @@ pub enum SuppressionEventType {
     SuppressionRemoved,
 }
 
+#[non_exhaustive]
 #[derive(Debug, Copy, Clone, Deserialize, Serialize)]
 #[cfg_attr(test, derive(strum::EnumCount))]
 pub enum TopicEventType {
@@ -425,6 +433,7 @@ pub enum TopicEventType {
     TopicDeleted,
 }
 
+#[non_exhaustive]
 #[derive(Debug, Copy, Clone, Deserialize, Serialize)]
 #[cfg_attr(test, derive(strum::EnumCount))]
 pub enum InboxEventType {
@@ -459,6 +468,7 @@ pub enum InboxEventType {
 }
 
 /// An `inbox.*` event. The shape of `data` depends on the event type.
+#[non_exhaustive]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 #[allow(clippy::large_enum_variant)]
@@ -586,10 +596,14 @@ pub struct Bounce {
     pub r#type: String,
 }
 
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum BounceType {
     Suppressed,
     MessageRejected,
+    /// A bounce type this version of the SDK does not know about yet.
+    #[serde(other)]
+    Unknown,
 }
 
 /// Extra data only populated in [`EmailEventType::EmailClicked`] events.
@@ -637,12 +651,16 @@ pub struct SuppressionBody {
     pub created_at: String,
 }
 
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SuppressionOriginType {
     Bounce,
     Complaint,
     Manual,
+    /// An origin this version of the SDK does not know about yet.
+    #[serde(other)]
+    Unknown,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -657,6 +675,7 @@ pub struct TopicBody {
 }
 
 /// What made the change in an `inbox.*` event.
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum InboxEventSource {
@@ -664,6 +683,9 @@ pub enum InboxEventSource {
     Dashboard,
     Agent,
     System,
+    /// A source this version of the SDK does not know about yet.
+    #[serde(other)]
+    Unknown,
 }
 
 /// An attachment on an email in an `inbox.*` event.
@@ -2388,6 +2410,20 @@ mod test {
             InboxEvent::InboxDraftDeleted { data, .. } => assert!(data.draft.is_none()),
             other => panic!("Wrong parsing: {other:?}"),
         }
+    }
+
+    #[test]
+    fn deserialize_unknown_event_values() {
+        use crate::events::{BounceType, SuppressionOriginType};
+
+        let bounce: BounceType = serde_json::from_str(r#""Transient""#).unwrap();
+        assert!(matches!(bounce, BounceType::Unknown));
+
+        let origin: SuppressionOriginType = serde_json::from_str(r#""a_new_origin""#).unwrap();
+        assert!(matches!(origin, SuppressionOriginType::Unknown));
+
+        let source: InboxEventSource = serde_json::from_str(r#""a_new_source""#).unwrap();
+        assert_eq!(source, InboxEventSource::Unknown);
     }
 
     /// Similar to the test in `error.rs`

@@ -838,6 +838,7 @@ pub mod types {
 
     /// An action the inbox agent can take.
     #[must_use]
+    #[non_exhaustive]
     #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
     #[serde(rename_all = "snake_case")]
     pub enum InboxAgentAction {
@@ -848,10 +849,14 @@ pub mod types {
         MarkAsSpam,
         Archive,
         MoveToTrash,
+        /// An action this version of the SDK does not know about yet.
+        #[serde(other)]
+        Unknown,
     }
 
     /// A tone preset the inbox agent writes in.
     #[must_use]
+    #[non_exhaustive]
     #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
     #[serde(rename_all = "snake_case")]
     pub enum InboxAgentTone {
@@ -859,6 +864,9 @@ pub mod types {
         ConciseCasual,
         ExpandedProfessional,
         ExpandedCasual,
+        /// A tone this version of the SDK does not know about yet.
+        #[serde(other)]
+        Unknown,
     }
 
     /// The agent settings of an inbox.
@@ -1042,6 +1050,7 @@ pub mod types {
 
     /// The folder a thread is in. Every thread is in exactly one folder.
     #[must_use]
+    #[non_exhaustive]
     #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
     #[serde(rename_all = "snake_case")]
     pub enum InboxFolder {
@@ -1050,6 +1059,9 @@ pub mod types {
         Spam,
         Sent,
         Trash,
+        /// A folder this version of the SDK does not know about yet.
+        #[serde(other)]
+        Unknown,
     }
 
     impl InboxFolder {
@@ -1062,6 +1074,7 @@ pub mod types {
                 Self::Spam => "spam",
                 Self::Sent => "sent",
                 Self::Trash => "trash",
+                Self::Unknown => "unknown",
             }
         }
     }
@@ -1365,6 +1378,7 @@ pub mod types {
 
     /// Whether the inbox received a message or sent it.
     #[must_use]
+    #[non_exhaustive]
     #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
     #[serde(rename_all = "snake_case")]
     pub enum InboxEmailDirection {
@@ -1666,11 +1680,15 @@ pub mod types {
 
     /// The kind of a draft.
     #[must_use]
+    #[non_exhaustive]
     #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
     #[serde(rename_all = "snake_case")]
     pub enum InboxDraftType {
         Standalone,
         Reply,
+        /// A draft type this version of the SDK does not know about yet.
+        #[serde(other)]
+        Unknown,
     }
 
     /// A file stored on a draft.
@@ -2184,6 +2202,22 @@ mod test {
             serde_json::to_value(&opts).unwrap(),
             serde_json::json!({ "from_name": "" })
         );
+    }
+
+    #[test]
+    fn deserialize_unknown_inbox_values() {
+        let folder: InboxFolder = serde_json::from_str(r#""snoozed""#).unwrap();
+        assert_eq!(folder, InboxFolder::Unknown);
+        assert_eq!(folder.as_str(), "unknown");
+
+        let action: InboxAgentAction = serde_json::from_str(r#""a_new_action""#).unwrap();
+        assert_eq!(action, InboxAgentAction::Unknown);
+
+        let tone: InboxAgentTone = serde_json::from_str(r#""a_new_tone""#).unwrap();
+        assert_eq!(tone, InboxAgentTone::Unknown);
+
+        let draft: InboxDraftType = serde_json::from_str(r#""a_new_draft""#).unwrap();
+        assert_eq!(draft, InboxDraftType::Unknown);
     }
 
     #[test]

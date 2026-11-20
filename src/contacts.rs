@@ -710,12 +710,16 @@ pub mod types {
         pub deleted: bool,
     }
 
+    #[non_exhaustive]
     #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone, Copy)]
     #[must_use]
     #[serde(rename_all = "snake_case")]
     pub enum PropertyType {
         String,
         Number,
+        /// A property type this version of the SDK does not know about yet.
+        #[serde(other)]
+        Unknown,
     }
 
     /// Details of a new [`ContactProperty`].
@@ -998,6 +1002,7 @@ pub mod types {
         pub counts: ContactImportCounts,
     }
 
+    #[non_exhaustive]
     #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone, Copy)]
     #[must_use]
     #[serde(rename_all = "snake_case")]
@@ -1006,6 +1011,9 @@ pub mod types {
         InProgress,
         Completed,
         Failed,
+        /// A status this version of the SDK does not know about yet.
+        #[serde(other)]
+        Unknown,
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize, Copy)]

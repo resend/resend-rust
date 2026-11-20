@@ -326,6 +326,9 @@ pub mod types {
         /// 'ap-northeast-1'
         #[serde(rename = "ap-northeast-1")]
         ApNorthEast1,
+        /// A region this version of the SDK does not know about yet.
+        #[serde(other)]
+        Unknown,
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -413,30 +416,35 @@ pub mod types {
         pub status: DomainRecordStatus,
     }
 
+    #[non_exhaustive]
     #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
     pub enum ReceivingRecordType {
         #[allow(clippy::upper_case_acronyms)]
         MX,
     }
 
+    #[non_exhaustive]
     #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
     pub enum TrackingRecordType {
         #[allow(clippy::upper_case_acronyms)]
         CNAME,
     }
 
+    #[non_exhaustive]
     #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
     pub enum TrackingCaaRecordType {
         #[allow(clippy::upper_case_acronyms)]
         CAA,
     }
 
+    #[non_exhaustive]
     #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
     pub enum ProxyStatus {
         Enable,
         Disable,
     }
 
+    #[non_exhaustive]
     #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
     #[serde(rename_all = "snake_case")]
     pub enum DomainStatus {
@@ -446,8 +454,12 @@ pub mod types {
         NotStarted,
         PartiallyVerified,
         PartiallyFailed,
+        /// A status this version of the SDK does not know about yet.
+        #[serde(other)]
+        Unknown,
     }
 
+    #[non_exhaustive]
     #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
     #[serde(rename_all = "snake_case")]
     pub enum DomainRecordStatus {
@@ -456,8 +468,12 @@ pub mod types {
         Failed,
         TemporaryFailure,
         NotStarted,
+        /// A status this version of the SDK does not know about yet.
+        #[serde(other)]
+        Unknown,
     }
 
+    #[non_exhaustive]
     #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
     pub enum SpfRecordType {
         MX,
@@ -467,6 +483,7 @@ pub mod types {
         CNAME,
     }
 
+    #[non_exhaustive]
     #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
     pub enum DkimRecordType {
         #[allow(clippy::upper_case_acronyms)]
@@ -476,6 +493,7 @@ pub mod types {
     }
 
     /// Individual [`Domain`] record.
+    #[non_exhaustive]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     #[serde(tag = "record")]
     pub enum DomainRecord {
@@ -489,6 +507,9 @@ pub mod types {
         TrackingRecord(TrackingRecord),
         #[serde(rename = "TrackingCAA")]
         TrackingCaaRecord(TrackingCaaRecord),
+        /// A record type this version of the SDK does not know about yet.
+        #[serde(other)]
+        Unknown,
     }
 
     /// Details of an existing domain.
@@ -739,6 +760,7 @@ pub mod types {
         }
     }
 
+    #[non_exhaustive]
     #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
     #[serde(rename_all = "snake_case")]
     pub enum DomainClaimStatus {
@@ -750,16 +772,24 @@ pub mod types {
         Superseded,
         Canceled,
         Failed,
+        /// A status this version of the SDK does not know about yet.
+        #[serde(other)]
+        Unknown,
     }
 
+    #[non_exhaustive]
     #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
     #[serde(rename_all = "snake_case")]
     pub enum DomainClaimBlockedReason {
         GracePeriod,
         RecentOwnerActivity,
         PendingScheduledEmails,
+        /// A reason this version of the SDK does not know about yet.
+        #[serde(other)]
+        Unknown,
     }
 
+    #[non_exhaustive]
     #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
     #[serde(rename_all = "snake_case")]
     pub enum DomainClaimRecordType {
@@ -944,6 +974,22 @@ mod test {
 
         let domain: Domain = serde_json::from_str(json).expect("domain deserializes");
         assert!(matches!(domain.status, DomainStatus::PartiallyFailed));
+    }
+
+    #[test]
+    fn deserialize_unknown_domain_values() {
+        use crate::domains::types::{DomainRecord, DomainStatus, Region};
+
+        let status: DomainStatus =
+            serde_json::from_str(r#""a_status_we_do_not_know""#).expect("status deserializes");
+        assert!(matches!(status, DomainStatus::Unknown));
+
+        let region: Region = serde_json::from_str(r#""af-south-1""#).expect("region deserializes");
+        assert!(matches!(region, Region::Unknown));
+
+        let record: DomainRecord = serde_json::from_str(r#"{"record": "Brand New", "name": "x"}"#)
+            .expect("record deserializes");
+        assert!(matches!(record, DomainRecord::Unknown));
     }
 
     #[test]

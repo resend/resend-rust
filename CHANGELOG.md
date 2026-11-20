@@ -12,10 +12,12 @@ and this project adheres to
 
 - `domains::enable_forge`
 - `EmailEvent::Unknown` preventing unknown/new events from causing parsing errors
+- `Unknown` variants (via `#[serde(other)]`) on response enums so values added by the API do not fail deserialization
 
 ### Changed
 
 - `domains::verify` now takes an `options: VerifyDomainOptions` argument.
+- Response enums are now `#[non_exhaustive]`; downstream exhaustive `match`es need a wildcard arm.
 
 ## [0.37.0] - 2026-11-19
 

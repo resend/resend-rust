@@ -179,15 +179,20 @@ pub mod types {
     }
 
     #[must_use]
+    #[non_exhaustive]
     #[derive(Debug, Clone, Copy, Serialize, Deserialize, Default)]
     #[serde(rename_all = "snake_case")]
     pub enum AutomationStatus {
         Enabled,
         #[default]
         Disabled,
+        /// A status this version of the SDK does not know about yet.
+        #[serde(other)]
+        Unknown,
     }
 
     #[must_use]
+    #[non_exhaustive]
     #[derive(Debug, Clone, Serialize, Deserialize)]
     #[serde(tag = "type", rename_all = "snake_case")]
     pub enum Step {
@@ -223,6 +228,11 @@ pub mod types {
             key: String,
             config: AddToSegmentStepConfig,
         },
+        /// A step type this version of the SDK does not know about yet.
+        ///
+        /// The step's config is not retained.
+        #[serde(other)]
+        Unknown,
     }
 
     #[must_use]
@@ -357,6 +367,7 @@ pub mod types {
     }
 
     #[must_use]
+    #[non_exhaustive]
     #[derive(Debug, Clone, Copy, Serialize, Deserialize, Default)]
     #[serde(rename_all = "snake_case")]
     pub enum ConnectionType {
@@ -366,6 +377,9 @@ pub mod types {
         ConditionNotMet,
         Timeout,
         EventReceived,
+        /// A connection type this version of the SDK does not know about yet.
+        #[serde(other)]
+        Unknown,
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -478,6 +492,7 @@ pub mod types {
     }
 
     #[must_use]
+    #[non_exhaustive]
     #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
     #[serde(rename_all = "snake_case")]
     pub enum AutomationRunStatus {
@@ -485,6 +500,9 @@ pub mod types {
         Completed,
         Failed,
         Cancelled,
+        /// A status this version of the SDK does not know about yet.
+        #[serde(other)]
+        Unknown,
     }
 
     #[must_use]
@@ -547,6 +565,17 @@ mod test {
         };
 
         println!("{}", serde_json::to_string(&tmp).unwrap());
+    }
+
+    #[test]
+    fn deserialize_unknown_automation_values() {
+        let step: Step = serde_json::from_str(r#"{"type":"brand_new_step","key":"x"}"#)
+            .expect("step deserializes");
+        assert!(matches!(step, Step::Unknown));
+
+        let status: AutomationStatus =
+            serde_json::from_str(r#""brand_new_status""#).expect("status deserializes");
+        assert!(matches!(status, AutomationStatus::Unknown));
     }
 
     #[test]

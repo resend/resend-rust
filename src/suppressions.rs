@@ -164,12 +164,16 @@ pub mod types {
     }
 
     #[must_use]
+    #[non_exhaustive]
     #[derive(Debug, Clone, Copy, Deserialize)]
     #[serde(rename_all = "snake_case")]
     pub enum SuppressionOrigin {
         Bounce,
         Complaint,
         Manual,
+        /// An origin this version of the SDK does not know about yet.
+        #[serde(other)]
+        Unknown,
     }
 
     #[must_use]

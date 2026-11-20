@@ -182,6 +182,7 @@ pub mod types {
     crate::define_id_type!(WebhookEventAttemptId);
 
     #[must_use]
+    #[non_exhaustive]
     #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
     #[serde(rename_all = "lowercase")]
     pub enum WebhookEventStatus {
@@ -189,6 +190,9 @@ pub mod types {
         Attempting,
         Success,
         Failed,
+        /// A status this version of the SDK does not know about yet.
+        #[serde(other)]
+        Unknown,
     }
 
     #[must_use]
