@@ -222,6 +222,7 @@ pub mod types {
 /// Error type for operations of a [`Resend`] client.
 ///
 /// <https://resend.com/docs/api-reference/errors>
+#[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     /// Errors that may occur during the processing an HTTP request.
