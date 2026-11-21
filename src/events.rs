@@ -210,6 +210,7 @@ pub mod types {
 /// ```
 pub fn try_parse_event(data: &str) -> Result<Event> {
     serde_json::from_str::<Event>(data).map_err(|e| crate::Error::Parse {
+        status: None,
         message: "Could not parse event".to_owned(),
         source: Some(Box::new(e)),
     })
@@ -227,6 +228,7 @@ pub fn try_parse_event(data: &str) -> Result<Event> {
 /// ```
 pub fn try_parse_event_type(data: &str) -> Result<EventType> {
     serde_json::from_str::<EventType>(data).map_err(|e| crate::Error::Parse {
+        status: None,
         message: "Could not parse event type".to_owned(),
         source: Some(Box::new(e)),
     })

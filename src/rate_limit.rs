@@ -93,9 +93,7 @@ pub async fn send_with_retry_opts<A: Future<Output = Result<B>> + Send, B: Send>
     let res = f().await;
 
     if let Err(Error::RateLimit {
-        ratelimit_limit: _,
-        ratelimit_remaining: _,
-        ratelimit_reset,
+        ratelimit_reset, ..
     }) = res
     {
         // Base case
@@ -224,6 +222,7 @@ mod test {
 
         let f = || async {
             let err = Error::RateLimit {
+                body: String::new(),
                 ratelimit_limit: Some(10),
                 ratelimit_remaining: Some(10),
                 ratelimit_reset: Some(1),
@@ -267,6 +266,7 @@ mod test {
                 return Result::<(), Error>::Ok(());
             }
             Err(Error::RateLimit {
+                body: String::new(),
                 ratelimit_limit: None,
                 ratelimit_remaining: None,
                 ratelimit_reset: None,
@@ -304,6 +304,7 @@ mod test {
 
         let f = || async {
             Result::<(), Error>::Err(Error::RateLimit {
+                body: String::new(),
                 ratelimit_limit: None,
                 ratelimit_remaining: None,
                 ratelimit_reset: Some(0),
