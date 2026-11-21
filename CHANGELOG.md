@@ -12,15 +12,18 @@ and this project adheres to
 
 - `domains::enable_forge`
 - `EmailEvent::Unknown` preventing unknown/new events from causing parsing errors
+- `EmailEvent::Suppressed`
 
 ### Changed
 
 - `domains::verify` now takes an `options: VerifyDomainOptions` argument.
 
 ### Fixed
+
 - `InboundEmail` now accepts the nullable `bcc`, `cc`, `reply_to`, and `headers` shapes allowed by
   the API spec (`null` is treated as empty), and rejects address strings and header lists that the
   spec does not allow
+
 ## [0.37.0] - 2026-11-19
 
 ### Added

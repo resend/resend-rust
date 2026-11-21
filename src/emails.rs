@@ -653,6 +653,8 @@ pub mod types {
         Scheduled,
         /// The email was sent successfully.
         Sent,
+        /// The email was suppressed because the recipient is on the suppression list.
+        Suppressed,
         /// An event this version of the SDK does not know about yet.
         #[serde(other)]
         Unknown,
