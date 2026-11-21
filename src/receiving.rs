@@ -247,18 +247,19 @@ pub mod types {
         pub to: Vec<String>,
         pub from: String,
         pub created_at: String,
+        #[serde(deserialize_with = "nullable_string")]
         pub subject: String,
-        #[serde(default)]
+        #[serde(default, deserialize_with = "nullable_vec")]
         pub bcc: Vec<String>,
-        #[serde(default)]
+        #[serde(default, deserialize_with = "nullable_vec")]
         pub cc: Vec<String>,
-        #[serde(default)]
+        #[serde(default, deserialize_with = "nullable_vec")]
         pub reply_to: Vec<String>,
         #[serde(default)]
         pub received_for: Vec<String>,
         pub html: Option<String>,
         pub text: Option<String>,
-        #[serde(default)]
+        #[serde(default, deserialize_with = "nullable_headers")]
         pub headers: HashMap<String, String>,
         pub message_id: String,
         pub raw: Option<Raw>,
@@ -332,6 +333,62 @@ pub mod types {
     #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct ForwardInboundEmailResponse {
         pub id: InboundEmailId,
+    }
+
+    /// Deserializes an `array | null` address field, treating `null` as an empty list.
+    fn nullable_vec<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        Ok(Option::<Vec<String>>::deserialize(deserializer)?.unwrap_or_default())
+    }
+
+    /// Deserializes a `string | null` field, treating `null` as an empty string.
+    fn nullable_string<'de, D>(deserializer: D) -> Result<String, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        Ok(Option::<String>::deserialize(deserializer)?.unwrap_or_default())
+    }
+
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum HeaderValue {
+        One(String),
+        Many(Vec<String>),
+    }
+
+    /// Deserializes the `headers` object, treating `null` as an empty map.
+    ///
+    /// The spec leaves the header values unconstrained; strings and lists of strings are
+    /// accepted, with list values joined for convenience.
+    fn nullable_headers<'de, D>(deserializer: D) -> Result<HashMap<String, String>, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let Some(headers) = Option::<HashMap<String, HeaderValue>>::deserialize(deserializer)?
+        else {
+            return Ok(HashMap::new());
+        };
+
+        Ok(headers
+            .into_iter()
+            .map(|(name, value)| {
+                let value = match value {
+                    HeaderValue::One(value) => value,
+                    HeaderValue::Many(values) => values.join(header_separator(&name)),
+                };
+                (name, value)
+            })
+            .collect())
+    }
+
+    fn header_separator(name: &str) -> &'static str {
+        if name.eq_ignore_ascii_case("references") || name.eq_ignore_ascii_case("in-reply-to") {
+            " "
+        } else {
+            ", "
+        }
     }
 }
 
@@ -776,7 +833,7 @@ mod test {
     }
 
     #[test]
-    fn deserialize_test4() {
+    fn rejects_headers_as_name_value_list() {
         let email = r#"    {
           "id": "a39999a6-88e3-48b1-888b-beaabcde1b33",
           "to": ["recipient@example.com"],
@@ -807,8 +864,99 @@ mod test {
           ]
         }"#;
 
+        // The spec defines `headers` as an object or null, not a list of name/value entries.
         let res = serde_json::from_str::<InboundEmail>(email);
-        assert!(res.is_ok());
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn deserialize_nullable_inbound_addresses_and_headers() {
+        let email = r#"{
+            "object": "email",
+            "id": "00000000-0000-0000-0000-000000000000",
+            "to": ["a@example.com"],
+            "from": "b@example.com",
+            "subject": null,
+            "html": "",
+            "text": "",
+            "headers": null,
+            "bcc": null,
+            "cc": null,
+            "reply_to": null,
+            "received_for": ["forwarded@example.com"],
+            "attachments": [],
+            "created_at": "2026-11-18 00:00:00.000000+00",
+            "message_id": "<x@example.com>"
+        }"#;
+
+        let email: InboundEmail = serde_json::from_str(email).expect("Parsing failed");
+        assert_eq!(email.to, vec!["a@example.com"]);
+        assert_eq!(email.subject, "");
+        assert_eq!(email.bcc, Vec::<String>::new());
+        assert_eq!(email.cc, Vec::<String>::new());
+        assert_eq!(email.reply_to, Vec::<String>::new());
+        assert_eq!(email.received_for, vec!["forwarded@example.com"]);
+        assert_eq!(email.headers, std::collections::HashMap::new());
+    }
+
+    /// Parses an `InboundEmail` with the given extra JSON fields appended.
+    fn inbound_email_with(fields: &str) -> Result<InboundEmail, serde_json::Error> {
+        let json = format!(
+            r#"{{
+                "id": "00000000-0000-0000-0000-000000000000",
+                "from": "b@example.com",
+                "created_at": "2026-11-18 00:00:00.000000+00",
+                "subject": "Hi",
+                "message_id": "<x@example.com>"{fields}
+            }}"#
+        );
+        serde_json::from_str(&json)
+    }
+
+    #[test]
+    fn rejects_non_spec_shapes() {
+        assert!(inbound_email_with(r#", "to": "a@example.com""#).is_err());
+        assert!(inbound_email_with(r#", "to": null"#).is_err());
+        assert!(inbound_email_with(r#", "to": ["a@example.com"], "cc": "c@example.com""#).is_err());
+        assert!(
+            inbound_email_with(
+                r#", "to": ["a@example.com"], "headers": [{ "name": "X-Trace", "value": "abc" }]"#
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn deserialize_map_headers_with_list_values() {
+        let email = r#"{
+            "id": "00000000-0000-0000-0000-000000000000",
+            "to": ["a@example.com"],
+            "from": "b@example.com",
+            "created_at": "2026-11-18 00:00:00.000000+00",
+            "subject": "Hi",
+            "headers": {
+                "References": ["<one@example.com>", "<two@example.com>"],
+                "In-Reply-To": ["<a@example.com>", "<b@example.com>"],
+                "X-Trace": ["abc", "def"],
+                "Subject": "Hi"
+            },
+            "message_id": "<x@example.com>"
+        }"#;
+
+        let email: InboundEmail = serde_json::from_str(email).expect("Parsing failed");
+        assert_eq!(
+            email.headers.get("References").map(String::as_str),
+            Some("<one@example.com> <two@example.com>")
+        );
+        assert_eq!(
+            email.headers.get("In-Reply-To").map(String::as_str),
+            Some("<a@example.com> <b@example.com>")
+        );
+        assert_eq!(
+            email.headers.get("X-Trace").map(String::as_str),
+            Some("abc, def")
+        );
+        assert_eq!(email.headers.get("Subject").map(String::as_str), Some("Hi"));
     }
 
     /// Serves one canned HTTP response on a local port and returns the URL.
