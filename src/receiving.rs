@@ -261,11 +261,25 @@ pub mod types {
         pub html: Option<String>,
         pub text: Option<String>,
         #[serde(default, deserialize_with = "nullable_headers")]
-        pub headers: HashMap<String, String>,
+        pub headers: HashMap<String, Vec<String>>,
         pub message_id: String,
         pub raw: Option<Raw>,
         #[serde(default)]
         pub attachments: Vec<InboundAttachment>,
+    }
+
+    impl InboundEmail {
+        /// Returns the first value for the header with the given name.
+        ///
+        /// Header names are matched case-insensitively.
+        #[must_use]
+        pub fn header(&self, name: &str) -> Option<&str> {
+            self.headers
+                .iter()
+                .find(|(header, _)| header.eq_ignore_ascii_case(name))
+                .and_then(|(_, values)| values.first())
+                .map(String::as_str)
+        }
     }
 
     #[must_use]
@@ -361,9 +375,8 @@ pub mod types {
 
     /// Deserializes the `headers` object, treating `null` as an empty map.
     ///
-    /// The spec leaves the header values unconstrained; strings and lists of strings are
-    /// accepted, with list values joined for convenience.
-    fn nullable_headers<'de, D>(deserializer: D) -> Result<HashMap<String, String>, D::Error>
+    /// Each value is kept as a list so repeated headers keep their boundaries.
+    fn nullable_headers<'de, D>(deserializer: D) -> Result<HashMap<String, Vec<String>>, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
@@ -375,21 +388,13 @@ pub mod types {
         Ok(headers
             .into_iter()
             .map(|(name, value)| {
-                let value = match value {
-                    HeaderValue::One(value) => value,
-                    HeaderValue::Many(values) => values.join(header_separator(&name)),
+                let values = match value {
+                    HeaderValue::One(value) => vec![value],
+                    HeaderValue::Many(values) => values,
                 };
-                (name, value)
+                (name, values)
             })
             .collect())
-    }
-
-    fn header_separator(name: &str) -> &'static str {
-        if name.eq_ignore_ascii_case("references") || name.eq_ignore_ascii_case("in-reply-to") {
-            " "
-        } else {
-            ", "
-        }
     }
 }
 
@@ -928,6 +933,14 @@ mod test {
         );
     }
 
+    fn assert_header(email: &InboundEmail, name: &str, expected: &[&str]) {
+        let expected: Vec<String> = expected.iter().map(|value| (*value).to_owned()).collect();
+        assert_eq!(
+            email.headers.get(name).map(Vec::as_slice),
+            Some(expected.as_slice())
+        );
+    }
+
     #[test]
     fn deserialize_map_headers_with_list_values() {
         let email = r#"{
@@ -946,19 +959,22 @@ mod test {
         }"#;
 
         let email: InboundEmail = serde_json::from_str(email).expect("Parsing failed");
-        assert_eq!(
-            email.headers.get("References").map(String::as_str),
-            Some("<one@example.com> <two@example.com>")
+        assert_header(
+            &email,
+            "References",
+            &["<one@example.com>", "<two@example.com>"],
         );
-        assert_eq!(
-            email.headers.get("In-Reply-To").map(String::as_str),
-            Some("<a@example.com> <b@example.com>")
+        assert_header(
+            &email,
+            "In-Reply-To",
+            &["<a@example.com>", "<b@example.com>"],
         );
-        assert_eq!(
-            email.headers.get("X-Trace").map(String::as_str),
-            Some("abc, def")
-        );
-        assert_eq!(email.headers.get("Subject").map(String::as_str), Some("Hi"));
+        assert_header(&email, "X-Trace", &["abc", "def"]);
+        assert_header(&email, "Subject", &["Hi"]);
+
+        assert_eq!(email.header("Subject"), Some("Hi"));
+        assert_eq!(email.header("subject"), Some("Hi"));
+        assert_eq!(email.header("missing"), None);
     }
 
     /// Serves one canned HTTP response on a local port and returns the URL.

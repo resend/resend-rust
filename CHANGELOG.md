@@ -22,15 +22,14 @@ and this project adheres to
 - `Error` is now `#[non_exhaustive]`; `Error::Resend` carries the HTTP status,
   `Error::Parse` carries an optional HTTP `status`, and `Error::RateLimit` carries the raw
   response `body`.
+- `InboundEmail::headers` now stores each header's values as a `Vec<String>`, so repeated headers
+  keep their boundaries
 
 ### Fixed
 
 - Errors from non-standard HTTP error bodies now keep their HTTP status, and non-quota 429
   responses keep their raw body. `Error::status` now reports the transport status for parsed API
   errors instead of relying on the body's `statusCode`.
-
-### Fixed
-
 - `InboundEmail` now accepts the nullable `bcc`, `cc`, `reply_to`, and `headers` shapes allowed by
   the API spec (`null` is treated as empty), and rejects address strings and header lists that the
   spec does not allow
