@@ -27,6 +27,7 @@ and this project adheres to
 - Errors from non-standard HTTP error bodies now keep their HTTP status, and non-quota 429
   responses keep their raw body. `Error::status` now reports the transport status for parsed API
   errors instead of relying on the body's `statusCode`.
+- `events` and `templates` now do url encoding
 
 ## [0.37.0] - 2026-11-19
 
