@@ -33,6 +33,7 @@ and this project adheres to
 - `InboundEmail` now accepts the nullable `bcc`, `cc`, `reply_to`, and `headers` shapes allowed by
   the API spec (`null` is treated as empty), and rejects address strings and header lists that the
   spec does not allow
+- `events` and `templates` now do url encoding
 
 ## [0.37.0] - 2026-11-19
 

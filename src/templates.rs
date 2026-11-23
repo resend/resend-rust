@@ -34,7 +34,7 @@ impl TemplateSvc {
     /// <https://resend.com/docs/api-reference/templates/get-template>
     #[maybe_async::maybe_async]
     pub async fn get(&self, id_or_alias: &str) -> Result<Template> {
-        let path = format!("/templates/{id_or_alias}");
+        let path = format!("/templates/{}", urlencoding::encode(id_or_alias));
 
         let request = self.0.build(Method::GET, &path);
         let response = self.0.send(request).await?;
@@ -52,7 +52,7 @@ impl TemplateSvc {
         id_or_alias: &str,
         update: UpdateTemplateOptions,
     ) -> Result<UpdateTemplateResponse> {
-        let path = format!("/templates/{id_or_alias}");
+        let path = format!("/templates/{}", urlencoding::encode(id_or_alias));
 
         let request = self.0.build(Method::PATCH, &path);
         let response = self.0.send(request.json(&update)).await?;
@@ -66,7 +66,7 @@ impl TemplateSvc {
     /// <https://resend.com/docs/api-reference/templates/publish-template>
     #[maybe_async::maybe_async]
     pub async fn publish(&self, id_or_alias: &str) -> Result<PublishTemplateResponse> {
-        let path = format!("/templates/{id_or_alias}/publish");
+        let path = format!("/templates/{}/publish", urlencoding::encode(id_or_alias));
 
         let request = self.0.build(Method::POST, &path);
         let response = self.0.send(request).await?;
@@ -80,7 +80,7 @@ impl TemplateSvc {
     /// <https://resend.com/docs/api-reference/templates/duplicate-template>
     #[maybe_async::maybe_async]
     pub async fn duplicate(&self, id_or_alias: &str) -> Result<DuplicateTemplateResponse> {
-        let path = format!("/templates/{id_or_alias}/duplicate");
+        let path = format!("/templates/{}/duplicate", urlencoding::encode(id_or_alias));
 
         let request = self.0.build(Method::POST, &path);
         let response = self.0.send(request).await?;
@@ -94,7 +94,7 @@ impl TemplateSvc {
     /// <https://resend.com/docs/api-reference/templates/delete-template>
     #[maybe_async::maybe_async]
     pub async fn delete(&self, id_or_alias: &str) -> Result<DeleteTemplateResponse> {
-        let path = format!("/templates/{id_or_alias}");
+        let path = format!("/templates/{}", urlencoding::encode(id_or_alias));
 
         let request = self.0.build(Method::DELETE, &path);
         let response = self.0.send(request).await?;

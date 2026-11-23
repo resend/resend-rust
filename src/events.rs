@@ -57,7 +57,7 @@ impl EventsSvc {
     /// <https://resend.com/docs/api-reference/events/get-event>
     #[maybe_async::maybe_async]
     pub async fn get(&self, event_id: &str) -> Result<GetEventResponse> {
-        let path = format!("/events/{event_id}");
+        let path = format!("/events/{}", urlencoding::encode(event_id));
 
         let request = self.0.build(Method::GET, &path);
         let response = self.0.send(request).await?;
@@ -90,7 +90,7 @@ impl EventsSvc {
         event_id: &str,
         update: UpdateEventOptions,
     ) -> Result<UpdateEventResponse> {
-        let path = format!("/events/{event_id}");
+        let path = format!("/events/{}", urlencoding::encode(event_id));
 
         let request = self.0.build(Method::PATCH, &path);
         let response = self.0.send(request.json(&update)).await?;
@@ -104,7 +104,7 @@ impl EventsSvc {
     /// <https://resend.com/docs/api-reference/events/delete-event>
     #[maybe_async::maybe_async]
     pub async fn delete(&self, event_id: &str) -> Result<DeleteEventResponse> {
-        let path = format!("/events/{event_id}");
+        let path = format!("/events/{}", urlencoding::encode(event_id));
 
         let request = self.0.build(Method::DELETE, &path);
         let response = self.0.send(request).await?;
@@ -2429,5 +2429,93 @@ mod test {
         assert_eq!(expected, actual.len());
 
         Ok(())
+    }
+
+    #[cfg(not(feature = "blocking"))]
+    fn serve_event_response(body: &'static str) -> (String, std::thread::JoinHandle<String>) {
+        use std::io::{BufRead, BufReader, Write};
+
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let base_url = format!("http://{}", listener.local_addr().unwrap());
+
+        let handle = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut reader = BufReader::new(stream.try_clone().unwrap());
+
+            let mut request_line = String::new();
+            let _ = reader.read_line(&mut request_line).unwrap();
+            let mut header = String::new();
+            while reader.read_line(&mut header).unwrap() > 2 {
+                header.clear();
+            }
+
+            write!(
+                stream,
+                "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{body}",
+                body.len()
+            )
+            .unwrap();
+
+            request_line
+        });
+
+        (base_url, handle)
+    }
+
+    #[tokio::test]
+    #[cfg(not(feature = "blocking"))]
+    async fn percent_encodes_event_identifiers_in_paths() {
+        use crate::types::UpdateEventOptions;
+
+        let event_name = "billing/invoice#paid?v=1 2";
+        let encoded_path = "/events/billing%2Finvoice%23paid%3Fv%3D1%202";
+
+        let (base_url, get_handle) = serve_event_response(
+            r#"{"id":"evt_1","name":"billing/invoice#paid?v=1 2","schema":null,"created_at":"2026-01-01T00:00:00Z","updated_at":null}"#,
+        );
+        let resend = crate::Resend::with_config(
+            crate::Config::builder("re_test")
+                .base_url(base_url.parse().unwrap())
+                .build(),
+        );
+        let event = resend.events.get(event_name).await.unwrap();
+        assert_eq!(event.name, event_name);
+        let request_line = get_handle.join().unwrap();
+        assert!(
+            request_line.starts_with(&format!("GET {encoded_path} ")),
+            "unexpected GET request line: {request_line}"
+        );
+
+        let (base_url, patch_handle) = serve_event_response(r#"{"id":"evt_1"}"#);
+        let resend = crate::Resend::with_config(
+            crate::Config::builder("re_test")
+                .base_url(base_url.parse().unwrap())
+                .build(),
+        );
+        let updated = resend
+            .events
+            .update(event_name, UpdateEventOptions { schema: json!({}) })
+            .await
+            .unwrap();
+        assert_eq!(&*updated.id, "evt_1");
+        let request_line = patch_handle.join().unwrap();
+        assert!(
+            request_line.starts_with(&format!("PATCH {encoded_path} ")),
+            "unexpected PATCH request line: {request_line}"
+        );
+
+        let (base_url, delete_handle) = serve_event_response(r#"{"id":"evt_1"}"#);
+        let resend = crate::Resend::with_config(
+            crate::Config::builder("re_test")
+                .base_url(base_url.parse().unwrap())
+                .build(),
+        );
+        let deleted = resend.events.delete(event_name).await.unwrap();
+        assert_eq!(&*deleted.id, "evt_1");
+        let request_line = delete_handle.join().unwrap();
+        assert!(
+            request_line.starts_with(&format!("DELETE {encoded_path} ")),
+            "unexpected DELETE request line: {request_line}"
+        );
     }
 }
