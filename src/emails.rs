@@ -653,6 +653,8 @@ pub mod types {
         Scheduled,
         /// The email was sent successfully.
         Sent,
+        /// The email was suppressed because the recipient is on the suppression list.
+        Suppressed,
         /// An event this version of the SDK does not know about yet.
         #[serde(other)]
         Unknown,
@@ -1407,7 +1409,7 @@ mod test {
             "bcc": null,
             "cc": null,
             "reply_to": null,
-            "last_event": "suppressed",
+            "last_event": "a_new_event",
             "html": null,
             "text": null,
             "scheduled_at": null
@@ -1415,6 +1417,29 @@ mod test {
 
         let email = serde_json::from_str::<Email>(email).expect("Parsing failed");
         assert_eq!(email.last_event, crate::types::EmailEvent::Unknown);
+    }
+
+    #[test]
+    fn deserialize_suppressed_last_event_test() {
+        let email = r#"{
+            "object": "email",
+            "id": "6757a66c-3a5b-49ee-98cc-fca7a5f423c0",
+            "message_id": null,
+            "to": ["email@gmail.com"],
+            "from": "email@gmail.com",
+            "created_at": "2024-07-11 07:49:53.682607+00",
+            "subject": "Subject",
+            "bcc": null,
+            "cc": null,
+            "reply_to": null,
+            "last_event": "suppressed",
+            "html": null,
+            "text": null,
+            "scheduled_at": null
+        }"#;
+
+        let email = serde_json::from_str::<Email>(email).expect("Parsing failed");
+        assert_eq!(email.last_event, crate::types::EmailEvent::Suppressed);
     }
 
     #[test]

@@ -12,6 +12,7 @@ and this project adheres to
 
 - `domains::enable_forge`
 - `EmailEvent::Unknown` preventing unknown/new events from causing parsing errors
+- `EmailEvent::Suppressed`
 - `Error::status` and `Error::raw_body`, exposing the HTTP status and raw response body of API
   errors
 
@@ -21,12 +22,17 @@ and this project adheres to
 - `Error` is now `#[non_exhaustive]`; `Error::Resend` carries the HTTP status,
   `Error::Parse` carries an optional HTTP `status`, and `Error::RateLimit` carries the raw
   response `body`.
+- `InboundEmail::headers` now stores each header's values as a `Vec<String>`, so repeated headers
+  keep their boundaries
 
 ### Fixed
 
 - Errors from non-standard HTTP error bodies now keep their HTTP status, and non-quota 429
   responses keep their raw body. `Error::status` now reports the transport status for parsed API
   errors instead of relying on the body's `statusCode`.
+- `InboundEmail` now accepts the nullable `bcc`, `cc`, `reply_to`, and `headers` shapes allowed by
+  the API spec (`null` is treated as empty), and rejects address strings and header lists that the
+  spec does not allow
 - `events` and `templates` now do url encoding
 
 ## [0.37.0] - 2026-11-19
