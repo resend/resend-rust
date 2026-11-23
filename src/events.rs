@@ -27,10 +27,6 @@ use crate::{
 #[derive(Clone, Debug)]
 pub struct EventsSvc(pub(crate) Arc<Config>);
 
-fn event_path(event_id: &str) -> String {
-    format!("/events/{}", urlencoding::encode(event_id))
-}
-
 impl EventsSvc {
     /// Create a new event that can be used to trigger automations.
     ///
@@ -61,7 +57,7 @@ impl EventsSvc {
     /// <https://resend.com/docs/api-reference/events/get-event>
     #[maybe_async::maybe_async]
     pub async fn get(&self, event_id: &str) -> Result<GetEventResponse> {
-        let path = event_path(event_id);
+        let path = format!("/events/{}", urlencoding::encode(event_id));
 
         let request = self.0.build(Method::GET, &path);
         let response = self.0.send(request).await?;
@@ -94,7 +90,7 @@ impl EventsSvc {
         event_id: &str,
         update: UpdateEventOptions,
     ) -> Result<UpdateEventResponse> {
-        let path = event_path(event_id);
+        let path = format!("/events/{}", urlencoding::encode(event_id));
 
         let request = self.0.build(Method::PATCH, &path);
         let response = self.0.send(request.json(&update)).await?;
@@ -108,7 +104,7 @@ impl EventsSvc {
     /// <https://resend.com/docs/api-reference/events/delete-event>
     #[maybe_async::maybe_async]
     pub async fn delete(&self, event_id: &str) -> Result<DeleteEventResponse> {
-        let path = event_path(event_id);
+        let path = format!("/events/{}", urlencoding::encode(event_id));
 
         let request = self.0.build(Method::DELETE, &path);
         let response = self.0.send(request).await?;
