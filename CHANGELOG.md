@@ -11,8 +11,8 @@ and this project adheres to
 ### Added
 
 - `domains::enable_forge`
-- `ReceivingSvc::list_with_filters` and `ListInboundEmailsOptions`, filtering listed received emails by
-  recipient (`to`) and date (`start_date`, `end_date`)
+- `ListInboundEmailsOptions`, adding optional recipient (`to`) and date (`start_date`, `end_date`)
+  filters to `ReceivingSvc::list`
 - `EmailEvent::Unknown` preventing unknown/new events from causing parsing errors
 - `EmailEvent::Suppressed`
 - `Error::status` and `Error::raw_body`, exposing the HTTP status and raw response body of API
@@ -26,6 +26,8 @@ and this project adheres to
   response `body`.
 - `InboundEmail::headers` now stores each header's values as a `Vec<String>`, so repeated headers
   keep their boundaries
+- `ReceivingSvc::list` now takes `ListInboundEmailsOptions` instead of `ListOptions`; it is a
+  superset of `ListOptions`, so pagination calls only need the type changed
 
 ### Fixed
 
