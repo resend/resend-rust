@@ -26,6 +26,9 @@ and this project adheres to
   response `body`.
 - `InboundEmail::headers` now stores each header's values as a `Vec<String>`, so repeated headers
   keep their boundaries
+- Attachment content (`ContentOrPath::Content`, from `CreateAttachment::from_content` and
+  `CreateInboxDraftAttachment::new`) is now sent as a base64 string instead of a JSON array of
+  numbers, so it takes about 1.33 bytes per byte of content instead of about 3.57
 - `ReceivingSvc::list` now takes `ListInboundEmailsOptions` instead of `ListOptions`; it is a
   superset of `ListOptions`, so pagination calls only need the type changed
 

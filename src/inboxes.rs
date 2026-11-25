@@ -2495,7 +2495,7 @@ mod test {
                 "cc": ["billing@acme.com"],
                 "text": "Refund issued for order 1041.",
                 "reply_all": true,
-                "attachments": [{ "content": [104, 105], "filename": "note.txt" }]
+                "attachments": [{ "content": "aGk=", "filename": "note.txt" }]
             })
         );
 
@@ -2654,7 +2654,7 @@ mod test {
             serde_json::to_value(&with_attachment).unwrap(),
             serde_json::json!({
                 "text": "See the receipt.",
-                "attachments": [{ "content": [104, 105], "filename": "note.txt", "content_type": "text/plain" }]
+                "attachments": [{ "content": "aGk=", "filename": "note.txt", "content_type": "text/plain" }]
             })
         );
 
