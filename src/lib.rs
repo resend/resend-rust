@@ -186,7 +186,7 @@ pub mod types {
     pub use super::receiving::types::{
         ForwardInboundEmailResponse, ForwardReceivingEmail, GetInboundEmailOptions,
         GetInboundEmailRaw, InboundAttachment, InboundAttachmentId, InboundEmail,
-        InboundEmailHtmlFormat, InboundEmailId,
+        InboundEmailHtmlFormat, InboundEmailId, ListInboundEmailsOptions,
     };
     pub use super::segments::types::{
         CreateSegmentResponse, Segment, SegmentId, UpdateSegmentResponse,
