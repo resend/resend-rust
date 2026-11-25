@@ -171,7 +171,7 @@ pub mod types {
     use serde::{Deserialize, Serialize};
 
     use crate::{
-        emails::{join_comma, parse_nullable_vec},
+        emails::{join_comma, parse_nullable_vec, serialize_base64},
         idempotent::Idempotent,
         types::{BroadcastId, DomainId, TemplateId, TopicId},
     };
@@ -507,9 +507,9 @@ pub mod types {
     #[must_use]
     #[derive(Debug, Clone, Serialize)]
     pub enum ContentOrPath {
-        /// Content of an attached file.
+        /// Content of an attached file. It is sent to the API as a base64 string.
         #[serde(rename = "content")]
-        Content(Vec<u8>),
+        Content(#[serde(serialize_with = "serialize_base64")] Vec<u8>),
         /// Path where the attachment file is hosted.
         #[serde(rename = "path")]
         Path(String),
@@ -1270,6 +1270,17 @@ where
     serializer.serialize_str(&joined)
 }
 
+/// Serializes bytes as a standard (padded) base64 string, the encoding the API expects for
+/// attachment `content`.
+fn serialize_base64<S>(bytes: &[u8], serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    use base64::Engine as _;
+
+    serializer.serialize_str(&base64::engine::general_purpose::STANDARD.encode(bytes))
+}
+
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 #[allow(clippy::needless_return)]
@@ -1718,6 +1729,39 @@ mod test {
             Some("application/pdf")
         );
         assert!(json.get("contentType").is_none());
+    }
+
+    #[test]
+    fn attachment_content_serializes_as_base64() {
+        let attachment =
+            CreateAttachment::from_content(b"Hello, World!".to_vec()).with_filename("hello.txt");
+
+        assert_eq!(
+            serde_json::to_value(&attachment).unwrap(),
+            serde_json::json!({ "content": "SGVsbG8sIFdvcmxkIQ==", "filename": "hello.txt" })
+        );
+    }
+
+    #[test]
+    fn attachment_content_base64_round_trips() {
+        use base64::Engine as _;
+
+        // Every byte value, and lengths that need no padding, one `=` and two `=`.
+        let all_bytes = (0..=u8::MAX).collect::<Vec<_>>();
+        for len in [0, 1, 2, 3, all_bytes.len()] {
+            let content = all_bytes.iter().take(len).copied().collect::<Vec<_>>();
+            let attachment = CreateAttachment::from_content(content.clone());
+            let json = serde_json::to_value(&attachment).unwrap();
+            let encoded = json
+                .get("content")
+                .and_then(serde_json::Value::as_str)
+                .unwrap();
+            let decoded = base64::engine::general_purpose::STANDARD
+                .decode(encoded)
+                .unwrap();
+
+            assert_eq!(decoded, content);
+        }
     }
 
     #[test]
