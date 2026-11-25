@@ -35,11 +35,12 @@ Crate documentation is available in [docsrs][docs-url]. Example usage is availab
 - `RESEND_API_KEY` to enable `impl Default` for a `Resend` client (Required).
 - `RESEND_BASE_URL` to override the default base address:
   `https://api.resend.com` (Optional).
-- `RESEND_RATE_LIMIT` to set the maximum amount of requests you can send per second. By default, this is
-  9 (Resend defaults to 10). See [the docs](https://docs.rs/resend-rs/latest/resend_rs/#rate-limits)
-  for more information.
+- `RESEND_RATE_LIMIT` to set the maximum number of requests per 1.1 seconds. Defaults to `9`
+  (Resend allows 10 per second). This can be overridden per client with
+  `ConfigBuilder::rate_limit`, including disabling the client-side limiter with `None`. See
+  [the docs](https://docs.rs/resend-rs/latest/resend_rs/#rate-limits) for more information.
 
-> <div class="warning">WARNING: Rate limiting only works when using the async version (default) of the crate</div>
+> <div class="warning">WARNING: Rate limiting, including `ConfigBuilder::rate_limit`, only applies when using the async version (default) of the crate</div>
 
 [action-badge]: https://img.shields.io/github/actions/workflow/status/resend/resend-rust/ci.yml
 [action-url]: https://github.com/resend/resend-rust/actions/workflows/ci.yml

@@ -11,14 +11,27 @@ use reqwest::blocking::{Client, RequestBuilder, Response};
 use reqwest::{Client, RequestBuilder, Response};
 use reqwest::{Method, Url};
 use reqwest::{StatusCode, header::USER_AGENT};
+use std::num::NonZeroU32;
 use std::{env, fmt};
 #[cfg(not(feature = "blocking"))]
-use std::{num::NonZeroU32, sync::Arc, time::Duration};
+use std::{sync::Arc, time::Duration};
 
 use crate::{
     Error, Result,
     error::types::{ErrorKind, ErrorResponse},
 };
+
+/// Client-side rate limit setting for [`ConfigBuilder`].
+#[derive(Debug, Clone, Copy)]
+enum RateLimitConfig {
+    /// Read `RESEND_RATE_LIMIT`, falling back to the default of 9 requests per 1.1 seconds.
+    EnvOrDefault,
+    /// Do not rate limit requests.
+    Disabled,
+    /// Limit to this many requests per 1.1 seconds.
+    #[cfg_attr(feature = "blocking", allow(dead_code))]
+    Limit(NonZeroU32),
+}
 
 #[cfg(doc)]
 use crate::Resend;
@@ -27,8 +40,8 @@ use crate::Resend;
 ///
 /// This requires from you to set the API key ([`ConfigBuilder::new`]), but also
 /// makes it possible to set a `reqwest` http client with your custom configuration
-/// (see also [`Resend::with_client`]) as well as an override for the Resend's
-/// base url to send requests to.
+/// (see also [`Resend::with_client`]), override Resend's base url, and configure or
+/// disable the client-side rate limiter.
 ///
 /// ```no_run
 /// # use resend_rs::ConfigBuilder;
@@ -52,6 +65,7 @@ pub struct ConfigBuilder {
     api_key: String,
     base_url: Option<Url>,
     client: Option<Client>,
+    rate_limit: RateLimitConfig,
 }
 
 impl ConfigBuilder {
@@ -64,6 +78,7 @@ impl ConfigBuilder {
             api_key: api_key.into(),
             base_url: None,
             client: None,
+            rate_limit: RateLimitConfig::EnvOrDefault,
         }
     }
 
@@ -89,9 +104,32 @@ impl ConfigBuilder {
         self
     }
 
+    /// Set the client-side rate limit, in requests per 1.1 seconds.
+    ///
+    /// Pass `None` to disable the limiter. If this method is not called, the
+    /// `RESEND_RATE_LIMIT` environment variable is used, falling back to 9 requests per 1.1
+    /// seconds.
+    ///
+    /// This only applies to the async client; the blocking client has no rate limiter.
+    ///
+    /// # Panics
+    ///
+    /// Building the config panics if the rate is above 1,100,000,000, because governor cannot
+    /// represent a period shorter than one nanosecond. Pass `None` to disable the limiter.
+    #[must_use]
+    pub fn rate_limit(mut self, rate_limit: Option<NonZeroU32>) -> Self {
+        self.rate_limit = rate_limit.map_or(RateLimitConfig::Disabled, RateLimitConfig::Limit);
+        self
+    }
+
     /// Builder's terminal method producing [`Config`].
     pub fn build(self) -> Config {
-        Config::new(self.api_key, self.client.unwrap_or_default(), self.base_url)
+        Config::with_rate_limit(
+            self.api_key,
+            self.client.unwrap_or_default(),
+            self.base_url,
+            self.rate_limit,
+        )
     }
 }
 
@@ -106,15 +144,16 @@ pub struct Config {
     pub(crate) base_url: Url,
     pub(crate) client: Client,
     #[cfg(not(feature = "blocking"))]
-    limiter: Arc<
-        RateLimiter<
-            NotKeyed,
-            InMemoryState,
-            MonotonicClock,
-            NoOpMiddleware<<MonotonicClock as governor::clock::Clock>::Instant>,
-        >,
-    >,
+    limiter: Option<Arc<Limiter>>,
 }
+
+#[cfg(not(feature = "blocking"))]
+type Limiter = RateLimiter<
+    NotKeyed,
+    InMemoryState,
+    MonotonicClock,
+    NoOpMiddleware<<MonotonicClock as governor::clock::Clock>::Instant>,
+>;
 
 impl Config {
     /// Create new [`ConfigBuilder`] with `api_key` set.
@@ -133,6 +172,15 @@ impl Config {
     /// variable.
     #[must_use]
     pub(crate) fn new(api_key: String, client: Client, base_url: Option<Url>) -> Self {
+        Self::with_rate_limit(api_key, client, base_url, RateLimitConfig::EnvOrDefault)
+    }
+
+    fn with_rate_limit(
+        api_key: String,
+        client: Client,
+        base_url: Option<Url>,
+        rate_limit: RateLimitConfig,
+    ) -> Self {
         let env_base_url = base_url.unwrap_or_else(|| {
             env::var("RESEND_BASE_URL")
                 .map_or_else(
@@ -145,17 +193,23 @@ impl Config {
         let env_user_agent = format!("{}/{}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
 
         // ==== Rate limiting is a non-blocking thing only ====
-        #[cfg(not(feature = "blocking"))]
-        let rate_limit_per_sec = env::var("RESEND_RATE_LIMIT")
-            .unwrap_or_else(|_| "9".to_owned())
-            .parse::<u32>()
-            .expect("env variable `RESEND_RATE_LIMIT` should be a valid u32");
+        #[cfg(feature = "blocking")]
+        let _ = rate_limit;
 
         #[cfg(not(feature = "blocking"))]
-        let quota = Self::rate_limit_quota(rate_limit_per_sec);
-
-        #[cfg(not(feature = "blocking"))]
-        let limiter = Arc::new(RateLimiter::direct_with_clock(quota, MonotonicClock));
+        let limiter = match rate_limit {
+            RateLimitConfig::Disabled => None,
+            RateLimitConfig::Limit(rate) => Some(Self::build_limiter(rate)),
+            RateLimitConfig::EnvOrDefault => {
+                let rate = env::var("RESEND_RATE_LIMIT")
+                    .unwrap_or_else(|_| "9".to_owned())
+                    .parse::<u32>()
+                    .expect("env variable `RESEND_RATE_LIMIT` should be a valid u32");
+                Some(Self::build_limiter(
+                    NonZeroU32::new(rate).expect("Rate limit is a valid non zero u32"),
+                ))
+            }
+        };
         // ====================================================
 
         Self {
@@ -166,6 +220,14 @@ impl Config {
             #[cfg(not(feature = "blocking"))]
             limiter,
         }
+    }
+
+    #[cfg(not(feature = "blocking"))]
+    fn build_limiter(rate: NonZeroU32) -> Arc<Limiter> {
+        Arc::new(RateLimiter::direct_with_clock(
+            Self::rate_limit_quota(rate.get()),
+            MonotonicClock,
+        ))
     }
 
     #[cfg(not(feature = "blocking"))]
@@ -248,10 +310,10 @@ impl Config {
     #[maybe_async::maybe_async]
     pub async fn send(&self, request: RequestBuilder) -> Result<Response> {
         #[cfg(not(feature = "blocking"))]
-        {
+        if let Some(limiter) = &self.limiter {
             let jitter =
                 governor::Jitter::new(Duration::from_millis(10), Duration::from_millis(50));
-            self.limiter.until_ready_with_jitter(jitter).await;
+            limiter.until_ready_with_jitter(jitter).await;
         }
 
         let request = request.build()?;
@@ -321,6 +383,31 @@ mod test {
             assert_eq!(replenished, rate as usize, "rate {rate}");
             assert!(limiter.check().is_err());
         }
+    }
+
+    #[cfg(not(feature = "blocking"))]
+    #[test]
+    fn builder_can_disable_rate_limit() {
+        let config = Config::builder("re_test").rate_limit(None).build();
+        assert!(config.limiter.is_none());
+    }
+
+    #[cfg(not(feature = "blocking"))]
+    #[test]
+    fn builder_can_set_rate_limit() {
+        let config = Config::builder("re_test")
+            .rate_limit(NonZeroU32::new(1))
+            .build();
+        let limiter = config.limiter.expect("limiter should be set");
+        assert!(limiter.check().is_ok());
+        assert!(limiter.check().is_err());
+    }
+
+    #[cfg(not(feature = "blocking"))]
+    #[test]
+    fn builder_enables_rate_limit_by_default() {
+        let config = Config::builder("re_test").build();
+        assert!(config.limiter.is_some());
     }
 
     fn url_for(base_url: &str, path: &str) -> String {
