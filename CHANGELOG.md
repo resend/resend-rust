@@ -11,6 +11,8 @@ and this project adheres to
 ### Added
 
 - `domains::enable_forge`
+- `ReceivingSvc::list_with_filters` and `ListInboundEmailsOptions`, filtering listed received emails by
+  recipient (`to`) and date (`start_date`, `end_date`)
 - `EmailEvent::Unknown` preventing unknown/new events from causing parsing errors
 - `EmailEvent::Suppressed`
 - `Error::status` and `Error::raw_body`, exposing the HTTP status and raw response body of API

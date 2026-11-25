@@ -662,7 +662,7 @@ pub mod types {
         Null,
     }
 
-    fn join<I, S>(values: I) -> Option<String>
+    pub fn join<I, S>(values: I) -> Option<String>
     where
         I: IntoIterator<Item = S>,
         S: AsRef<str>,

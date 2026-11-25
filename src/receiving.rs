@@ -6,6 +6,11 @@ use mailparse::{DispositionType, MailHeaderMap};
 #[cfg(feature = "blocking")]
 use reqwest::blocking as reqwest;
 
+#[cfg(not(feature = "blocking"))]
+use ::reqwest::RequestBuilder;
+#[cfg(feature = "blocking")]
+use ::reqwest::blocking::RequestBuilder;
+
 use crate::{
     Config, Error, Result,
     emails::EmailsSvc,
@@ -13,7 +18,7 @@ use crate::{
     receiving::types::ForwardReceivingEmail,
     types::{
         Attachment, CreateAttachment, CreateEmailBaseOptions, ForwardInboundEmailResponse,
-        GetInboundEmailOptions, InboundEmail, InboundEmailId,
+        GetInboundEmailOptions, InboundEmail, InboundEmailId, ListInboundEmailsOptions,
     },
 };
 
@@ -41,14 +46,35 @@ impl ReceivingSvc {
     /// <https://resend.com/docs/api-reference/emails/list-received-emails>
     #[maybe_async::maybe_async]
     pub async fn list<T>(&self, list_opts: ListOptions<T>) -> Result<ListResponse<InboundEmail>> {
-        let request = self
-            .0
-            .build(Method::GET, "/emails/receiving")
-            .query(&list_opts);
+        self.list_with_filters(ListInboundEmailsOptions::default(), list_opts)
+            .await
+    }
+
+    /// Retrieve a list of received emails, filtered by recipient and date.
+    ///
+    /// <https://resend.com/docs/api-reference/emails/list-received-emails>
+    #[maybe_async::maybe_async]
+    pub async fn list_with_filters<T>(
+        &self,
+        filters: ListInboundEmailsOptions,
+        list_opts: ListOptions<T>,
+    ) -> Result<ListResponse<InboundEmail>> {
+        let request = self.list_request(&filters, &list_opts);
         let response = self.0.send(request).await?;
         let content = response.json::<ListResponse<InboundEmail>>().await?;
 
         Ok(content)
+    }
+
+    fn list_request<T>(
+        &self,
+        filters: &ListInboundEmailsOptions,
+        list_opts: &ListOptions<T>,
+    ) -> RequestBuilder {
+        self.0
+            .build(Method::GET, "/emails/receiving")
+            .query(list_opts)
+            .query(filters)
     }
 
     /// Retrieve a single attachment from a received email.
@@ -221,6 +247,50 @@ pub mod types {
         #[inline]
         pub fn with_raw(mut self, raw: GetInboundEmailRaw) -> Self {
             self.raw = Some(raw);
+            self
+        }
+    }
+
+    /// Filters for [`ReceivingSvc::list_with_filters`](crate::services::ReceivingSvc::list_with_filters).
+    ///
+    /// [`ListInboundEmailsOptions::default()`] applies no filters.
+    #[must_use]
+    #[derive(Debug, Default, Clone, Serialize)]
+    pub struct ListInboundEmailsOptions {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        to: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        start_date: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        end_date: Option<String>,
+    }
+
+    impl ListInboundEmailsOptions {
+        pub fn new() -> Self {
+            Self::default()
+        }
+
+        /// Recipients. Returns emails delivered to any of these addresses. Each value must match
+        /// the envelope recipient exactly, including case. Up to 20 values.
+        #[inline]
+        pub fn with_to<S: AsRef<str>>(mut self, to: impl IntoIterator<Item = S>) -> Self {
+            self.to = crate::inboxes::types::join(to);
+            self
+        }
+
+        /// Matches emails received on or after this date. Accepts a date like `2026-09-01` or an
+        /// ISO 8601 timestamp, in UTC unless the timestamp has an offset.
+        #[inline]
+        pub fn with_start_date(mut self, start_date: impl Into<String>) -> Self {
+            self.start_date = Some(start_date.into());
+            self
+        }
+
+        /// Matches emails received on or before this date. Same formats as `start_date`. A date
+        /// covers that whole day. Must not be before `start_date`.
+        #[inline]
+        pub fn with_end_date(mut self, end_date: impl Into<String>) -> Self {
+            self.end_date = Some(end_date.into());
             self
         }
     }
@@ -991,6 +1061,50 @@ mod test {
             stream.write_all(response.as_bytes()).unwrap();
         });
         url
+    }
+
+    #[test]
+    fn list_filters_query() {
+        use crate::{Resend, list_opts::ListOptions, types::ListInboundEmailsOptions};
+
+        fn query<T>(filters: &ListInboundEmailsOptions, list_opts: &ListOptions<T>) -> String {
+            let request = Resend::new("re_123")
+                .receiving
+                .list_request(filters, list_opts);
+            request
+                .build()
+                .unwrap()
+                .url()
+                .query()
+                .unwrap_or_default()
+                .to_owned()
+        }
+
+        let filters = ListInboundEmailsOptions::new()
+            .with_to(["support@acme.com", "billing@acme.com"])
+            .with_start_date("2026-11-01")
+            .with_end_date("2026-11-15T12:00:00Z");
+        let list_opts = ListOptions::default()
+            .with_limit(25)
+            .list_after("cursor123");
+        assert_eq!(
+            query(&filters, &list_opts),
+            "limit=25&after=cursor123&to=support%40acme.com%2Cbilling%40acme.com&start_date=2026-11-01&end_date=2026-11-15T12%3A00%3A00Z"
+        );
+
+        let filters = ListInboundEmailsOptions::new().with_to(["support@acme.com"]);
+        assert_eq!(
+            query(&filters, &ListOptions::default()),
+            "to=support%40acme.com"
+        );
+
+        assert_eq!(
+            query(
+                &ListInboundEmailsOptions::default(),
+                &ListOptions::default()
+            ),
+            ""
+        );
     }
 
     #[tokio::test]
