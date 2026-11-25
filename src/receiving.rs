@@ -274,7 +274,12 @@ pub mod types {
         /// the envelope recipient exactly, including case. Up to 20 values.
         #[inline]
         pub fn with_to<S: AsRef<str>>(mut self, to: impl IntoIterator<Item = S>) -> Self {
-            self.to = crate::inboxes::types::join(to);
+            let joined = to
+                .into_iter()
+                .map(|value| value.as_ref().to_owned())
+                .collect::<Vec<_>>()
+                .join(",");
+            self.to = (!joined.is_empty()).then_some(joined);
             self
         }
 
