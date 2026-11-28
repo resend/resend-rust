@@ -15,6 +15,9 @@ and this project adheres to
   filters to `ReceivingSvc::list`
 - `EmailEvent::Unknown` preventing unknown/new events from causing parsing errors
 - `EmailEvent::Suppressed`
+- The documented bounce sub types to `BounceType` (`General`, `NoEmail`, `MailboxFull`,
+  `MessageTooLarge`, `ContentRejected`, `AttachmentRejected`, `Undetermined`) and
+  `BounceType::Unknown`, preventing other/new sub types from causing `email.bounced` parsing errors
 - `Error::status` and `Error::raw_body`, exposing the HTTP status and raw response body of API
   errors
 
