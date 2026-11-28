@@ -8,8 +8,9 @@
 //!
 //! - Firstly *all* requests made by the [`Resend`] client are automatically rate limited to
 //!   9 req/1.1s to avoid collisions with the 10 req/s limit that Resend imposes at the time of
-//!   writing this. Note that this can be changed by changing the `RESEND_RATE_LIMIT` environment
-//!   variable (by default it is set to `9`).
+//!   writing this. This can be changed globally with the `RESEND_RATE_LIMIT` environment variable
+//!   (by default it is set to `9`), or per client with [`ConfigBuilder::rate_limit`]. Passing
+//!   `None` to that method disables the client-side limiter for that client.
 //!
 //!   Note that the client can be safely cloned as well as used in async/parallel contexts and the
 //!   rate limit will work as intended. The only exception to this is creating 2 clients via the

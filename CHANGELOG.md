@@ -11,6 +11,8 @@ and this project adheres to
 ### Added
 
 - `domains::enable_forge`
+- `ConfigBuilder::rate_limit`, allowing the async client's rate limiter to be configured per client
+  or disabled with `None`
 - `ListInboundEmailsOptions`, adding optional recipient (`to`) and date (`start_date`, `end_date`)
   filters to `ReceivingSvc::list`
 - `EmailEvent::Unknown` preventing unknown/new events from causing parsing errors
