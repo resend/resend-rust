@@ -588,10 +588,28 @@ pub struct Bounce {
     pub r#type: String,
 }
 
+/// The bounce sub type, see <https://resend.com/docs/dashboard/emails/email-bounces>.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum BounceType {
+    /// The recipient's email provider sent a general bounce message.
+    General,
+    /// It was not possible to retrieve the recipient email address from the bounce message.
+    NoEmail,
     Suppressed,
+    /// The recipient's inbox was full.
+    MailboxFull,
+    /// The message was too large.
+    MessageTooLarge,
+    /// The message contains content that the recipient's email provider doesn't allow.
+    ContentRejected,
+    /// The message contained an unacceptable attachment.
+    AttachmentRejected,
     MessageRejected,
+    /// The bounce message didn't contain enough information to determine the reason.
+    Undetermined,
+    /// A sub type this version of the SDK does not know about yet.
+    #[serde(other)]
+    Unknown,
 }
 
 /// Extra data only populated in [`EmailEventType::EmailClicked`] events.
@@ -861,9 +879,9 @@ mod test {
 
     use crate::{
         events::{
-            ContactEventType, ContactTopicsEventType, DomainEventType, EmailEventType, Event,
-            EventType, InboxEvent, InboxEventSource, SuppressionEventType, TopicEventType,
-            try_parse_event,
+            Bounce, BounceType, ContactEventType, ContactTopicsEventType, DomainEventType,
+            EmailEventType, Event, EventType, InboxEvent, InboxEventSource, SuppressionEventType,
+            TopicEventType, try_parse_event,
         },
         types::{
             ContactIdOrEmail, InboxDraftType, InboxEmailDirection, InboxFolder, SubscriptionType,
@@ -1114,6 +1132,65 @@ mod test {
         } else {
             panic!("Wrong parsing");
         }
+    }
+
+    #[test]
+    fn email_bounced_sub_types() {
+        // Sub types documented in <https://resend.com/docs/dashboard/emails/email-bounces>
+        // plus one this version of the SDK does not know about.
+        for (r#type, sub_type) in [
+            ("Permanent", "General"),
+            ("Permanent", "NoEmail"),
+            ("Transient", "General"),
+            ("Transient", "MailboxFull"),
+            ("Transient", "MessageTooLarge"),
+            ("Transient", "ContentRejected"),
+            ("Transient", "AttachmentRejected"),
+            ("Undetermined", "Undetermined"),
+            ("Permanent", "SomeFutureSubType"),
+        ] {
+            let data = format!(
+                r#"
+    {{
+      "type": "email.bounced",
+      "created_at": "2024-11-22T23:41:12.126Z",
+      "data": {{
+        "created_at": "2024-11-22T23:41:11.894Z",
+        "email_id": "56761188-7520-42d8-8898-ff6fc54ce618",
+        "message_id": "<111-222-333@email.example.com>",
+        "from": "Acme <onboarding@resend.dev>",
+        "to": ["delivered@resend.dev"],
+        "subject": "Sending this example",
+        "bounce": {{
+          "message": "The recipient's email provider sent a bounce message.",
+          "subType": "{sub_type}",
+          "type": "{type}"
+        }}
+      }}
+    }}"#
+            );
+
+            let parsed = try_parse_event(&data);
+            assert!(parsed.is_ok(), "failed to parse subType {sub_type}");
+
+            if let Ok(Event::EmailEvent(email_event)) = parsed {
+                assert!(matches!(email_event.r#type, EmailEventType::EmailBounced));
+                assert!(email_event.data.bounce.is_some());
+            } else {
+                panic!("Wrong parsing for subType {sub_type}");
+            }
+        }
+
+        let bounce: Bounce = serde_json::from_str(
+            r#"{"message": "m", "subType": "SomeFutureSubType", "type": "Permanent"}"#,
+        )
+        .unwrap();
+        assert!(matches!(bounce.sub_type, BounceType::Unknown));
+
+        let bounce: Bounce =
+            serde_json::from_str(r#"{"message": "m", "subType": "General", "type": "Permanent"}"#)
+                .unwrap();
+        assert!(matches!(bounce.sub_type, BounceType::General));
     }
 
     #[test]
